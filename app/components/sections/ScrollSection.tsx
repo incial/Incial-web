@@ -2,111 +2,126 @@
 
 import { useRef, useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { rotatingWords } from "@/app/lib/constants";
 
-gsap.registerPlugin(ScrollTrigger);
-
 export default function ScrollSection() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const circleRef = useRef<HTMLDivElement>(null);
   const [wordIndex, setWordIndex] = useState(0);
   const [showFinal, setShowFinal] = useState(false);
+  const isScrolling = useRef(false);
+  const circleRef = useRef(null);
 
   useEffect(() => {
-    const container = containerRef.current;
-    const circle = circleRef.current;
-    if (!container || !circle) return;
+    const handleScroll = (e: WheelEvent) => {
+      // Prevent default scrolling to ensure "fixed" feel if necessary,
+      // but usually 'passive: false' + preventDefault is needed for true scroll-jacking.
+      // e.preventDefault();
 
-    // Small delay to let the slide-in animation finish before GSAP measures
-    const timer = setTimeout(() => {
-      const ctx = gsap.context(() => {
-        // Circle starts at bottom (top arc peeking), rises up and scales
-        gsap.fromTo(
-          circle,
-          { bottom: "-95%", scale: 1 },
-          {
-            bottom: "5%",
-            scale: 1.3,
-            ease: "none",
-            scrollTrigger: {
-              trigger: container,
-              start: "top top",
-              end: "bottom bottom",
-              scrub: true,
-            },
+      if (isScrolling.current) return;
+
+      if (e.deltaY > 0) {
+        // Scroll Down
+        isScrolling.current = true;
+        if (!showFinal) {
+          if (wordIndex < rotatingWords.length - 1) {
+            setWordIndex((prev) => prev + 1);
+          } else {
+            setShowFinal(true);
           }
-        );
-
-        // Word changes based on scroll position
-        const totalWords = rotatingWords.length;
-        const wordRange = 0.8;
-        const segmentSize = wordRange / totalWords;
-
-        for (let i = 0; i < totalWords; i++) {
-          ScrollTrigger.create({
-            trigger: container,
-            start: () =>
-              `top+=${i * segmentSize * (container.scrollHeight - window.innerHeight)}px top`,
-            end: () =>
-              `top+=${(i + 1) * segmentSize * (container.scrollHeight - window.innerHeight)}px top`,
-            onEnter: () => {
-              setShowFinal(false);
-              setWordIndex(i);
-            },
-            onEnterBack: () => {
-              setShowFinal(false);
-              setWordIndex(i);
-            },
-          });
         }
+        setTimeout(() => {
+          isScrolling.current = false;
+        }, 500); // Debounce
+      } else if (e.deltaY < 0) {
+        // Scroll Up
+        isScrolling.current = true;
+        if (showFinal) {
+          setShowFinal(false);
+        } else if (wordIndex > 0) {
+          setWordIndex((prev) => prev - 1);
+        }
+        setTimeout(() => {
+          isScrolling.current = false;
+        }, 500); // Debounce
+      }
+    };
 
-        // Final state: "We Are incial"
-        ScrollTrigger.create({
-          trigger: container,
-          start: () =>
-            `top+=${0.82 * (container.scrollHeight - window.innerHeight)}px top`,
-          end: "bottom bottom",
-          onEnter: () => setShowFinal(true),
-          onLeaveBack: () => {
+    // Touch support (basic Swipe)
+    let touchStartY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isScrolling.current) return;
+      const touchEndY = e.touches[0].clientY;
+      const deltaY = touchStartY - touchEndY;
+
+      if (Math.abs(deltaY) > 50) {
+        if (deltaY > 0) {
+          // Swipe Up / Scroll Down
+          isScrolling.current = true;
+          if (!showFinal) {
+            if (wordIndex < rotatingWords.length - 1) {
+              setWordIndex((prev) => prev + 1);
+            } else {
+              setShowFinal(true);
+            }
+          }
+        } else {
+          // Swipe Down / Scroll Up
+          isScrolling.current = true;
+          if (showFinal) {
             setShowFinal(false);
-            setWordIndex(totalWords - 1);
-          },
-        });
-      }, container);
+          } else if (wordIndex > 0) {
+            setWordIndex((prev) => prev - 1);
+          }
+        }
+        setTimeout(() => {
+          isScrolling.current = false;
+        }, 500);
+      }
+    };
 
-      return () => ctx.revert();
-    }, 900);
+    window.addEventListener("wheel", handleScroll, { passive: false });
+    window.addEventListener("touchstart", handleTouchStart, { passive: false });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      window.removeEventListener("wheel", handleScroll);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [wordIndex, showFinal]);
 
   return (
-    <div ref={containerRef} className="relative" style={{ height: "500vh" }}>
+    <div className="relative h-screen w-full overflow-hidden bg-black">
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden">
         {/* Center text */}
         <main className="relative z-20 flex flex-1 items-center justify-center">
           <AnimatePresence mode="wait">
             {!showFinal ? (
               <motion.div
-                key={`build-${wordIndex}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                className="text-center"
+                key="phase-1-container"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}
+                className="flex w-full items-center justify-center gap-3 text-center"
               >
-                <span className="text-4xl font-light text-white/90 md:text-5xl">
-                  We{" "}
-                </span>
-                <span className="text-4xl font-light italic text-white/90 md:text-5xl">
-                  build
-                </span>
-                <span className="text-4xl md:text-5xl">&nbsp;&nbsp;</span>
-                <span className="text-4xl font-bold text-white md:text-5xl">
-                  {rotatingWords[wordIndex]}
-                </span>
+                <div className="text-4xl font-light text-white/90 md:text-5xl">
+                  We <span className="italic">build</span>
+                </div>
+                <div className="text-left text-4xl font-bold text-white md:text-5xl">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={wordIndex}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      {rotatingWords[wordIndex]}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
               </motion.div>
             ) : (
               <motion.div
@@ -127,21 +142,27 @@ export default function ScrollSection() {
           </AnimatePresence>
         </main>
 
-        {/* Circle — starts at bottom with top arc visible, rises with scroll */}
-        <div
+        {/* Circle — animated with scroll progress */}
+        <motion.div
           ref={circleRef}
           className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2"
+          initial={{ bottom: "-95%" }}
+          animate={{
+            bottom: showFinal
+              ? "15%" // Moves up significantly for final state
+              : `${-95 + (wordIndex / rotatingWords.length) * 80}%`, // Gradually moves up from -95% to ~-15%
+          }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           style={{
             width: "min(1000px, 90vw)",
             height: "min(1000px, 90vw)",
-            bottom: "-90%",
           }}
         >
           <div
             className="h-full w-full rounded-full"
             style={{ border: "1px solid rgba(100, 130, 200, 0.35)" }}
           />
-        </div>
+        </motion.div>
       </div>
     </div>
   );

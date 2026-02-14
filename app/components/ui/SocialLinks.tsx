@@ -17,7 +17,13 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   WhatsApp: FaWhatsapp,
 };
 
-export default function SocialLinks() {
+interface SocialLinksProps {
+  className?: string;
+}
+
+export default function SocialLinks({
+  className = "text-white/80 hover:text-white",
+}: SocialLinksProps) {
   return (
     <div className="flex items-center gap-4">
       {socialLinks.map(({ label, href }) => {
@@ -28,7 +34,7 @@ export default function SocialLinks() {
             key={label}
             href={href}
             aria-label={label}
-            className="text-white/80 transition-colors hover:text-white"
+            className={`transition-colors ${className}`}
           >
             <Icon className="text-lg" />
           </a>

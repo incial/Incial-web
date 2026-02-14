@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { HiMenuAlt3 } from "react-icons/hi";
 import { IoCloseOutline } from "react-icons/io5";
 import SocialLinks from "@/app/components/ui/SocialLinks";
@@ -11,7 +12,15 @@ interface HeaderProps {
 
 export default function Header({ menuOpen, onToggleMenu }: HeaderProps) {
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between px-10 pb-4 pt-10 md:px-20">
+    <motion.header
+      initial={{ y: 0 }}
+      animate={{
+        y: menuOpen ? 100 : 0,
+        scale: menuOpen ? 0.95 : 1,
+      }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed left-0 right-0 top-0 z-50 flex origin-top items-center justify-between px-10 pb-4 pt-10 md:px-20"
+    >
       {/* Logo */}
       <div className="text-xl font-light tracking-wide text-white">
         We Are <span className="font-bold">incial.</span>
@@ -33,6 +42,6 @@ export default function Header({ menuOpen, onToggleMenu }: HeaderProps) {
 
       {/* Social icons */}
       <SocialLinks />
-    </header>
+    </motion.header>
   );
 }
