@@ -1,0 +1,68 @@
+name: "📋 Task"
+description: A development task or sub-issue
+title: "[Task]: "
+labels: ["task"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for implementation tasks, chores, or sub-issues.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know this is done?
+      value: |
+        - [ ] Criteria 1
+        - [ ] Criteria 2
+        - [ ] Criteria 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical Details
+      description: Implementation notes, files to change, dependencies, etc.
+
+  - type: input
+    id: branch
+    attributes:
+      label: Branch Name
+      description: Suggested branch name for this work.
+      placeholder: "feat/your-feature"
+
+  - type: textarea
+    id: figma
+    attributes:
+      label: Figma Reference
+      description: Link to relevant Figma nodes or frames.
+
+  - type: input
+    id: parent
+    attributes:
+      label: Parent Issue
+      description: "Link to parent epic or issue (e.g. #1)"
+      placeholder: "#1"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "P0 - Blocker"
+        - "P1 - Core"
+        - "P2 - Secondary"
+        - "P3 - Polish"
+    validations:
+      required: false
