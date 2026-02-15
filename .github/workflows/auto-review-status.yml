@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Add issue to project and set status
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
           ISSUE_ID: ${{ github.event.issue.node_id }}
           PROJECT_ID: "PVT_kwDOCiL9As4BPPwG"
           STATUS_FIELD_ID: "PVTSSF_lADOCiL9As4BPPwGzg9teFM"

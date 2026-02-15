@@ -12,58 +12,63 @@ This repository uses GitHub Actions to automatically add issues to the project b
 - **Trigger**: When any issue is opened
 - **Action**: Adds issue to Project #2 with "Todo" status (unless it has the `review` label)
 
-## Required Permissions
+## Required Setup
 
-For organization projects, the default `GITHUB_TOKEN` has limited permissions. You need to:
+**Organization projects require a Personal Access Token (PAT)** because `GITHUB_TOKEN` doesn't have write access to organization-level projects.
 
-### Option 1: Enable GitHub Actions Permissions (Recommended)
+### Create Personal Access Token
 
-1. Go to repository **Settings** → **Actions** → **General**
-2. Scroll to **Workflow permissions**
-3. Select **Read and write permissions**
-4. Check ✅ **Allow GitHub Actions to create and approve pull requests**
-5. Save
+1. Go to: https://github.com/settings/tokens/new
+2. Configure:
+   - **Note**: `Incial Project Automation`
+   - **Expiration**: 90 days (recommended)
+   - **Scopes**: 
+     - ✅ `repo` (Full repository access)
+     - ✅ `write:org` (Organization projects access)
+3. Click **Generate token**
+4. **Copy the token immediately** (you won't see it again!)
 
-### Option 2: Use Organization Settings
+### Add Token to Repository Secrets
 
-1. Go to https://github.com/organizations/incial/settings/actions
-2. Under **Workflow permissions**, select **Read and write permissions**
-3. Save
-
-### Option 3: Create a GitHub App (Most Secure)
-
-If the above doesn't work for organization projects:
-
-1. Go to https://github.com/organizations/incial/settings/apps
-2. Click **New GitHub App**
-3. Name: "Project Automation"
-4. Permissions:
-   - **Repository permissions**: Issues (Read & write)
-   - **Organization permissions**: Projects (Read & write)
-5. Generate a private key
-6. Install the app on your repository
-7. Add secrets to the repository:
-   - `PROJECT_APP_ID`: The app ID
-   - `PROJECT_APP_PRIVATE_KEY`: The private key content
+1. Go to: https://github.com/incial/Incial-web/settings/secrets/actions
+2. Click **New repository secret**
+3. Name: `PAT_TOKEN`
+4. Value: Paste your token
+5. Click **Add secret**
 
 ## Testing
 
-After setting up permissions, test by:
+After adding the PAT_TOKEN secret:
 
-1. Creating a new issue with the `review` label
-2. Check if it appears in Project #2 with "Review" status
-3. Create a regular issue and check if it appears with "Todo" status
+```bash
+# Test regular issue (should get "Todo" status)
+gh issue create --title "Test: Regular issue" --body "Testing automation"
+
+# Test review issue (should get "Review" status)
+gh issue create --title "Test: Review issue" --body "Testing review" --label "review"
+```
+
+Verify in project board: https://github.com/orgs/incial/projects/2
 
 ## Troubleshooting
 
-If workflows fail:
-- Check the **Actions** tab for error messages
-- Verify the project IDs and field IDs are correct
-- Ensure the workflow has project permissions
-- Check if the `review` label exists in the repository
+**Error: "Resource not accessible by integration"**
+- `PAT_TOKEN` secret not configured
+- PAT doesn't have `write:org` scope
+- PAT has expired
+
+**Issue not added to project**
+- Check Actions tab: https://github.com/incial/Incial-web/actions
+- Verify PAT owner has project access
+- Check if workflows are enabled
+
+**Status not set correctly**
+- Field IDs may have changed in project settings
+- Verify project structure at https://github.com/orgs/incial/projects/2
 
 ## Manual Workflow (Fallback)
 
-If automation doesn't work, manually:
-1. Use `gh project item-add 2 --owner incial --url <issue-url>`
-2. Set status via project board UI
+If automation doesn't work:
+```bash
+gh project item-add 2 --owner incial --url https://github.com/incial/Incial-web/issues/<number>
+```
