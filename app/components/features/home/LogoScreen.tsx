@@ -2,8 +2,13 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { FiArrowDown } from "react-icons/fi";
 
-export default function LogoScreen() {
+interface LogoScreenProps {
+  onNextClick?: () => void;
+}
+
+export default function LogoScreen({ onNextClick }: LogoScreenProps) {
   return (
     <motion.div
       key="logo-screen"
@@ -51,11 +56,20 @@ export default function LogoScreen() {
       {/* Bottom arrow */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="absolute bottom-10 right-10 text-white"
+        animate={{
+          opacity: [0.5, 1, 0.5],
+          y: [0, 8, 0],
+        }}
+        transition={{
+          delay: 0.6,
+          duration: 2,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        onClick={onNextClick}
+        className="absolute bottom-10 right-10 cursor-pointer text-white"
       >
-        ↓
+        <FiArrowDown size={24} />
       </motion.div>
     </motion.div>
   );

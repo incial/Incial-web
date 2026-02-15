@@ -20,6 +20,7 @@ export default function GreetingsOverlay({
       <AnimatePresence mode="wait">
         <motion.div
           key={greetingIndex}
+          lang={greetings[greetingIndex].lang}
           className="flex text-4xl font-semibold text-white sm:text-5xl"
           initial="hidden"
           animate="visible"
@@ -32,7 +33,11 @@ export default function GreetingsOverlay({
             },
           }}
         >
-          {greetings[greetingIndex].split("").map((char, i) => (
+          {Array.from(
+            new Intl.Segmenter(greetings[greetingIndex].lang, {
+              granularity: "grapheme",
+            }).segment(greetings[greetingIndex].text),
+          ).map((item, i) => (
             <motion.span
               key={i}
               variants={{
@@ -41,9 +46,9 @@ export default function GreetingsOverlay({
                 exit: { opacity: 0, y: -8 },
               }}
               transition={{ duration: 0.12, ease: "easeOut" }}
-              className={char === " " ? "w-2" : ""}
+              className={item.segment === " " ? "w-2" : ""}
             >
-              {char}
+              {item.segment}
             </motion.span>
           ))}
         </motion.div>

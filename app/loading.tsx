@@ -14,42 +14,47 @@ export default function Loading() {
     return () => clearInterval(interval);
   }, []);
 
-    const currentGreeting = greetings[index];
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={index}
-            className="flex text-4xl font-semibold text-white sm:text-5xl"
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            variants={{
-              hidden: {},
-              visible: {
-                transition: { staggerChildren: 0.03 },
-              },
-              exit: {
-                transition: { staggerChildren: 0.02, staggerDirection: -1 },
-              },
-            }}
-          >
-            {currentGreeting.split("").map((char, i) => (
-              <motion.span
-                key={i}
-                variants={{
-                  hidden: { opacity: 0, y: 8 },
-                  visible: { opacity: 1, y: 0 },
-                  exit: { opacity: 0, y: -8 },
-                }}
-                transition={{ duration: 0.12, ease: "easeOut" }}
-                className={char === " " ? "w-2" : ""}
-              >
-                {char}
-              </motion.span>
-            ))}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    );
+  const currentGreeting = greetings[index];
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={index}
+          lang={currentGreeting.lang}
+          className="flex text-4xl font-semibold text-white sm:text-5xl font-[family:var(--font-noto-stack)]"
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          variants={{
+            hidden: {},
+            visible: {
+              transition: { staggerChildren: 0.03 },
+            },
+            exit: {
+              transition: { staggerChildren: 0.02, staggerDirection: -1 },
+            },
+          }}
+        >
+          {Array.from(
+            new Intl.Segmenter(currentGreeting.lang, {
+              granularity: "grapheme",
+            }).segment(currentGreeting.text),
+          ).map((item, i) => (
+            <motion.span
+              key={i}
+              variants={{
+                hidden: { opacity: 0, y: 8 },
+                visible: { opacity: 1, y: 0 },
+                exit: { opacity: 0, y: -8 },
+              }}
+              transition={{ duration: 0.12, ease: "easeOut" }}
+              className={item.segment === " " ? "w-2" : ""}
+            >
+              {item.segment}
+            </motion.span>
+          ))}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
 }

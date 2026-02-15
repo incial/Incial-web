@@ -8,8 +8,9 @@ import NavMenu from "@/app/components/layout/NavMenu";
 import GreetingsOverlay from "@/app/components/sections/GreetingsOverlay";
 import HeroSection from "@/app/components/sections/HeroSection";
 import ScrollSection from "@/app/components/sections/ScrollSection";
+import ServicesSection from "@/app/components/sections/ServicesSection";
 
-type Phase = "greetings" | "hero" | "scrolling";
+type Phase = "greetings" | "hero" | "scrolling" | "services";
 
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("greetings");
@@ -21,10 +22,7 @@ export default function Home() {
     if (phase !== "greetings") return;
 
     if (greetingIndex < greetings.length - 1) {
-      const timer = setTimeout(
-        () => setGreetingIndex((prev) => prev + 1),
-        500
-      );
+      const timer = setTimeout(() => setGreetingIndex((prev) => prev + 1), 500);
       return () => clearTimeout(timer);
     } else {
       const timer = setTimeout(() => setPhase("hero"), 500);
@@ -33,10 +31,7 @@ export default function Home() {
   }, [greetingIndex, phase]);
 
   const handleStart = useCallback(() => setPhase("scrolling"), []);
-  const handleToggleMenu = useCallback(
-    () => setMenuOpen((prev) => !prev),
-    []
-  );
+  const handleToggleMenu = useCallback(() => setMenuOpen((prev) => !prev), []);
 
   return (
     <>
@@ -87,9 +82,23 @@ export default function Home() {
                 key="scroll"
                 initial={{ y: "100vh", opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
+                exit={{ y: "-100vh", opacity: 0 }}
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
               >
-                <ScrollSection />
+                <ScrollSection onScrollComplete={() => setPhase("services")} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {phase === "services" && (
+              <motion.div
+                key="services"
+                initial={{ y: "100vh", opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <ServicesSection />
               </motion.div>
             )}
           </AnimatePresence>

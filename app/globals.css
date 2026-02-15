@@ -9,6 +9,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-poppins);
+  --font-noto-stack: var(--font-noto-sans), var(--font-noto-sans-jp),
+    var(--font-noto-sans-kr), var(--font-noto-sans-malayalam),
+    var(--font-noto-sans-devanagari), var(--font-noto-sans-arabic);
 }
 
 @media (prefers-color-scheme: dark) {

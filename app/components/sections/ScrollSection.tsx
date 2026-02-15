@@ -10,7 +10,13 @@ import FinalReveal from "@/app/components/features/home/FinalReveal";
 import LogoScreen from "@/app/components/features/home/LogoScreen";
 import BackgroundCircle from "@/app/components/features/home/BackgroundCircle";
 
-export default function ScrollSection() {
+interface ScrollSectionProps {
+  onScrollComplete?: () => void;
+}
+
+export default function ScrollSection({
+  onScrollComplete,
+}: ScrollSectionProps) {
   const [wordIndex, setWordIndex] = useState(0);
   const [showFinal, setShowFinal] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
@@ -114,7 +120,7 @@ export default function ScrollSection() {
             ) : showFinal && !showLogo ? (
               <FinalReveal />
             ) : (
-              <LogoScreen />
+              <LogoScreen onNextClick={onScrollComplete} />
             )}
           </AnimatePresence>
         </main>

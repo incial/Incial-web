@@ -1,10 +1,10 @@
 export const greetings = [
-  "Hello",
-  "नमस्ते",
-  "안녕하세요",
-  "ഹലോ",
-  "こんにちは",
-  "مرحبًا",
+  { text: "Hello", lang: "en" },
+  { text: "नमस्ते", lang: "hi" },
+  { text: "안녕하세요", lang: "ko" },
+  { text: "ഹലോ", lang: "ml" },
+  { text: "こんにちは", lang: "ja" },
+  { text: "مرحبًا", lang: "ar" },
 ];
 
 export const navLinks = [
