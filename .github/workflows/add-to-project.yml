@@ -1,0 +1,53 @@
+name: Add Issues to Project Board
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  add-to-project:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Add issue to project
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_ID: ${{ github.event.issue.node_id }}
+          PROJECT_ID: "PVT_kwDOCiL9As4BPPwG"
+          STATUS_FIELD_ID: "PVTSSF_lADOCiL9As4BPPwGzg9teFM"
+          TODO_STATUS_ID: "93fd08a3"
+        run: |
+          echo "Adding issue #${{ github.event.issue.number }} to project..."
+          
+          # Add issue to project
+          ITEM_ID=$(gh api graphql -f query='
+            mutation($projectId: ID!, $issueId: ID!) {
+              addProjectV2ItemById(input: {projectId: $projectId, contentId: $issueId}) {
+                item {
+                  id
+                }
+              }
+            }' -f projectId="$PROJECT_ID" -f issueId="$ISSUE_ID" --jq '.data.addProjectV2ItemById.item.id')
+          
+          echo "Issue added with item ID: $ITEM_ID"
+          
+          # Set default status to Todo (unless it has special labels)
+          if [[ "${{ contains(github.event.issue.labels.*.name, 'review') }}" != "true" ]]; then
+            gh api graphql -f query='
+              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $statusId: String!) {
+                updateProjectV2ItemFieldValue(
+                  input: {
+                    projectId: $projectId
+                    itemId: $itemId
+                    fieldId: $fieldId
+                    value: { singleSelectOptionId: $statusId }
+                  }
+                ) {
+                  projectV2Item {
+                    id
+                  }
+                }
+              }' -f projectId="$PROJECT_ID" -f itemId="$ITEM_ID" -f fieldId="$STATUS_FIELD_ID" -f statusId="$TODO_STATUS_ID"
+            
+            echo "✅ Status set to Todo"
+          fi

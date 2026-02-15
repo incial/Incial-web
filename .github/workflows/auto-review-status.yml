@@ -1,0 +1,60 @@
+name: Auto-add Review Issues to Project
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  add-to-project:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'review')
+    
+    steps:
+      - name: Generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.PROJECT_APP_ID }}
+          private_key: ${{ secrets.PROJECT_APP_PRIVATE_KEY }}
+        continue-on-error: true
+
+      - name: Add issue to project and set status
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token || secrets.GITHUB_TOKEN }}
+          ISSUE_ID: ${{ github.event.issue.node_id }}
+          PROJECT_ID: "PVT_kwDOCiL9As4BPPwG"
+          STATUS_FIELD_ID: "PVTSSF_lADOCiL9As4BPPwGzg9teFM"
+          REVIEW_STATUS_ID: "d145492d"
+        run: |
+          echo "Adding issue #${{ github.event.issue.number }} to project..."
+          
+          # Add issue to project and get the item ID
+          ITEM_ID=$(gh api graphql -f query='
+            mutation($projectId: ID!, $issueId: ID!) {
+              addProjectV2ItemById(input: {projectId: $projectId, contentId: $issueId}) {
+                item {
+                  id
+                }
+              }
+            }' -f projectId="$PROJECT_ID" -f issueId="$ISSUE_ID" --jq '.data.addProjectV2ItemById.item.id')
+          
+          echo "Issue added to project with item ID: $ITEM_ID"
+          
+          # Set status to Review
+          gh api graphql -f query='
+            mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $statusId: String!) {
+              updateProjectV2ItemFieldValue(
+                input: {
+                  projectId: $projectId
+                  itemId: $itemId
+                  fieldId: $fieldId
+                  value: { singleSelectOptionId: $statusId }
+                }
+              ) {
+                projectV2Item {
+                  id
+                }
+              }
+            }' -f projectId="$PROJECT_ID" -f itemId="$ITEM_ID" -f fieldId="$STATUS_FIELD_ID" -f statusId="$REVIEW_STATUS_ID"
+          
+          echo "✅ Status set to Review"
