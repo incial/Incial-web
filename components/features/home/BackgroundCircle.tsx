@@ -6,7 +6,6 @@ import { RefObject } from "react";
 interface BackgroundCircleProps {
   circleRef?: RefObject<HTMLDivElement | null>;
   wordIndex: number;
-  showFinal: boolean;
   showLogo: boolean;
   totalWords: number;
 }
@@ -14,7 +13,6 @@ interface BackgroundCircleProps {
 export default function BackgroundCircle({
   circleRef,
   wordIndex,
-  showFinal,
   showLogo,
   totalWords,
 }: BackgroundCircleProps) {
@@ -24,11 +22,7 @@ export default function BackgroundCircle({
       className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2"
       initial={{ bottom: "-95%" }}
       animate={{
-        bottom: showLogo
-          ? "-100%"
-          : showFinal
-            ? "15%"
-            : `${-95 + (wordIndex / totalWords) * 80}%`,
+        bottom: showLogo ? "-100%" : `${-95 + (wordIndex / totalWords) * 80}%`,
         opacity: showLogo ? 0 : 1,
       }}
       transition={{

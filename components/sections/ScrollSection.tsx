@@ -6,7 +6,6 @@ import { rotatingWords } from "@/lib/constants";
 
 // Components
 import RotatingText from "@/components/features/home/RotatingText";
-import FinalReveal from "@/components/features/home/FinalReveal";
 import LogoScreen from "@/components/features/home/LogoScreen";
 import BackgroundCircle from "@/components/features/home/BackgroundCircle";
 
@@ -18,7 +17,6 @@ export default function ScrollSection({
   onScrollComplete,
 }: ScrollSectionProps) {
   const [wordIndex, setWordIndex] = useState(0);
-  const [showFinal, setShowFinal] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
   const isScrolling = useRef(false);
   const circleRef = useRef<HTMLDivElement>(null);
@@ -30,14 +28,12 @@ export default function ScrollSection({
       if (e.deltaY > 0) {
         // Scroll Down
         isScrolling.current = true;
-        if (!showFinal) {
+        if (!showLogo) {
           if (wordIndex < rotatingWords.length - 1) {
             setWordIndex((prev) => prev + 1);
           } else {
-            setShowFinal(true);
+            setShowLogo(true);
           }
-        } else if (!showLogo) {
-          setShowLogo(true);
         }
         setTimeout(() => {
           isScrolling.current = false;
@@ -47,8 +43,6 @@ export default function ScrollSection({
         isScrolling.current = true;
         if (showLogo) {
           setShowLogo(false);
-        } else if (showFinal) {
-          setShowFinal(false);
         } else if (wordIndex > 0) {
           setWordIndex((prev) => prev - 1);
         }
@@ -72,22 +66,18 @@ export default function ScrollSection({
         if (deltaY > 0) {
           // Swipe Up / Scroll Down
           isScrolling.current = true;
-          if (!showFinal) {
+          if (!showLogo) {
             if (wordIndex < rotatingWords.length - 1) {
               setWordIndex((prev) => prev + 1);
             } else {
-              setShowFinal(true);
+              setShowLogo(true);
             }
-          } else if (!showLogo) {
-            setShowLogo(true);
           }
         } else {
           // Swipe Down / Scroll Up
           isScrolling.current = true;
           if (showLogo) {
             setShowLogo(false);
-          } else if (showFinal) {
-            setShowFinal(false);
           } else if (wordIndex > 0) {
             setWordIndex((prev) => prev - 1);
           }
@@ -107,7 +97,7 @@ export default function ScrollSection({
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [wordIndex, showFinal, showLogo]);
+  }, [wordIndex, showLogo]);
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-black">
@@ -115,10 +105,8 @@ export default function ScrollSection({
         {/* Main Interaction Area */}
         <main className="relative z-20 flex flex-1 items-center justify-center">
           <AnimatePresence mode="wait">
-            {!showFinal && !showLogo ? (
+            {!showLogo ? (
               <RotatingText wordIndex={wordIndex} words={rotatingWords} />
-            ) : showFinal && !showLogo ? (
-              <FinalReveal />
             ) : (
               <LogoScreen onNextClick={onScrollComplete} />
             )}
@@ -129,7 +117,6 @@ export default function ScrollSection({
         <BackgroundCircle
           circleRef={circleRef}
           wordIndex={wordIndex}
-          showFinal={showFinal}
           showLogo={showLogo}
           totalWords={rotatingWords.length}
         />
