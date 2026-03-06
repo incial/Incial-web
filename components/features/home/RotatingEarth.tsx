@@ -232,7 +232,7 @@ export default function RotatingEarth({
     };
 
     // Set up rotation and interaction
-    const rotation = [0, 0];
+    const rotation: [number, number] = [0, 0];
     let autoRotate = true;
     const rotationSpeed = 0.5;
 
@@ -251,7 +251,7 @@ export default function RotatingEarth({
       autoRotate = false;
       const startX = event.clientX;
       const startY = event.clientY;
-      const startRotation = [...rotation];
+      const startRotation: [number, number] = [rotation[0], rotation[1]];
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
         const sensitivity = 0.5;
