@@ -11,6 +11,7 @@ import Image from "next/image";
 const imgHeroBanner = "/images/about/Team-Photo.png";
 const imgBrand = "/images/about/imgBrand.png";
 const imgImpact = "/images/about/imgImpact.png";
+const imgAwardsIcon = "/images/about/imgAwardsIcon.svg";
 
 // ── Fade-up animation variant ─────────────────────────────────────────────
 const fadeUp = {
