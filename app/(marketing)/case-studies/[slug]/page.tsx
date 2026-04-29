@@ -12,7 +12,6 @@ interface PageProps {
   }>;
 }
 
-// Generate static params for all case studies
 export async function generateStaticParams() {
   const data = loadCaseStudiesData();
   return data.cases
@@ -22,18 +21,11 @@ export async function generateStaticParams() {
     }));
 }
 
-// Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
   const data = loadCaseStudiesData();
   const caseStudy = data.cases.find((c) => c.slug === slug);
-
-  if (!caseStudy) {
-    return {
-      title: "Case Study Not Found",
-    };
-  }
-
+  if (!caseStudy) return { title: "Case Study Not Found" };
   return {
     title: `${caseStudy.title} - Incial`,
     description: caseStudy.heroQuote,
@@ -45,17 +37,14 @@ export default async function CaseStudyDetailPage({ params }: PageProps) {
   const data = loadCaseStudiesData();
   const caseStudy = data.cases.find((c) => c.slug === slug);
 
-  // If case study not found, show 404
-  if (!caseStudy) {
-    notFound();
-  }
+  if (!caseStudy) notFound();
 
   return (
     <ClientWrapper>
-      {/* Main Content */}
       <main className="pt-32 pb-20">
-        {/* Breadcrumb */}
-        <div className="mb-10 px-6 md:px-16 lg:px-24 xl:px-32 max-w-[1400px] mx-auto">
+
+        {/* Breadcrumb — desktop only */}
+        <div className="hidden md:block mb-10 px-6 md:px-16 lg:px-24 xl:px-32 max-w-[1400px] mx-auto">
           <Breadcrumbs
             items={[
               { label: "Home", href: "/" },
@@ -68,15 +57,14 @@ export default async function CaseStudyDetailPage({ params }: PageProps) {
           />
         </div>
 
-        {/* Hero Section with Image */}
-        <section className="mb-16 relative px-6 md:px-16 lg:px-24">
+        {/* Hero Section */}
+        <section className="mb-10 md:mb-16 relative px-4 md:px-16 lg:px-24">
           <div className="max-w-[1400px] mx-auto">
-            {/* Hero Image with overlay text */}
             <div
               className="relative w-full overflow-hidden"
               style={{
                 maxWidth: "1256px",
-                height: "320px",
+                height: "clamp(280px, 55vw, 320px)",
                 borderRadius: "25px",
                 margin: "0 auto",
               }}
@@ -95,15 +83,14 @@ export default async function CaseStudyDetailPage({ params }: PageProps) {
               {/* Dark overlay */}
               <div className="absolute inset-0 bg-black/60" />
 
-              {/* Text content overlay */}
-              <div className="absolute inset-0 flex flex-col justify-between p-8 md:p-10 lg:p-12">
-                {/* Title at top */}
+              {/* Text overlay */}
+              <div className="absolute inset-0 flex flex-col justify-between p-6 md:p-10 lg:p-12">
                 <h1
                   className="text-white max-w-3xl"
                   style={{
                     fontFamily: "Poppins",
                     fontWeight: 700,
-                    fontSize: "clamp(20px, 3.5vw, 32px)",
+                    fontSize: "clamp(18px, 4vw, 32px)",
                     lineHeight: "120%",
                     letterSpacing: "0%",
                   }}
@@ -111,13 +98,12 @@ export default async function CaseStudyDetailPage({ params }: PageProps) {
                   {caseStudy.title}
                 </h1>
 
-                {/* Hero quote at bottom */}
                 <p
-                  className="text-white max-w-4xl italic line-clamp-2"
+                  className="text-white italic"
                   style={{
                     fontFamily: "Poppins",
                     fontWeight: 400,
-                    fontSize: "clamp(13px, 2vw, 18px)",
+                    fontSize: "clamp(12px, 2.5vw, 18px)",
                     lineHeight: "140%",
                     letterSpacing: "0%",
                   }}
@@ -129,9 +115,9 @@ export default async function CaseStudyDetailPage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* Content Container - Introduction and Sections */}
+        {/* Content */}
         <div
-          className="px-6 md:px-8"
+          className="px-5 md:px-8"
           style={{
             maxWidth: "1200px",
             margin: "0 auto",
@@ -140,7 +126,6 @@ export default async function CaseStudyDetailPage({ params }: PageProps) {
             gap: "50px",
           }}
         >
-          {/* Introduction */}
           {caseStudy.introduction && (
             <section className="max-w-[900px] mx-auto">
               <p
@@ -158,7 +143,6 @@ export default async function CaseStudyDetailPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* Content Sections */}
           <div className="max-w-[900px] mx-auto w-full space-y-12">
             {(caseStudy.sections || []).map(
               (
@@ -198,7 +182,6 @@ export default async function CaseStudyDetailPage({ params }: PageProps) {
             )}
           </div>
 
-          {/* Closing CTA */}
           <section className="max-w-[900px] mx-auto">
             <p
               className="text-gray-300 italic"
@@ -220,7 +203,6 @@ export default async function CaseStudyDetailPage({ params }: PageProps) {
         </div>
       </main>
 
-      {/* Footer */}
       <div className="px-6 md:px-16 lg:px-24 xl:px-32 max-w-[1400px] mx-auto mt-20">
         <Footer />
       </div>

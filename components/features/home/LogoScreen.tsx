@@ -3,22 +3,22 @@
 import { motion, Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { FiArrowDown } from "react-icons/fi";
 
 interface LogoScreenProps {
-  onNextClick?: () => void;
   skipAnimation?: boolean;
+  sizeMode?: "desktop" | "mobile";
 }
 
 export default function LogoScreen({
-  onNextClick,
   skipAnimation,
+  sizeMode = "desktop",
 }: LogoScreenProps) {
-  const handleOurWorks = () => {
-    if (onNextClick) {
-      onNextClick();
-    }
-  };
+  const isMobileMode = sizeMode === "mobile";
+  const logoFrameStyle = {
+    width: isMobileMode ? "clamp(14rem, 84vw, 23rem)" : "clamp(11rem, 30vw, 34rem)",
+    height: isMobileMode ? "clamp(14rem, 84vw, 23rem)" : "clamp(11rem, 30vw, 34rem)",
+  } as const;
+  const logoScale = isMobileMode ? "scale(1.1)" : "scale(1.05)";
 
   const pathVariants: Variants = {
     hidden: { pathLength: 0, opacity: 0 },
@@ -35,10 +35,10 @@ export default function LogoScreen({
   return (
     <motion.div
       key="logo-screen"
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={skipAnimation ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      transition={skipAnimation ? { duration: 0 } : { duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       className="relative flex h-full w-full items-center justify-center"
     >
       {/* Left Button */}
@@ -56,13 +56,20 @@ export default function LogoScreen({
         </Link>
       </motion.div>
 
-      <div className="relative flex h-80 w-80 items-center justify-center md:h-[32rem] md:w-[32rem] lg:h-[40rem] lg:w-[40rem]">
+      <div
+        className="relative flex items-center justify-center"
+        style={logoFrameStyle}
+      >
         {/* Sharp Stroke Layer */}
         <motion.svg
           viewBox="0 0 626 590"
           className="absolute inset-0 h-full w-full stroke-white"
           fill="transparent"
-          strokeWidth="3"
+          style={{
+            strokeWidth: "clamp(1.5px, 0.28vmin, 4px)",
+            transform: logoScale,
+            transformOrigin: "center",
+          }}
           strokeLinecap="round"
           strokeLinejoin="round"
           initial="hidden"
@@ -87,11 +94,9 @@ export default function LogoScreen({
         </motion.svg>
 
         {/* Full Finished Logo */}
-        <motion.a
-          href="/pdf/Brochure.pdf"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="absolute inset-0 flex items-center justify-center cursor-pointer"
+        <motion.div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{ transform: logoScale, transformOrigin: "center" }}
           initial={skipAnimation ? { opacity: 1 } : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={
@@ -107,7 +112,7 @@ export default function LogoScreen({
             className="object-contain"
             priority
           />
-        </motion.a>
+        </motion.div>
       </div>
 
       {/* Right Button */}
@@ -117,12 +122,14 @@ export default function LogoScreen({
         transition={skipAnimation ? { duration: 0 } : { delay: 2.5 }}
         className="absolute right-[10%] hidden md:block"
       >
-        <button
-          onClick={handleOurWorks}
+        <a
+          href="/pdf/Brochure.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
           className="rounded-full border border-white/30 px-8 py-3 text-sm text-white transition hover:bg-white hover:text-black inline-block"
         >
           Our Works
-        </button>
+        </a>
       </motion.div>
     </motion.div>
   );
