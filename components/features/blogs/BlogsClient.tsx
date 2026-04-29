@@ -18,7 +18,6 @@ function BlogCard({ post, index }: { post: BlogPost; index: number }) {
       transition={{ duration: 0.5, delay: index * 0.07 }}
     >
       <Link href={`/blogs/${post.slug}`} className="group block">
-        {/* White card — Figma: radius 25px, padding 10px, gap 10px */}
         <div className="bg-white rounded-[25px] p-[10px] flex flex-col gap-[10px] shadow-sm group-hover:shadow-lg transition-shadow duration-300">
           {/* Image with overlay */}
           <div className="relative rounded-[18px] overflow-hidden aspect-4/3 w-full">
@@ -39,7 +38,7 @@ function BlogCard({ post, index }: { post: BlogPost; index: number }) {
             </div>
           </div>
 
-          {/* Meta row — white strip */}
+          {/* Meta row */}
           <div className="flex items-center justify-between px-2 pb-1 text-[12px] text-gray-400 italic">
             <span>{post.mins} Mins</span>
             <span className="text-gray-300">|</span>
@@ -58,7 +57,17 @@ function SectionLabel({ label, delay = 0 }: { label: string; delay?: number }) {
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay }}
-      className="text-2xl md:text-3xl font-bold italic text-white mb-8"
+      className="
+        text-center md:text-left
+        text-[20px] md:text-3xl
+        font-medium md:font-bold
+        italic
+        text-white
+        mb-8
+        tracking-normal
+        leading-none
+        [font-family:'Poppins',sans-serif] md:[font-family:inherit]
+      "
     >
       {label}
     </motion.h2>
@@ -77,10 +86,6 @@ export default function BlogsClient({
   const [menuOpen, setMenuOpen] = useState(false);
   const [isDisabled, setIsDisabled] = useState(false);
 
-  const [sectionsConfig, setSectionsConfig] = useState<Record<string, boolean>>(
-    {},
-  );
-
   useEffect(() => {
     async function fetchConfig() {
       try {
@@ -89,13 +94,6 @@ export default function BlogsClient({
         const blogsConfig = data.sections?.find((s: any) => s.id === "blogs");
         if (blogsConfig && !blogsConfig.enabled) {
           setIsDisabled(true);
-        }
-        if (data?.sections) {
-          const configMap: Record<string, boolean> = {};
-          data.sections.forEach((s: any) => {
-            configMap[s.id] = s.enabled;
-          });
-          setSectionsConfig(configMap);
         }
       } catch (err) {
         // Ignore
@@ -136,13 +134,14 @@ export default function BlogsClient({
         className="relative origin-top overflow-hidden bg-black text-white min-h-screen"
         style={{ zIndex: 30 }}
       >
-        <main className="pt-28 pb-24 pl-[90px] pr-[90px] max-w-[1431px] mx-auto">
+        {/* ── ONLY change: px-5 on mobile, 90px on desktop ── */}
+        <main className="pt-28 pb-24 px-5 md:pl-[90px] md:pr-[90px] max-w-[1431px] mx-auto">
           {/* Breadcrumb */}
           <Breadcrumbs
             items={[{ label: "Home", href: "/" }, { label: "Blogs" }]}
             variant="pill"
             size="lg"
-            className="mb-8"
+            className="mb-8 hidden md:flex"
           />
 
           {/* Page Title */}
@@ -155,35 +154,32 @@ export default function BlogsClient({
             Blogs
           </motion.h1>
 
-          {/* ── Popular ─────────────────────────────────────────────────────── */}
-          {sectionsConfig["blog-popular"] !== false && (
-            <section className="mb-16">
-              <SectionLabel label="Popular" />
-              <div className="max-w-[1251px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-[60px] gap-y-[60px]">
-                {popularPosts.map((post, i) => (
-                  <BlogCard key={post.id} post={post} index={i} />
-                ))}
-              </div>
-            </section>
-          )}
+          {/* ── Popular ── */}
+          <section className="mb-16">
+            <SectionLabel label="Popular" />
+            <div className="max-w-[1251px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-[60px] gap-y-8 md:gap-y-[60px]">
+              {popularPosts.map((post, i) => (
+                <BlogCard key={post.id} post={post} index={i} />
+              ))}
+            </div>
+          </section>
 
           {/* Divider */}
           <div className="max-w-[1251px] border-t border-white/10 mb-16" />
 
-          {/* ── Newest ──────────────────────────────────────────────────────── */}
-          {sectionsConfig["blog-newest"] !== false && (
-            <section>
-              <SectionLabel label="Newest" delay={0.1} />
-              <div className="max-w-[1251px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-[60px] gap-y-[60px]">
-                {newestPosts.map((post, i) => (
-                  <BlogCard key={post.id} post={post} index={i} />
-                ))}
-              </div>
-            </section>
-          )}
+          {/* ── Newest ── */}
+          <section>
+            <SectionLabel label="Newest" delay={0.1} />
+            <div className="max-w-[1251px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-[60px] gap-y-8 md:gap-y-[60px]">
+              {newestPosts.map((post, i) => (
+                <BlogCard key={post.id} post={post} index={i} />
+              ))}
+            </div>
+          </section>
         </main>
 
-        <div className="pl-[90px] pr-[90px] max-w-[1431px] mx-auto">
+        {/* ── Footer padding also made responsive ── */}
+        <div className="px-5 md:pl-[90px] md:pr-[90px] max-w-[1431px] mx-auto">
           <Footer />
         </div>
       </motion.div>

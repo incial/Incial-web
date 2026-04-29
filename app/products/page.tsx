@@ -54,13 +54,32 @@ function ProductSection({
         style={{ height: "408px", borderRadius: "10px" }}
       >
         {product.image && (
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            className="object-cover object-top"
-            priority={index === 0}
-          />
+          <>
+            {/* Desktop image */}
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              sizes="(max-width: 768px) 0px, (max-width: 1439px) calc(100vw - 298px), 1141px"
+              className="hidden md:block object-cover object-top"
+              priority={index === 0}
+            />
+            {/* Mobile image */}
+            <Image
+              src={
+                product.image.includes('Stockflow')
+                  ? '/images/products/StockMobile.png'
+                  : product.image.includes('Workhub')
+                  ? '/images/products/WorkMobile.png'
+                  : product.image
+              }
+              alt={product.name}
+              fill
+              sizes="(max-width: 768px) calc(100vw - 48px), 0px"
+              className="block md:hidden object-cover object-top"
+              priority={index === 0}
+            />
+          </>
         )}
       </div>
 
@@ -192,7 +211,7 @@ export default function ProductsPage() {
             transition={{ duration: 0.6 }}
             className="text-center mb-20 px-6"
           >
-            <div className="flex justify-center mb-10">
+            <div className="hidden sm:flex justify-center mb-10">
               <Breadcrumbs
                 items={[{ label: "Home", href: "/" }, { label: "Products" }]}
                 variant="pill"

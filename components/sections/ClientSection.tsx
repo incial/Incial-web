@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import type { ClientsData, Client, Testimonial } from "@/lib/dataLoader";
@@ -18,6 +18,7 @@ export default function ClientSection({
   const [sectionsConfig, setSectionsConfig] = useState<Record<string, boolean>>(
     {},
   );
+  const isScrollingRef = useRef(false);
 
   useEffect(() => {
     fetch("/api/admin/clients")
@@ -39,18 +40,29 @@ export default function ClientSection({
       .catch(console.error);
   }, []);
   useEffect(() => {
-    let isScrolling = false;
+    const isCoarsePointer =
+      typeof window !== "undefined" &&
+      window.matchMedia("(pointer: coarse)").matches;
+    const scrollThreshold = isCoarsePointer ? 24 : 40;
+    const scrollLockMs = isCoarsePointer ? 700 : 1200;
+
+    const lockScroll = () => {
+      isScrollingRef.current = true;
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, scrollLockMs);
+    };
+
     const handleScroll = (e: WheelEvent) => {
-      if (isScrolling) return;
-      isScrolling = true;
+      if (Math.abs(e.deltaY) < scrollThreshold) return;
+      e.preventDefault();
+      if (isScrollingRef.current) return;
+      lockScroll();
       if (e.deltaY > 0) {
         if (onComplete) onComplete();
       } else {
         if (onBack) onBack();
       }
-      setTimeout(() => {
-        isScrolling = false;
-      }, 500);
     };
 
     let touchStartY = 0;
@@ -58,22 +70,17 @@ export default function ClientSection({
       touchStartY = e.touches[0].clientY;
     };
     const handleTouchMove = (e: TouchEvent) => {
-      if (isScrolling) return;
+      e.preventDefault();
+      if (isScrollingRef.current) return;
       const touchEndY = e.touches[0].clientY;
       const deltaY = touchStartY - touchEndY;
 
-      if (deltaY > 50) {
-        isScrolling = true;
+      if (deltaY > scrollThreshold) {
+        lockScroll();
         if (onComplete) onComplete();
-        setTimeout(() => {
-          isScrolling = false;
-        }, 500);
-      } else if (deltaY < -50) {
-        isScrolling = true;
+      } else if (deltaY < -scrollThreshold) {
+        lockScroll();
         if (onBack) onBack();
-        setTimeout(() => {
-          isScrolling = false;
-        }, 500);
       }
     };
 
@@ -90,10 +97,10 @@ export default function ClientSection({
 
   return (
     <section className="h-screen w-full bg-black text-white flex flex-col justify-center items-center relative overflow-hidden">
-      <div className="container mx-auto px-6 md:px-12 relative z-10 h-full flex flex-col justify-center items-center">
+      <div className="layout-container relative z-10 h-full flex flex-col justify-center items-center">
         <motion.div
           className="flex flex-col items-center w-full max-w-7xl"
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: "3.125rem" }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
@@ -106,7 +113,7 @@ export default function ClientSection({
 
           {/* Client Logo Grid */}
           {sectionsConfig["client-logos"] !== false && (
-            <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-2.5 mb-10 md:mb-14 w-full">
+            <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-2.5 2xl:gap-3 mb-10 md:mb-14 w-full">
               {(data?.clients || []).map((client, index) => (
                 <motion.div
                   key={client.id}

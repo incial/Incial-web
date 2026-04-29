@@ -10,9 +10,27 @@ interface ContactSectionProps {
 
 export default function ContactSection({ onBack }: ContactSectionProps) {
   useEffect(() => {
+    const isCoarsePointer =
+      typeof window !== "undefined" &&
+      window.matchMedia("(pointer: coarse)").matches;
+    const scrollThreshold = isCoarsePointer ? 24 : 40;
+    const scrollLockMs = isCoarsePointer ? 700 : 1200;
+    let isScrolling = false;
+
+    const lockScroll = () => {
+      isScrolling = true;
+      setTimeout(() => {
+        isScrolling = false;
+      }, scrollLockMs);
+    };
+
     const handleScroll = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) < scrollThreshold) return;
+      if (isScrolling) return;
       // If scrolling UP and at the top of the page
       if (e.deltaY < 0 && window.scrollY === 0 && onBack) {
+        e.preventDefault();
+        lockScroll();
         onBack();
       }
     };
@@ -23,11 +41,14 @@ export default function ContactSection({ onBack }: ContactSectionProps) {
       touchStartY = e.touches[0].clientY;
     };
     const handleTouchMove = (e: TouchEvent) => {
+      if (isScrolling) return;
       const touchEndY = e.touches[0].clientY;
       const deltaY = touchStartY - touchEndY;
 
       // Swipe Down (negative deltaY) and at top
-      if (deltaY < -50 && window.scrollY === 0 && onBack) {
+      if (deltaY < -scrollThreshold && window.scrollY === 0 && onBack) {
+        e.preventDefault();
+        lockScroll();
         onBack();
       }
     };
@@ -102,86 +123,86 @@ export default function ContactSection({ onBack }: ContactSectionProps) {
   };
 
   return (
-    <section className="min-h-screen w-full bg-black text-white flex flex-col justify-between pt-24 pb-8 px-6 md:px-12 relative overflow-hidden">
-      <div className="grow flex flex-col justify-center items-center max-w-2xl mx-auto w-full z-10">
+    <section className="min-h-screen w-full bg-black text-white flex flex-col justify-between pt-16 pb-6 px-4 md:pt-24 md:pb-8 md:px-0 relative overflow-hidden">
+      <div className="layout-content grow flex flex-col justify-center items-center max-w-2xl w-full mx-auto z-10">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: "1.25rem" }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-12"
+          className="text-center mb-8 md:mb-12 px-2 md:px-0"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          <h2 className="text-3xl md:text-5xl font-bold mb-3 md:mb-4 leading-tight">
             Have a question? Need a quote?
           </h2>
-          <p className="text-lg text-gray-400">
+          <p className="text-base md:text-lg text-gray-400">
             We promise to reply within 24 hours, every time.
           </p>
         </motion.div>
 
         <motion.form
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: "1.875rem" }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.2 }}
           onSubmit={handleSubmit}
-          className="w-full space-y-6"
+          className="w-full space-y-4 md:space-y-6"
         >
           {/* Name Field */}
-          <div className="bg-white/5 border border-white/10 rounded-full px-6 py-3">
+          <div className="bg-white/5 border border-white/10 rounded-full px-5 py-3 md:px-6 md:py-3">
             <input
               type="text"
               name="name"
               placeholder="Full Name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full bg-transparent outline-none text-white placeholder-gray-500"
+              className="w-full bg-transparent outline-none text-white placeholder-gray-500 text-sm md:text-base"
             />
           </div>
 
           {/* Email Field */}
-          <div className="bg-white/5 border border-white/10 rounded-full px-6 py-3">
+          <div className="bg-white/5 border border-white/10 rounded-full px-5 py-3 md:px-6 md:py-3">
             <input
               type="email"
               name="email"
               placeholder="Email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full bg-transparent outline-none text-white placeholder-gray-500"
+              className="w-full bg-transparent outline-none text-white placeholder-gray-500 text-sm md:text-base"
             />
           </div>
 
           {/* Phone Field */}
-          <div className="bg-white/5 border border-white/10 rounded-full px-6 py-3">
+          <div className="bg-white/5 border border-white/10 rounded-full px-5 py-3 md:px-6 md:py-3">
             <input
               type="tel"
               name="phone"
               placeholder="Phone"
               value={formData.phone}
               onChange={handleChange}
-              className="w-full bg-transparent outline-none text-white placeholder-gray-500"
+              className="w-full bg-transparent outline-none text-white placeholder-gray-500 text-sm md:text-base"
             />
           </div>
 
           {/* Message Field */}
-          <div className="bg-white/5 border border-white/10 rounded-3xl px-6 py-4 relative">
+          <div className="bg-white/5 border border-white/10 rounded-3xl px-5 py-4 md:px-6 md:py-4 relative">
             <textarea
               name="message"
               placeholder="Message"
               rows={4}
               value={formData.message}
               onChange={handleChange}
-              className="w-full bg-transparent outline-none text-white placeholder-gray-500 resize-none mb-12"
+              className="w-full bg-transparent outline-none text-white placeholder-gray-500 resize-none mb-12 text-sm md:text-base"
             />
 
             {status === "success" && (
-              <p className="absolute bottom-4 left-6 text-green-400 text-sm">
+              <p className="absolute bottom-4 left-5 md:left-6 text-green-400 text-xs md:text-sm">
                 Message sent successfully!
               </p>
             )}
             {status === "error" && (
               <p
-                className="absolute bottom-4 left-6 text-red-500 text-sm max-w-[70%] truncate"
+                className="absolute bottom-4 left-5 md:left-6 text-red-500 text-xs md:text-sm max-w-[60%] md:max-w-[70%] line-clamp-2"
                 title={errorMessage}
               >
                 {errorMessage}
@@ -191,7 +212,7 @@ export default function ContactSection({ onBack }: ContactSectionProps) {
             <button
               type="submit"
               disabled={status === "loading"}
-              className="absolute bottom-4 right-4 bg-white text-black font-bold py-2 px-6 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute bottom-4 right-4 bg-white text-black font-bold py-2 px-5 md:px-6 text-sm md:text-base rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {status === "loading" ? "Sending..." : "Contact"}
             </button>
