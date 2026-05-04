@@ -24,43 +24,32 @@ export default function ServicesSection({
   const isScrolling = useRef(false);
 
   useEffect(() => {
-    const isCoarsePointer =
-      typeof window !== "undefined" &&
-      window.matchMedia("(pointer: coarse)").matches;
-    const scrollThreshold = isCoarsePointer ? 24 : 40;
-    const scrollLockMs = isCoarsePointer ? 700 : 1200;
-
-    const lockScroll = () => {
-      isScrolling.current = true;
-      setTimeout(() => {
-        isScrolling.current = false;
-      }, scrollLockMs);
-    };
-
     const handleScroll = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) < scrollThreshold) return;
-      e.preventDefault();
       if (isScrolling.current) return;
 
       if (e.deltaY > 0) {
         // Scroll Down
         if (currentSlide < SLIDES.length - 1) {
-          lockScroll();
+          isScrolling.current = true;
           setDirection(1);
           setCurrentSlide((prev) => prev + 1);
+          setTimeout(() => {
+            isScrolling.current = false;
+          }, 1500);
         } else if (onComplete) {
           // End of section, trigger parent transition
-          lockScroll();
           onComplete();
         }
       } else if (e.deltaY < 0) {
         // Scroll Up
         if (currentSlide > 0) {
-          lockScroll();
+          isScrolling.current = true;
           setDirection(-1);
           setCurrentSlide((prev) => prev - 1);
+          setTimeout(() => {
+            isScrolling.current = false;
+          }, 1500);
         } else if (onBack) {
-          lockScroll();
           onBack();
         }
       }
@@ -72,30 +61,33 @@ export default function ServicesSection({
       touchStartY = e.touches[0].clientY;
     };
     const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
       if (isScrolling.current) return;
       const touchEndY = e.touches[0].clientY;
       const deltaY = touchStartY - touchEndY;
 
-      if (Math.abs(deltaY) > scrollThreshold) {
+      if (Math.abs(deltaY) > 50) {
         if (deltaY > 0) {
           // Swipe Up / Scroll Down
           if (currentSlide < SLIDES.length - 1) {
-            lockScroll();
+            isScrolling.current = true;
             setDirection(1);
             setCurrentSlide((prev) => prev + 1);
+            setTimeout(() => {
+              isScrolling.current = false;
+            }, 1500);
           } else if (onComplete) {
-            lockScroll();
             onComplete();
           }
         } else {
           // Swipe Down / Scroll Up
           if (currentSlide > 0) {
-            lockScroll();
+            isScrolling.current = true;
             setDirection(-1);
             setCurrentSlide((prev) => prev - 1);
+            setTimeout(() => {
+              isScrolling.current = false;
+            }, 1500);
           } else if (onBack) {
-            lockScroll();
             onBack();
           }
         }
@@ -111,7 +103,7 @@ export default function ServicesSection({
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [currentSlide, onBack, onComplete]);
+  }, [currentSlide]);
 
   const slideVariants = {
     enter: (direction: number) => ({
@@ -146,54 +138,62 @@ export default function ServicesSection({
   // Technology: Center is Top Middle (for bottom arc/smile).
 
   return (
-    <section className="services-section h-dvh min-h-screen w-full bg-black overflow-hidden relative" style={{ maxWidth: "1920px", marginLeft: "auto", marginRight: "auto" }}>
-      {/* Shared Background Circle (hidden on intro slide) */}
-      {currentSlide > 0 && (
-        <motion.div
-          className="absolute rounded-full border-white/80 pointer-events-none z-10"
-          style={{ borderWidth: "clamp(1px, 0.12vw, 2px)" }}
-          animate={
-            currentSlide === 1
-              ? "branding"
-              : currentSlide === 2
-                ? "technology"
-                : "experience"
-          }
-          variants={{
-            branding: {
-              left: "calc(100% - 265vmin)",
-              top: "50%",
-              y: "-110vmin",
-              x: "0%",
-              width: "220vmin",
-              height: "220vmin",
-              opacity: 1,
-              transition: { duration: 1, ease: [0.22, 1, 0.36, 1] },
-            },
-            technology: {
-              top: "-128vmin",
-              left: "35%",
-              x: "-50%",
-              y: "0%",
-              width: "190vmin",
-              height: "190vmin",
-              opacity: 1,
-              transition: { duration: 1, ease: [0.22, 1, 0.36, 1] },
-            },
-            experience: {
-              top: "50%",
-              left: "calc(100% - 25vmin)",
-              y: "-80vmin",
-              x: "0%",
-              width: "160vmin",
-              height: "160vmin",
-              opacity: 1,
-              transition: { duration: 1, ease: [0.22, 1, 0.36, 1] },
-            },
-          }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-        />
-      )}
+    <section className="h-screen w-full bg-black overflow-hidden relative">
+      {/* Shared Background Circle */}
+      <motion.div
+        className="absolute rounded-full border-2 border-white/80 pointer-events-none z-10"
+        animate={
+          currentSlide === 1
+            ? "branding"
+            : currentSlide === 2
+              ? "technology"
+              : currentSlide === 3
+                ? "experience"
+                : "intro"
+        }
+        variants={{
+          intro: {
+            left: "calc(100% - 210vh)",
+            top: "50%",
+            y: "100vh",
+            x: "0%",
+            width: "180vh",
+            height: "180vh",
+            opacity: 0,
+          },
+          branding: {
+            left: "calc(100% - 210vh)",
+            top: "50%",
+            y: "-50%",
+            x: "0%",
+            width: "180vh",
+            height: "180vh",
+            opacity: 1,
+            transition: { duration: 1, ease: [0.22, 1, 0.36, 1] },
+          },
+          technology: {
+            top: "-130vh",
+            left: "40%",
+            x: "-50%",
+            y: "0%",
+            width: "180vh",
+            height: "180vh",
+            opacity: 1,
+            transition: { duration: 1, ease: [0.22, 1, 0.36, 1] },
+          },
+          experience: {
+            top: "50%",
+            left: "calc(100% - 25vh)",
+            y: "-50%",
+            x: "0%",
+            width: "160vh",
+            height: "160vh",
+            opacity: 1,
+            transition: { duration: 1, ease: [0.22, 1, 0.36, 1] },
+          },
+        }}
+        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+      />
 
       <AnimatePresence custom={direction}>
         {currentSlide === 0 && (
@@ -207,10 +207,10 @@ export default function ServicesSection({
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center z-10"
           >
-            <h2 className="text-2xl font-bold text-white sm:text-3xl md:text-5xl lg:text-6xl">
+            <h2 className="text-4xl font-bold text-white md:text-6xl">
               Services That Make Magic Happen
             </h2>
-            <p className="mt-3 text-base text-white/80 italic sm:text-lg md:mt-4 md:text-2xl">
+            <p className="mt-4 text-xl text-white/80 italic md:text-2xl">
               (And Seriously Grow Your Business)
             </p>
           </motion.div>
