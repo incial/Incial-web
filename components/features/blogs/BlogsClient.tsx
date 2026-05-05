@@ -8,6 +8,8 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import type { BlogPost } from "@/lib/dataLoader";
+import { useDevice } from "@/hooks";
+import { MobileLayout } from "@/components/mobile";
 
 function BlogCard({ post, index }: { post: BlogPost; index: number }) {
   return (
@@ -79,9 +81,13 @@ export default function BlogsClient({
   popularPosts,
   newestPosts,
 }: BlogsClientProps) {
+  const { isMobile, isLoading: isDeviceLoading } = useDevice();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isDisabled, setIsDisabled] = useState(false);
-  const [sectionsConfig, setSectionsConfig] = useState<Record<string, boolean>>({});
+
+  const [sectionsConfig, setSectionsConfig] = useState<Record<string, boolean>>(
+    {},
+  );
 
   useEffect(() => {
     async function fetchConfig() {
@@ -106,20 +112,176 @@ export default function BlogsClient({
     fetchConfig();
   }, []);
 
+  if (isDeviceLoading) {
+    return <div className="min-h-screen w-full bg-black" />;
+  }
+
+  // ── Disabled state ────────────────────────────────────────────────────────
+  const disabledContent = (
+    <div className="flex min-h-[70vh] items-center justify-center bg-black text-white px-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold mb-4">Section Disabled</h1>
+        <p className="text-gray-400">This page is currently unavailable.</p>
+      </div>
+    </div>
+  );
+
+  // ── Desktop page body (UNTOUCHED) ─────────────────────────────────────────
+  const pageBody = (
+    <>
+      <div className="pointer-events-none absolute inset-0 opacity-40">
+        <div className="absolute -top-24 -right-28 h-72 w-72 rounded-full bg-white/8 blur-3xl" />
+        <div className="absolute top-[38%] -left-28 h-64 w-64 rounded-full bg-white/8 blur-3xl" />
+        <div className="absolute bottom-0 right-[16%] h-52 w-52 rounded-full bg-white/10 blur-3xl" />
+      </div>
+
+      <main className="relative pt-24 sm:pt-28 pb-20 sm:pb-24 px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto">
+        {/* Breadcrumb */}
+        <Breadcrumbs
+          items={[{ label: "Home", href: "/" }, { label: "Blogs" }]}
+          variant="pill"
+          size="lg"
+          className="mb-8"
+        />
+
+        {/* Page Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="text-4xl sm:text-5xl md:text-6xl font-bold text-center mb-4"
+        >
+          Blogs
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-center text-white/70 text-sm sm:text-base whitespace-nowrap mx-auto mb-12 sm:mb-14"
+        >
+          Sharp ideas, practical playbooks, and stories from the teams building
+          standout digital experiences.
+        </motion.p>
+
+        {/* ── Popular ─────────────────────────────────────────────────────── */}
+        {sectionsConfig["blog-popular"] !== false && (
+          <section className="mb-16">
+            <SectionLabel label="Popular" />
+            <div className="max-w-[1251px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
+              {popularPosts.map((post, i) => (
+                <BlogCard key={post.id} post={post} index={i} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Divider */}
+        <div className="max-w-[1251px] border-t border-white/15 mb-16" />
+
+        {/* ── Newest ──────────────────────────────────────────────────────── */}
+        {sectionsConfig["blog-newest"] !== false && (
+          <section>
+            <SectionLabel label="Newest" delay={0.1} />
+            <div className="max-w-[1251px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
+              {newestPosts.map((post, i) => (
+                <BlogCard key={post.id} post={post} index={i} />
+              ))}
+            </div>
+          </section>
+        )}
+      </main>
+
+      <div className="px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto">
+        <Footer />
+      </div>
+    </>
+  );
+
+  // ── Mobile page body (no breadcrumbs, same full-width cards as desktop) ───
+  const mobilePageBody = (
+    <div className="relative min-h-screen bg-black text-white">
+      {/* Ambient blobs */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-30">
+        <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-white/8 blur-3xl" />
+        <div className="absolute top-[45%] -left-20 h-48 w-48 rounded-full bg-white/8 blur-3xl" />
+        <div className="absolute bottom-20 right-[10%] h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+      </div>
+
+      <main className="relative pt-14 pb-24 px-4">
+        {/* Page title — no breadcrumbs */}
+        <motion.h1
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.05 }}
+          className="text-[32px] font-bold italic text-center mb-2"
+        >
+          Blogs
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="text-center text-white/50 text-[13px] leading-relaxed mx-auto mb-10 max-w-[280px]"
+        >
+          Sharp ideas, practical playbooks, and stories from the teams building
+          standout digital experiences.
+        </motion.p>
+
+        {/* ── Popular ───────────────────────────────────────────────────── */}
+        {sectionsConfig["blog-popular"] !== false && (
+          <section className="mb-10">
+            <SectionLabel label="Popular" />
+            <div className="flex flex-col gap-5">
+              {popularPosts.map((post, i) => (
+                <BlogCard key={post.id} post={post} index={i} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Divider */}
+        <div className="border-t border-white/10 mb-10" />
+
+        {/* ── Newest ────────────────────────────────────────────────────── */}
+        {sectionsConfig["blog-newest"] !== false && (
+          <section>
+            <SectionLabel label="Newest" delay={0.1} />
+            <div className="flex flex-col gap-5">
+              {newestPosts.map((post, i) => (
+                <BlogCard key={post.id} post={post} index={i} />
+              ))}
+            </div>
+          </section>
+        )}
+      </main>
+
+      <div className="px-4">
+        <Footer />
+      </div>
+    </div>
+  );
+
+  // ── Disabled routing ──────────────────────────────────────────────────────
   if (isDisabled) {
+    if (isMobile) {
+      return <MobileLayout>{disabledContent}</MobileLayout>;
+    }
     return (
       <div className="relative min-h-screen bg-white">
         <Header menuOpen={menuOpen} onToggleMenu={() => setMenuOpen(!menuOpen)} />
-        <div className="flex min-h-[70vh] items-center justify-center bg-black text-white px-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">Section Disabled</h1>
-            <p className="text-gray-400">This page is currently unavailable.</p>
-          </div>
-        </div>
+        {disabledContent}
       </div>
     );
   }
 
+  // ── Mobile render ─────────────────────────────────────────────────────────
+  if (isMobile) {
+    return <MobileLayout>{mobilePageBody}</MobileLayout>;
+  }
+
+  // ── Desktop render (UNTOUCHED) ────────────────────────────────────────────
   return (
     <div className="relative min-h-screen bg-white">
       <Header menuOpen={menuOpen} onToggleMenu={() => setMenuOpen(!menuOpen)} />
@@ -135,119 +297,7 @@ export default function BlogsClient({
         className="relative origin-top overflow-hidden bg-black text-white min-h-screen"
         style={{ zIndex: 30 }}
       >
-        <div className="pointer-events-none absolute inset-0 opacity-40">
-          <div className="absolute -top-24 -right-28 h-72 w-72 rounded-full bg-white/8 blur-3xl" />
-          <div className="absolute top-[38%] -left-28 h-64 w-64 rounded-full bg-white/8 blur-3xl" />
-          <div className="absolute bottom-0 right-[16%] h-52 w-52 rounded-full bg-white/10 blur-3xl" />
-        </div>
-
-        {/* ── MOBILE LAYOUT (below sm) ─────────────────────────────────────── */}
-        <div className="block sm:hidden relative pt-20 pb-16 px-4">
-          {/* Page Title */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-3xl font-bold text-center mb-3"
-          >
-            Blogs
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-center text-white/60 text-sm leading-relaxed mx-auto mb-10 max-w-xs"
-          >
-            Sharp ideas, practical playbooks, and stories from the teams building
-            standout digital experiences.
-          </motion.p>
-
-          {/* ── Popular — full-width vertical stack ── */}
-          {sectionsConfig["blog-popular"] !== false && (
-            <section className="mb-12">
-              <SectionLabel label="Popular" />
-              <div className="flex flex-col gap-5">
-                {popularPosts.map((post, i) => (
-                  <BlogCard key={post.id} post={post} index={i} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Divider */}
-          <div className="border-t border-white/15 mb-12" />
-
-          {/* ── Newest — full-width vertical stack ── */}
-          {sectionsConfig["blog-newest"] !== false && (
-            <section>
-              <SectionLabel label="Newest" delay={0.1} />
-              <div className="flex flex-col gap-5">
-                {newestPosts.map((post, i) => (
-                  <BlogCard key={post.id} post={post} index={i} />
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-
-        {/* ── DESKTOP LAYOUT (sm and above) — completely untouched ─────────── */}
-        <main className="hidden sm:block relative pt-24 sm:pt-28 pb-20 sm:pb-24 px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto">
-          {/* Breadcrumb — desktop only */}
-          <Breadcrumbs
-            items={[{ label: "Home", href: "/" }, { label: "Blogs" }]}
-            variant="pill"
-            size="lg"
-            className="mb-8"
-          />
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-6xl font-bold text-center mb-4"
-          >
-            Blogs
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-center text-white/70 text-sm sm:text-base whitespace-nowrap mx-auto mb-12 sm:mb-14"
-          >
-            Sharp ideas, practical playbooks, and stories from the teams building
-            standout digital experiences.
-          </motion.p>
-
-          {sectionsConfig["blog-popular"] !== false && (
-            <section className="mb-16">
-              <SectionLabel label="Popular" />
-              <div className="max-w-[1251px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
-                {popularPosts.map((post, i) => (
-                  <BlogCard key={post.id} post={post} index={i} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          <div className="max-w-[1251px] border-t border-white/15 mb-16" />
-
-          {sectionsConfig["blog-newest"] !== false && (
-            <section>
-              <SectionLabel label="Newest" delay={0.1} />
-              <div className="max-w-[1251px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
-                {newestPosts.map((post, i) => (
-                  <BlogCard key={post.id} post={post} index={i} />
-                ))}
-              </div>
-            </section>
-          )}
-        </main>
-
-        <div className="px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto">
-          <Footer />
-        </div>
+        {pageBody}
       </motion.div>
     </div>
   );
