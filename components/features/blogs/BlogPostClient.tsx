@@ -17,6 +17,8 @@ interface BlogPostClientProps {
 type LayoutVariant = "cinematic" | "split" | "editorial" | "interwoven";
 type ContentBlockType = "h1" | "h2" | "h3" | "li" | "p" | "divider";
 
+const SENTENCES_BETWEEN_GALLERIES = 6;
+
 interface ContentBlock {
   type: ContentBlockType;
   text: string;
@@ -127,6 +129,18 @@ function GalleryImageFigure({
   );
 }
 
+function splitIntoSentences(text: string): string[] {
+  const normalized = text.replace(/\s+/g, " ").trim();
+
+  if (!normalized) {
+    return [];
+  }
+
+  const sentences = normalized.match(/[^.!?]+[.!?]+(?:[\"')\]]+)?|[^.!?]+$/g);
+
+  return (sentences ?? [normalized]).map((sentence) => sentence.trim()).filter(Boolean);
+}
+
 function parseContentToBlocks(content?: string): ContentBlock[] {
   if (!content) {
     return [
@@ -186,42 +200,84 @@ function ContentRenderer({
   galleryImages?: string[];
   altText: string;
 }) {
-  const paragraphIndexes = blocks
-    .map((block, index) => ({ block, index }))
-    .filter(({ block }) => block.type === "p")
-    .map(({ index }) => index);
+  const rendered: JSX.Element[] = [];
+  let galleryIndex = 0;
+  let sentencesSinceGallery = 0;
+  let paragraphIndex = 0;
+
+  function appendGalleryImage() {
+    if (galleryIndex >= galleryImages.length) {
+      return;
+    }
+
+    rendered.push(
+      <GalleryImageFigure
+        key={`g-${galleryIndex}`}
+        src={galleryImages[galleryIndex]}
+        alt={altText}
+        index={galleryIndex}
+      />,
+    );
+    galleryIndex += 1;
+  }
+
+  function appendParagraph(text: string) {
+    rendered.push(renderContentBlock({ type: "p", text }, paragraphIndex));
+    paragraphIndex += 1;
+  }
+
+  for (const block of blocks) {
+    if (block.type !== "p") {
+      rendered.push(renderContentBlock(block, paragraphIndex));
+      paragraphIndex += 1;
+      continue;
+    }
+
+    const sentences = splitIntoSentences(block.text);
+
+    if (sentences.length === 0) {
+      continue;
+    }
+
+    let chunk: string[] = [];
+
+    for (const sentence of sentences) {
+      chunk.push(sentence);
+      const endsSentence = /[.!?][\"')\]]?$/.test(sentence);
+
+      if (!endsSentence) {
+        continue;
+      }
+
+      sentencesSinceGallery += 1;
+
+      if (sentencesSinceGallery >= SENTENCES_BETWEEN_GALLERIES) {
+        appendParagraph(chunk.join(" "));
+        chunk = [];
+        appendGalleryImage();
+        sentencesSinceGallery = 0;
+      }
+    }
+
+    if (chunk.length > 0) {
+      appendParagraph(chunk.join(" "));
+    }
+  }
+
+  for (; galleryIndex < galleryImages.length; galleryIndex += 1) {
+    rendered.push(
+      <GalleryImageFigure
+        key={`g-bottom-${galleryIndex}`}
+        src={galleryImages[galleryIndex]}
+        alt={altText}
+        index={galleryIndex}
+      />,
+    );
+  }
 
   return (
     <div className="space-y-5">
-      {blocks.map((block, index) => {
-        const nodes = [renderContentBlock(block, index)];
-
-        if (block.type === "p" && galleryImages.length > 0 && paragraphIndexes.includes(index)) {
-          const imageIndex = paragraphIndexes.indexOf(index);
-          if (imageIndex < galleryImages.length) {
-            nodes.push(
-              <GalleryImageFigure
-                key={`g-${index}`}
-                src={galleryImages[imageIndex]}
-                alt={altText}
-                index={imageIndex}
-              />,
-            );
-          }
-        }
-
-        return nodes;
-      })}
-
-      {galleryImages.length > paragraphIndexes.length &&
-        galleryImages.slice(paragraphIndexes.length).map((src, index) => (
-          <GalleryImageFigure
-            key={`g-bottom-${index}`}
-            src={src}
-            alt={altText}
-            index={paragraphIndexes.length + index}
-          />
-        ))}
+      {rendered}
     </div>
   );
 }
@@ -239,6 +295,35 @@ function MetaRow({ post }: { post: BlogPost }) {
       <span>{post.date}</span>
       <span className="w-px h-4 bg-white/20" />
       <span>{post.mins} min read</span>
+    </motion.div>
+  );
+}
+
+function BlogHeroVisual({
+  post,
+  variant,
+}: {
+  post: BlogPost;
+  variant: LayoutVariant;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.2 }}
+      className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.02] shadow-[0_24px_80px_rgba(0,0,0,0.35)]"
+    >
+      <div className="absolute inset-0 bg-linear-to-tr from-white/10 via-transparent to-transparent" />
+      <div className="relative aspect-[16/9] sm:aspect-[18/8] min-h-[280px] sm:min-h-[360px]">
+        <Image
+          src={post.image}
+          alt={post.title}
+          fill
+          priority
+          className="object-contain object-center"
+        />
+      </div>
+      <div className="absolute inset-0 bg-linear-to-t from-black/35 via-transparent to-transparent" />
     </motion.div>
   );
 }
@@ -277,23 +362,17 @@ function RelatedCard({ post, index }: { post: BlogPost; index: number }) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Mobile-only Related Posts horizontal scroll strip
-   (hidden on sm and above — desktop variants use their own aside)
-───────────────────────────────────────────────────────────── */
-function MobileRelatedStrip({ relatedPosts }: { relatedPosts: BlogPost[] }) {
-  if (!relatedPosts.length) return null;
+/** Mobile-only related posts horizontal scroll strip */
+function MobileRelatedStrip({ posts }: { posts: BlogPost[] }) {
+  if (!posts.length) return null;
   return (
-    <section className="sm:hidden mt-12 pt-8 border-t border-white/10">
-      <h3 className="text-[10px] font-semibold uppercase tracking-widest text-white/40 mb-4">
+    <section className="sm:hidden mt-10">
+      <h3 className="text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-4 px-1">
         Related Posts
       </h3>
-      <div className="flex gap-4 overflow-x-auto pb-2 -mx-5 px-5 snap-x snap-mandatory scrollbar-none">
-        {relatedPosts.map((rp, i) => (
-          <div
-            key={rp.id}
-            className="snap-start shrink-0 w-[72vw] max-w-[260px]"
-          >
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-none snap-x snap-mandatory">
+        {posts.map((rp, i) => (
+          <div key={rp.id} className="snap-start shrink-0 w-[68vw] max-w-[260px]">
             <RelatedCard post={rp} index={i} />
           </div>
         ))}
@@ -302,36 +381,26 @@ function MobileRelatedStrip({ relatedPosts }: { relatedPosts: BlogPost[] }) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Mobile-only category badge
-───────────────────────────────────────────────────────────── */
-function MobileCategoryBadge({ category }: { category: string }) {
-  return (
-    <motion.span
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      className="sm:hidden inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-white/50 mb-3"
-    >
-      {category === "popular" ? "Popular" : "Newest"}
-    </motion.span>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Back link — shared across variants
-───────────────────────────────────────────────────────────── */
+/** Back link used in all variants */
 function BackLink() {
   return (
-    <Link
-      href="/blogs"
-      className="inline-flex items-center gap-2 text-sm font-medium text-white/50 hover:text-white transition-colors group"
+    <motion.div
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+      className="mt-12 pt-8 border-t border-white/10"
     >
-      <span className="transform group-hover:-translate-x-1 transition-transform duration-200">
-        ←
-      </span>
-      Back to all blogs
-    </Link>
+      <Link
+        href="/blogs"
+        className="inline-flex items-center gap-2 text-sm font-medium text-white/55 hover:text-white transition-colors group"
+      >
+        <span className="transform group-hover:-translate-x-1 transition-transform duration-200">
+          ←
+        </span>
+        Back to all blogs
+      </Link>
+    </motion.div>
   );
 }
 
@@ -344,6 +413,12 @@ export default function BlogPostClient({
   const blocks = parseContentToBlocks(post.content);
   const coverImage = post.image;
   const galleryImages = getPostImages(post);
+
+  const breadcrumbItems = [
+    { label: "Home", href: "/" },
+    { label: "Blogs", href: "/blogs" },
+    { label: post.title },
+  ];
 
   return (
     <div className="relative min-h-screen bg-white">
@@ -360,164 +435,169 @@ export default function BlogPostClient({
         className="relative origin-top overflow-hidden bg-black text-white min-h-screen"
         style={{ zIndex: 30 }}
       >
-
-        {/* ══════════════════════════════════════════════
-            CINEMATIC VARIANT
-        ══════════════════════════════════════════════ */}
+        {/* ─────────────────────────── CINEMATIC ─────────────────────────── */}
         {variant === "cinematic" && (
           <>
-            {/* ── Hero image (shared mobile + desktop) ── */}
-            <div className="relative w-full h-[40vh] min-h-[260px] sm:h-[55vh] sm:min-h-[340px] overflow-hidden">
-              <Image
-                src={coverImage}
-                alt={post.title}
-                fill
-                priority
-                className="object-contain object-center"
-              />
-              <div className="absolute inset-0 bg-linear-to-b from-black/30 via-transparent to-black" />
+            {/* ── MOBILE hero (stacked, no cinematic overlay text) ── */}
+            <div className="sm:hidden">
+              <div className="relative w-full aspect-[4/3] overflow-hidden">
+                <Image
+                  src={coverImage}
+                  alt={post.title}
+                  fill
+                  priority
+                  className="object-contain object-center"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+              </div>
 
-              {/* Desktop breadcrumbs + title overlay */}
-              <div className="absolute bottom-0 left-0 right-0 px-5 sm:px-8 lg:px-12 pb-6 sm:pb-10 max-w-[1431px] mx-auto">
-                {/* Breadcrumbs — desktop only */}
-                <div className="hidden sm:flex mb-3 pt-6">
-                  <Breadcrumbs
-                    items={[
-                      { label: "Home", href: "/" },
-                      { label: "Blogs", href: "/blogs" },
-                      { label: post.title },
-                    ]}
-                    variant="pill"
-                    size="lg"
-                  />
-                </div>
-
+              <div className="px-5 pt-6 pb-10">
                 <motion.span
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4, delay: 0.15 }}
-                  className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/40 mb-2 sm:mb-3"
+                  transition={{ duration: 0.4 }}
+                  className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/40 mb-3"
                 >
                   {post.category === "popular" ? "Popular" : "Newest"}
                 </motion.span>
 
                 <motion.h1
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
-                  className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold leading-[1.1] max-w-4xl"
+                  transition={{ duration: 0.55, delay: 0.1 }}
+                  className="text-[26px] font-bold leading-[1.15] text-white"
                 >
                   {post.title}
                 </motion.h1>
 
                 <MetaRow post={post} />
-              </div>
-            </div>
 
-            {/* ── Mobile content area ── */}
-            <div className="sm:hidden px-5 py-8">
-              {/* Article body */}
-              <article>
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-                  className="origin-left h-px bg-white/10 mb-8"
-                />
-                <ContentRenderer
-                  blocks={blocks}
-                  galleryImages={galleryImages}
-                  altText={post.title}
-                />
-              </article>
+                <div className="mt-10">
+                  <ContentRenderer
+                    blocks={blocks}
+                    galleryImages={galleryImages}
+                    altText={post.title}
+                  />
+                </div>
 
-              {/* Mobile related posts */}
-              <MobileRelatedStrip relatedPosts={relatedPosts} />
-
-              {/* Back link */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="mt-10 pt-8 border-t border-white/10"
-              >
+                <MobileRelatedStrip posts={relatedPosts} />
                 <BackLink />
-              </motion.div>
+              </div>
             </div>
 
-            {/* ── Desktop content area ── */}
-            <main className="hidden sm:block px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto py-16">
-              <div className="flex flex-col lg:flex-row gap-16">
-                <article className="flex-1 min-w-0">
-                  <div className="max-w-[760px]">
-                    <motion.div
-                      initial={{ scaleX: 0 }}
-                      animate={{ scaleX: 1 }}
-                      transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-                      className="origin-left h-px bg-white/10 mb-10"
-                    />
-                    <ContentRenderer
-                      blocks={blocks}
-                      galleryImages={galleryImages}
-                      altText={post.title}
-                    />
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: 0.2 }}
-                      className="mt-14 pt-10 border-t border-white/10"
-                    >
-                      <Link
-                        href="/blogs"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-white/50 hover:text-white transition-colors group"
-                      >
-                        <span className="transform group-hover:-translate-x-1 transition-transform duration-200">
-                          ←
-                        </span>
-                        Back to all blogs
-                      </Link>
-                    </motion.div>
-                  </div>
-                </article>
+            {/* ── DESKTOP hero (original cinematic) ── */}
+            <div className="hidden sm:block">
+              <div className="relative w-full h-[55vh] min-h-[340px] overflow-hidden">
+                <Image
+                  src={coverImage}
+                  alt={post.title}
+                  fill
+                  priority
+                  className="object-contain object-center"
+                />
+                <div className="absolute inset-0 bg-linear-to-b from-black/30 via-transparent to-black" />
 
-                {relatedPosts.length > 0 && (
-                  <aside className="w-full lg:w-[320px] shrink-0">
-                    <motion.div
-                      initial={{ opacity: 0, x: 24 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.6, delay: 0.3 }}
-                    >
-                      <h3 className="text-sm font-semibold uppercase tracking-widest text-white/40 mb-6">
-                        Related Posts
-                      </h3>
-                      <div className="space-y-5">
-                        {relatedPosts.map((rp, i) => (
-                          <RelatedCard key={rp.id} post={rp} index={i} />
-                        ))}
-                      </div>
-                    </motion.div>
-                  </aside>
-                )}
+                <div className="absolute bottom-0 left-0 right-0 px-5 sm:px-8 lg:px-12 pb-10 max-w-[1431px] mx-auto">
+                  <div className="mb-3 pt-6 flex">
+                    <Breadcrumbs
+                      items={breadcrumbItems}
+                      variant="pill"
+                      size="lg"
+                    />
+                  </div>
+
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4, delay: 0.15 }}
+                    className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/40 mb-3"
+                  >
+                    {post.category === "popular" ? "Popular" : "Newest"}
+                  </motion.span>
+
+                  <motion.h1
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    className="text-3xl md:text-5xl lg:text-6xl font-bold leading-[1.1] max-w-4xl"
+                  >
+                    {post.title}
+                  </motion.h1>
+
+                  <MetaRow post={post} />
+                </div>
               </div>
-            </main>
+
+              <main className="px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto py-16">
+                <div className="flex flex-col lg:flex-row gap-16">
+                  <article className="flex-1 min-w-0">
+                    <div className="max-w-[760px]">
+                      <motion.div
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
+                        className="origin-left h-px bg-white/10 mb-10"
+                      />
+                      <ContentRenderer
+                        blocks={blocks}
+                        galleryImages={galleryImages}
+                        altText={post.title}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className="mt-14 pt-10 border-t border-white/10"
+                      >
+                        <Link
+                          href="/blogs"
+                          className="inline-flex items-center gap-2 text-sm font-medium text-white/50 hover:text-white transition-colors group"
+                        >
+                          <span className="transform group-hover:-translate-x-1 transition-transform duration-200">
+                            ←
+                          </span>
+                          Back to all blogs
+                        </Link>
+                      </motion.div>
+                    </div>
+                  </article>
+
+                  {relatedPosts.length > 0 && (
+                    <aside className="w-full lg:w-[320px] shrink-0">
+                      <motion.div
+                        initial={{ opacity: 0, x: 24 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                      >
+                        <h3 className="text-sm font-semibold uppercase tracking-widest text-white/40 mb-6">
+                          Related Posts
+                        </h3>
+                        <div className="space-y-5">
+                          {relatedPosts.map((rp, i) => (
+                            <RelatedCard key={rp.id} post={rp} index={i} />
+                          ))}
+                        </div>
+                      </motion.div>
+                    </aside>
+                  )}
+                </div>
+              </main>
+            </div>
           </>
         )}
 
-        {/* ══════════════════════════════════════════════
-            SPLIT VARIANT
-        ══════════════════════════════════════════════ */}
+        {/* ─────────────────────────── SPLIT ─────────────────────────── */}
         {variant === "split" && (
           <>
-            {/* ── Mobile layout ── */}
+            {/* ── MOBILE split ── */}
             <div className="sm:hidden px-5 py-8">
-              {/* Cover image */}
+              {/* cover image */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, delay: 0.1 }}
-                className="relative rounded-[20px] overflow-hidden w-full aspect-[16/10] border border-white/10 mb-6"
+                className="relative rounded-[20px] overflow-hidden w-full aspect-[4/3] border border-white/10 mb-6"
               >
                 <Image
                   src={coverImage}
@@ -526,59 +606,46 @@ export default function BlogPostClient({
                   priority
                   className="object-contain object-center"
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               </motion.div>
 
-              {/* Category + Title + Meta */}
-              <MobileCategoryBadge category={post.category} />
+              {/* category + title + meta */}
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+                className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/45 mb-2"
+              >
+                {post.category}
+              </motion.span>
               <motion.h1
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.15 }}
-                className="text-[26px] font-bold leading-[1.1] mb-1"
+                transition={{ duration: 0.55, delay: 0.12 }}
+                className="text-[24px] font-bold leading-[1.18] text-white"
               >
                 {post.title}
               </motion.h1>
               <MetaRow post={post} />
 
-              {/* Divider */}
-              <div className="h-px bg-white/10 my-7" />
+              {/* content */}
+              <div className="mt-8 rounded-[18px] border border-white/10 bg-white/[0.02] p-5">
+                <ContentRenderer
+                  blocks={blocks}
+                  galleryImages={galleryImages}
+                  altText={post.title}
+                />
+              </div>
 
-              {/* Article body */}
-              <article>
-                <div className="rounded-[18px] border border-white/10 bg-white/[0.02] p-5">
-                  <ContentRenderer
-                    blocks={blocks}
-                    galleryImages={galleryImages}
-                    altText={post.title}
-                  />
-                </div>
-              </article>
-
-              {/* Mobile related posts */}
-              <MobileRelatedStrip relatedPosts={relatedPosts} />
-
-              {/* Back link */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-                className="mt-10 pt-8 border-t border-white/10"
-              >
-                <BackLink />
-              </motion.div>
+              <MobileRelatedStrip posts={relatedPosts} />
+              <BackLink />
             </div>
 
-            {/* ── Desktop layout ── */}
+            {/* ── DESKTOP split (original) ── */}
             <main className="hidden sm:block px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto py-10 sm:py-14">
               <div className="mb-8">
                 <Breadcrumbs
-                  items={[
-                    { label: "Home", href: "/" },
-                    { label: "Blogs", href: "/blogs" },
-                    { label: post.title },
-                  ]}
+                  items={breadcrumbItems}
                   variant="pill"
                   size="lg"
                 />
@@ -670,78 +737,51 @@ export default function BlogPostClient({
           </>
         )}
 
-        {/* ══════════════════════════════════════════════
-            EDITORIAL VARIANT
-        ══════════════════════════════════════════════ */}
+        {/* ─────────────────────────── EDITORIAL ─────────────────────────── */}
         {variant === "editorial" && (
           <>
-            {/* ── Mobile layout ── */}
+            {/* ── MOBILE editorial ── */}
             <div className="sm:hidden px-5 py-8">
-              {/* Category badge */}
-              <MobileCategoryBadge category={post.category} />
-
-              {/* Title */}
+              {/* category + title */}
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+                className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/40 mb-2"
+              >
+                {post.category}
+              </motion.span>
               <motion.h1
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, delay: 0.1 }}
-                className="text-[26px] font-bold leading-[1.1] mb-1"
+                className="text-[24px] font-bold leading-[1.18] text-white"
               >
                 {post.title}
               </motion.h1>
-
               <MetaRow post={post} />
 
-              {/* Cover image */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.2 }}
-                className="relative rounded-[20px] overflow-hidden w-full aspect-[16/10] border border-white/10 mt-6 mb-8"
-              >
-                <Image
-                  src={coverImage}
-                  alt={post.title}
-                  fill
-                  priority
-                  className="object-contain object-center"
-                />
-                <div className="absolute inset-0 bg-linear-to-b from-black/10 via-black/10 to-black/45" />
-              </motion.div>
+              {/* hero image */}
+              <div className="mt-6 mb-8">
+                <BlogHeroVisual post={post} variant={variant} />
+              </div>
 
-              {/* Article body */}
-              <article>
-                <ContentRenderer
-                  blocks={blocks}
-                  galleryImages={galleryImages}
-                  altText={post.title}
-                />
-              </article>
+              {/* content */}
+              <ContentRenderer
+                blocks={blocks}
+                galleryImages={galleryImages}
+                altText={post.title}
+              />
 
-              {/* Mobile related posts */}
-              <MobileRelatedStrip relatedPosts={relatedPosts} />
-
-              {/* Back link */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-                className="mt-10 pt-8 border-t border-white/10"
-              >
-                <BackLink />
-              </motion.div>
+              <MobileRelatedStrip posts={relatedPosts} />
+              <BackLink />
             </div>
 
-            {/* ── Desktop layout ── */}
+            {/* ── DESKTOP editorial (original) ── */}
             <main className="hidden sm:block px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto py-10 sm:py-14">
               <div className="mb-8 flex justify-center lg:justify-start">
                 <Breadcrumbs
-                  items={[
-                    { label: "Home", href: "/" },
-                    { label: "Blogs", href: "/blogs" },
-                    { label: post.title },
-                  ]}
+                  items={breadcrumbItems}
                   variant="pill"
                   size="lg"
                 />
@@ -769,21 +809,9 @@ export default function BlogPostClient({
                 </div>
               </section>
 
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="relative rounded-[26px] overflow-hidden h-[36vh] sm:h-[48vh] min-h-[280px] max-w-5xl mx-auto border border-white/10 mb-14"
-              >
-                <Image
-                  src={coverImage}
-                  alt={post.title}
-                  fill
-                  priority
-                  className="object-contain object-center"
-                />
-                <div className="absolute inset-0 bg-linear-to-b from-black/15 via-black/10 to-black/45" />
-              </motion.div>
+              <div className="max-w-5xl mx-auto mb-14">
+                <BlogHeroVisual post={post} variant={variant} />
+              </div>
 
               <article className="max-w-3xl mx-auto">
                 <ContentRenderer
@@ -827,78 +855,51 @@ export default function BlogPostClient({
           </>
         )}
 
-        {/* ══════════════════════════════════════════════
-            INTERWOVEN VARIANT
-        ══════════════════════════════════════════════ */}
+        {/* ─────────────────────────── INTERWOVEN ─────────────────────────── */}
         {variant === "interwoven" && (
           <>
-            {/* ── Mobile layout ── */}
+            {/* ── MOBILE interwoven ── */}
             <div className="sm:hidden px-5 py-8">
-              {/* Category badge */}
-              <MobileCategoryBadge category={post.category} />
-
-              {/* Title */}
+              {/* category + title */}
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+                className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/40 mb-2"
+              >
+                {post.category}
+              </motion.span>
               <motion.h1
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, delay: 0.1 }}
-                className="text-[26px] font-bold leading-[1.1] mb-1"
+                className="text-[24px] font-bold leading-[1.18] text-white"
               >
                 {post.title}
               </motion.h1>
-
               <MetaRow post={post} />
 
-              {/* Cover image strip */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.2 }}
-                className="relative rounded-[20px] overflow-hidden w-full aspect-[16/10] border border-white/10 mt-6 mb-8"
-              >
-                <Image
-                  src={coverImage}
-                  alt={post.title}
-                  fill
-                  priority
-                  className="object-contain object-center"
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
-              </motion.div>
+              {/* hero image */}
+              <div className="mt-6 mb-8">
+                <BlogHeroVisual post={post} variant={variant} />
+              </div>
 
-              {/* Article body */}
-              <article>
-                <ContentRenderer
-                  blocks={blocks}
-                  galleryImages={galleryImages}
-                  altText={post.title}
-                />
-              </article>
+              {/* content */}
+              <ContentRenderer
+                blocks={blocks}
+                galleryImages={galleryImages}
+                altText={post.title}
+              />
 
-              {/* Mobile related posts */}
-              <MobileRelatedStrip relatedPosts={relatedPosts} />
-
-              {/* Back link */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-                className="mt-10 pt-8 border-t border-white/10"
-              >
-                <BackLink />
-              </motion.div>
+              <MobileRelatedStrip posts={relatedPosts} />
+              <BackLink />
             </div>
 
-            {/* ── Desktop layout ── */}
+            {/* ── DESKTOP interwoven (original) ── */}
             <main className="hidden sm:block px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto py-10 sm:py-14">
               <div className="mb-8">
                 <Breadcrumbs
-                  items={[
-                    { label: "Home", href: "/" },
-                    { label: "Blogs", href: "/blogs" },
-                    { label: post.title },
-                  ]}
+                  items={breadcrumbItems}
                   variant="pill"
                   size="lg"
                 />
@@ -924,9 +925,11 @@ export default function BlogPostClient({
                 <MetaRow post={post} />
               </section>
 
+              <div className="max-w-6xl mb-14">
+                <BlogHeroVisual post={post} variant={variant} />
+              </div>
+
               <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
-                <div className="lg:col-span-12">
-                </div>
                 <article className="lg:col-span-8">
                   <ContentRenderer
                     blocks={blocks}
