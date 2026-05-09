@@ -8,6 +8,7 @@ import { FiArrowDown } from "react-icons/fi";
 interface LogoScreenProps {
   onNextClick?: () => void;
   skipAnimation?: boolean;
+  sizeMode?: "desktop" | "mobile";
 }
 
 export default function LogoScreen({
