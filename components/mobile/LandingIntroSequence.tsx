@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import LogoScreen from '@/components/features/home/LogoScreen';
@@ -20,6 +20,25 @@ const getNextStage = (stage: SequenceStage): SequenceStage => {
   return 'logo';
 };
 
+// Memoized word component to prevent re-renders
+const WordDisplay = memo(({ word }: { word: string }) => (
+  <motion.div
+    key={word}
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{
+      duration: 0.5,
+      ease: [0.25, 0.1, 0.25, 1.0],
+    }}
+    style={{ transform: 'translateZ(0)' }}
+  >
+    {word}
+  </motion.div>
+));
+
+WordDisplay.displayName = 'WordDisplay';
+
 export const LandingIntroSequence = memo(function LandingIntroSequence({
   playAnimation = false,
   warmupOnly = false,
@@ -29,6 +48,7 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
   const [stage, setStage] = useState<SequenceStage>(() =>
     warmupOnly || playAnimation ? 'brand' : 'logo',
   );
+  const isFirstRenderRef = useRef(true);
 
   const currentWord = useMemo(() => {
     if (stage === 'brand') return landingWords[0];
@@ -37,6 +57,9 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
     return landingWords[0];
   }, [stage]);
 
+  // Stage progression with extended hold ONLY for first state
+  // Brand: 1500ms (extra 300ms for mobile render stability)
+  // Business & Beyond: 1200ms each (original timing)
   useEffect(() => {
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current);
@@ -47,9 +70,18 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
       return;
     }
 
+    // ONLY the first state gets extended hold time
+    // This ensures "We Build Brand" is fully visible on mobile before transition
+    const isFirstState = isFirstRenderRef.current && stage === 'brand';
+    const holdTime = isFirstState ? 1500 : 1200; // +300ms only for Brand state
+
+    if (isFirstState) {
+      isFirstRenderRef.current = false;
+    }
+
     timerRef.current = window.setTimeout(() => {
       setStage((currentStage) => getNextStage(currentStage));
-    }, 1500);
+    }, holdTime);
 
     return () => {
       if (timerRef.current !== null) {
@@ -59,14 +91,25 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
     };
   }, [playAnimation, warmupOnly, stage]);
 
+  // Memoized completion callback
+  const handleComplete = useCallback(() => {
+    onComplete?.();
+  }, [onComplete]);
+
   useEffect(() => {
     if (stage !== 'logo' || !playAnimation || warmupOnly) return;
-    onComplete?.();
-  }, [onComplete, playAnimation, stage, warmupOnly]);
+    handleComplete();
+  }, [stage, playAnimation, warmupOnly, handleComplete]);
 
   return (
     <div
       className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black [contain:layout_paint_style]"
+      style={{ 
+        transform: 'translateZ(0)', 
+        willChange: 'contents',
+        backfaceVisibility: 'hidden',
+        perspective: '1000px',
+      }}
     >
       <AnimatePresence mode="wait">
         {stage !== 'logo' ? (
@@ -76,7 +119,11 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}
             className="relative z-20 flex w-full flex-col items-center justify-center gap-1 px-4 text-center"
-            style={{ willChange: 'transform, opacity' }}
+            style={{ 
+              willChange: 'transform, opacity', 
+              transform: 'translateZ(0)',
+              backfaceVisibility: 'hidden',
+            }}
           >
             <div
               className="font-light text-white/90"
@@ -89,18 +136,7 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
               style={{ fontSize: 'clamp(2rem, 7.5vw, 4rem)' }}
             >
               <AnimatePresence mode="wait">
-                <motion.div
-                  key={stage}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{
-                    duration: 0.5,
-                    ease: [0.25, 0.1, 0.25, 1.0],
-                  }}
-                >
-                  {currentWord}
-                </motion.div>
+                <WordDisplay word={currentWord} />
               </AnimatePresence>
             </div>
           </motion.div>

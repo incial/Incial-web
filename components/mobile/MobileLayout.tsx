@@ -24,12 +24,36 @@ export const MobileLayout = ({ children, backgroundLayer }: MobileLayoutProps) =
     }
   }, []);
 
+  // Throttle scroll events for low-end devices
+  useEffect(() => {
+    const scrollContainer = document.querySelector('.snap-y');
+    if (!scrollContainer) return;
+
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
       {/* Fixed Header */}
       <header 
         className="fixed top-0 left-0 right-0 z-30 h-[110px] pt-[45px] pb-2 bg-black/95 backdrop-blur-sm flex items-center justify-between px-6"
         style={{ 
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          transform: 'none',
           WebkitBackdropFilter: 'blur(4px)',
           backdropFilter: 'blur(4px)',
         }}
