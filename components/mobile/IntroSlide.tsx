@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { MobileSlide } from './MobileSlide';
 
 interface IntroSlideProps {
@@ -7,7 +8,7 @@ interface IntroSlideProps {
   onInView?: (id: string) => void;
 }
 
-export const IntroSlide = ({ id, onInView }: IntroSlideProps) => {
+const IntroSlideComponent = ({ id, onInView }: IntroSlideProps) => {
   return (
     <MobileSlide id={id} onInView={onInView}>
       <div className="w-full h-full flex flex-col items-start justify-center px-6 pb-32">
@@ -32,3 +33,10 @@ export const IntroSlide = ({ id, onInView }: IntroSlideProps) => {
     </MobileSlide>
   );
 };
+
+export const IntroSlide = memo(IntroSlideComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.id === nextProps.id &&
+    prevProps.onInView === nextProps.onInView
+  );
+});

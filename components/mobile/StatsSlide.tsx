@@ -1,18 +1,14 @@
 'use client';
 
+import { memo } from 'react';
 import { MobileSlide } from './MobileSlide';
-
-const stats = [
-  { value: '50+', label: 'Happy Clients' },
-  { value: '10+', label: 'Projects Completed' },
-];
 
 interface StatsSlideProps {
   id?: string;
   onInView?: (id: string) => void;
 }
 
-export const StatsSlide = ({ id, onInView }: StatsSlideProps) => {
+const StatsSlideComponent = ({ id, onInView }: StatsSlideProps) => {
   return (
     <MobileSlide id={id} onInView={onInView}>
       <div className="flex h-full w-full flex-col items-center justify-center bg-black px-6 pb-32 text-white">
@@ -22,7 +18,6 @@ export const StatsSlide = ({ id, onInView }: StatsSlideProps) => {
         </h2>
 
         <div className="flex flex-col items-center text-center">
-          {/* Happy Clients - Stays in place */}
           <div className="flex flex-col items-center leading-none">
             <div className="text-[30px] font-semibold italic leading-none text-[#56A6FF]">
               50+
@@ -32,7 +27,6 @@ export const StatsSlide = ({ id, onInView }: StatsSlideProps) => {
             </div>
           </div>
 
-          {/* Projects Completed - Moves downwards */}
           <div className="mt-16 flex flex-col items-center leading-none">
             <div className="text-[30px] font-semibold italic leading-none text-[#56A6FF]">
               10+
@@ -46,3 +40,10 @@ export const StatsSlide = ({ id, onInView }: StatsSlideProps) => {
     </MobileSlide>
   );
 };
+
+export const StatsSlide = memo(StatsSlideComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.id === nextProps.id &&
+    prevProps.onInView === nextProps.onInView
+  );
+});

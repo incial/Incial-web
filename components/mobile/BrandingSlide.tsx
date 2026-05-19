@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { memo } from 'react';
 import { MobileArtboard } from './MobileArtboard';
 import { MobileSlide } from './MobileSlide';
 
@@ -9,7 +10,7 @@ interface BrandingSlideProps {
   onInView?: (id: string) => void;
 }
 
-export const BrandingSlide = ({ id, onInView }: BrandingSlideProps) => {
+const BrandingSlideComponent = ({ id, onInView }: BrandingSlideProps) => {
   const brandingTextStyle = {
     fontSize: '23px',
     lineHeight: 1,
@@ -104,3 +105,10 @@ export const BrandingSlide = ({ id, onInView }: BrandingSlideProps) => {
     </MobileSlide>
   );
 };
+
+export const BrandingSlide = memo(BrandingSlideComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.id === nextProps.id &&
+    prevProps.onInView === nextProps.onInView
+  );
+});

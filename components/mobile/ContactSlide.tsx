@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { MobileSlide } from './MobileSlide';
 
 interface ContactSlideProps {
@@ -7,7 +8,7 @@ interface ContactSlideProps {
   onInView?: (id: string) => void;
 }
 
-export const ContactSlide = ({ id, onInView }: ContactSlideProps) => {
+const ContactSlideComponent = ({ id, onInView }: ContactSlideProps) => {
   return (
     <MobileSlide id={id} onInView={onInView}>
       <div className="flex h-full w-full flex-col justify-between bg-black px-6 pb-8 pt-16 text-white">
@@ -71,3 +72,10 @@ export const ContactSlide = ({ id, onInView }: ContactSlideProps) => {
     </MobileSlide>
   );
 };
+
+export const ContactSlide = memo(ContactSlideComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.id === nextProps.id &&
+    prevProps.onInView === nextProps.onInView
+  );
+});

@@ -1,12 +1,15 @@
 'use client';
 
+import { useState, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import LogoScreen from '@/components/features/home/LogoScreen';
 import { MobileSlide } from './MobileSlide';
+import { LandingIntroSequence } from './LandingIntroSequence';
 
 interface LandingSlideProps {
   onNavigate?: (section: string) => void;
   playLogoAnimation?: boolean;
+  warmupOnly?: boolean;
   id?: string;
   onInView?: (id: string) => void;
 }
@@ -17,8 +20,9 @@ const navTargets: Record<string, string> = {
   products: '/products',
 };
 
-export const LandingSlide = ({ onNavigate, playLogoAnimation = false, id, onInView }: LandingSlideProps) => {
+export function LandingSlide({ onNavigate, playLogoAnimation = false, warmupOnly = false, id, onInView }: LandingSlideProps) {
   const router = useRouter();
+  const [showControls, setShowControls] = useState(!playLogoAnimation);
 
   const handleCTA = (action: string) => {
     if (onNavigate) {
@@ -32,48 +36,63 @@ export const LandingSlide = ({ onNavigate, playLogoAnimation = false, id, onInVi
     }
   };
 
+  const handleSequenceComplete = useCallback(() => {
+    setShowControls(true);
+  }, []);
+
   return (
     <MobileSlide id={id} onInView={onInView}>
       <div className="w-full h-full flex flex-col items-center justify-between px-6 pb-8 pt-8">
-        {/* Logo */}
-        <div className="flex flex-1 items-center justify-center">
-          <div className="relative aspect-square w-[min(90vw,340px)]">
-            <LogoScreen
-              key={playLogoAnimation ? 'logo-animate' : 'logo-static'}
-              skipAnimation={!playLogoAnimation}
-              sizeMode="mobile"
+        {/* Post-preloader intro animation */}
+        <div className="flex flex-1 items-center justify-center w-full">
+          <div className="relative h-full w-full">
+            <LandingIntroSequence
+              key={`${playLogoAnimation ? 'active' : 'idle'}-${warmupOnly ? 'warmup' : 'live'}`}
+              playAnimation={playLogoAnimation}
+              warmupOnly={warmupOnly}
+              onComplete={handleSequenceComplete}
             />
           </div>
         </div>
 
         {/* Bottom Section */}
-        <div className="w-[96%] max-w-[370px] mb-[45px] flex flex-col items-center">
-          {/* Divider */}
-          <div className="h-[1px] w-full bg-white/40" />
+        <AnimatePresence>
+          {showControls && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              className="w-[96%] max-w-[370px] mb-[45px] flex flex-col items-center"
+            >
+              {/* Divider */}
+              <div className="h-[1px] w-full bg-white/40" />
 
-          {/* CTA Buttons */}
-          <div className="flex w-full items-center justify-between pt-6">
-            <button
-              onClick={() => handleCTA('about')}
-              className="rounded-full border border-white/80 px-[24px] py-[11px] text-[12px] font-medium text-white transition-colors hover:bg-white hover:text-black"
-            >
-              About Us
-            </button>
-            <button
-              onClick={() => handleCTA('works')}
-              className="rounded-full border border-white/80 px-[24px] py-[11px] text-[12px] font-medium text-white transition-colors hover:bg-white hover:text-black"
-            >
-              Our Works
-            </button>
-            <button
-              onClick={() => handleCTA('products')}
-              className="rounded-full border border-white/80 px-[24px] py-[11px] text-[12px] font-medium text-white transition-colors hover:bg-white hover:text-black"
-            >
-              Our Products
-            </button>
-          </div>
-        </div>
+              {/* CTA Buttons */}
+              <div className="flex w-full items-center justify-between pt-6">
+                <button
+                  onClick={() => handleCTA('about')}
+                  className="rounded-full border border-white/80 px-[24px] py-[11px] text-[12px] font-medium text-white transition-colors hover:bg-white hover:text-black"
+                >
+                  About Us
+                </button>
+                <button
+                  onClick={() => handleCTA('works')}
+                  className="rounded-full border border-white/80 px-[24px] py-[11px] text-[12px] font-medium text-white transition-colors hover:bg-white hover:text-black"
+                >
+                  Our Works
+                </button>
+                <button
+                  onClick={() => handleCTA('products')}
+                  className="rounded-full border border-white/80 px-[24px] py-[11px] text-[12px] font-medium text-white transition-colors hover:bg-white hover:text-black"
+                >
+                  Our Products
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </MobileSlide>
   );
-};
+}

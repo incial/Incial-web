@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState, useMemo } from 'react';
 
 interface MobileArtboardProps {
   children: ReactNode;
@@ -26,11 +26,14 @@ export const MobileArtboard = ({
     offsetY: 0,
   });
 
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
+  // Throttle layout updates to prevent thrashing
+  const updateScheduledRef = useRef(false);
 
+  useEffect(() => {
     const updateLayout = () => {
+      const host = hostRef.current;
+      if (!host) return;
+
       const rect = host.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
 
@@ -39,28 +42,51 @@ export const MobileArtboard = ({
       const offsetY = (rect.height - baseHeight * scale) / 2;
 
       setLayout({ scale, offsetX, offsetY });
+      updateScheduledRef.current = false;
+    };
+
+    const scheduleUpdate = () => {
+      if (!updateScheduledRef.current) {
+        updateScheduledRef.current = true;
+        requestAnimationFrame(() => {
+          updateLayout();
+        });
+      }
     };
 
     updateLayout();
 
+    // Use ResizeObserver but throttle updates with requestAnimationFrame
     const observer = new ResizeObserver(() => {
-      updateLayout();
+      scheduleUpdate();
     });
-    observer.observe(host);
+
+    if (hostRef.current) {
+      observer.observe(hostRef.current);
+    }
 
     return () => observer.disconnect();
   }, [baseWidth, baseHeight]);
 
+  // Memoize the transform to prevent object recreation
+  const transformStyle = useMemo(() => ({
+    transform: `translate(${layout.offsetX}px, ${layout.offsetY}px) scale(${layout.scale})`,
+    transformOrigin: 'top left',
+    willChange: 'auto' as const,
+  }), [layout.offsetX, layout.offsetY, layout.scale]);
+
   return (
-    <div ref={hostRef} className="relative h-full w-full overflow-hidden">
+    <div 
+      ref={hostRef} 
+      className="relative h-full w-full overflow-hidden"
+      style={{ contain: 'layout style paint' }}
+    >
       <div
         className="absolute left-0 top-0"
         style={{
           width: `${baseWidth}px`,
           height: `${baseHeight}px`,
-          transform: `translate(${layout.offsetX}px, ${layout.offsetY}px) scale(${layout.scale})`,
-          transformOrigin: 'top left',
-          willChange: 'transform',
+          ...transformStyle,
         }}
       >
         {children}
