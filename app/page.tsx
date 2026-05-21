@@ -7,6 +7,7 @@ import { Header } from "@/components/layout";
 import { GreetingsOverlay, ScrollSection } from "@/components/sections";
 import { useDevice } from "@/hooks";
 import type { SectionConfig } from "@/lib/dataLoader";
+import { fetchJsonIfAvailable } from "@/lib/adminApi";
 
 import TrustSection from "@/components/sections/TrustSection";
 import ClientSection from "@/components/sections/ClientSection";
@@ -31,7 +32,7 @@ const sectionVariants = {
 const MENU_OFFSET_Y = "6.25rem";
 
 export default function Home() {
-  const { isMobile, isLoading: isDeviceLoading } = useDevice();
+  const { isMobile } = useDevice();
   const [phase, setPhase] = useState<Phase>("greetings");
   const [greetingIndex, setGreetingIndex] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -45,9 +46,13 @@ export default function Home() {
 
   /* ── Load section config from API ────────────────── */
   useEffect(() => {
-    fetch("/api/admin/sections")
-      .then((r) => r.json())
-      .then((data: { sections: SectionConfig[] }) => {
+    fetchJsonIfAvailable<{ sections: SectionConfig[] }>("/api/admin/sections")
+      .then((data) => {
+        if (!data?.sections) {
+          setEnabledSections([...ALL_PHASES]);
+          return;
+        }
+
         const enabled = data.sections.filter((s) => s.enabled).map((s) => s.id);
         // Always keep scrolling (homepage) enabled as fallback
         setEnabledSections(enabled.length > 0 ? enabled : ["scrolling"]);
@@ -122,18 +127,10 @@ export default function Home() {
 
   const handleToggleMenu = useCallback(() => setMenuOpen((prev) => !prev), []);
 
-  const goNext = useCallback(() => {
-    setDirection(1);
-    setPhase((curr) => getNextPhase(curr, 1));
-  }, [orderedEnabledPhases]);
-
-  const goBack = useCallback(
-    (current: Phase) => {
-      setDirection(-1);
-      setPhase(getNextPhase(current, -1));
-    },
-    [orderedEnabledPhases],
-  );
+  const goBack = (current: Phase) => {
+    setDirection(-1);
+    setPhase(getNextPhase(current, -1));
+  };
 
   const isPreloading = phase === "greetings";
 

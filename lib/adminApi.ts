@@ -20,10 +20,32 @@ export class AdminApiError extends Error {
   }
 }
 
+export async function fetchJsonIfAvailable<T>(url: string): Promise<T | null> {
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    return null;
+  }
+
+  const contentType = res.headers.get("content-type");
+  if (!contentType?.includes("application/json")) {
+    return null;
+  }
+
+  try {
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 export async function apiGetSection<T>(section: string): Promise<T> {
-  const res = await fetch(`/api/admin/${section}`);
-  if (!res.ok) throw new Error(`Failed to load ${section}`);
-  return res.json();
+  const data = await fetchJsonIfAvailable<T>(`/api/admin/${section}`);
+  if (data === null) {
+    throw new Error(`Failed to load ${section}`);
+  }
+
+  return data;
 }
 
 export async function apiSaveSection<T>(section: string, data: T): Promise<void> {

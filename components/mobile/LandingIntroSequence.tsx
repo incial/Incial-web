@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { memo, useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import LogoScreen from '@/components/features/home/LogoScreen';
@@ -12,84 +12,116 @@ interface LandingIntroSequenceProps {
 }
 
 const landingWords = ['Brand', 'Business', 'Beyond'];
+const introStabilizationDelayMs = 180;
+const brandHoldMs = 1600;
+const otherHoldMs = 1200;
 type SequenceStage = 'brand' | 'business' | 'beyond' | 'logo';
+const sequenceStages: SequenceStage[] = ['brand', 'business', 'beyond'];
 
-const getNextStage = (stage: SequenceStage): SequenceStage => {
-  if (stage === 'brand') return 'business';
-  if (stage === 'business') return 'beyond';
-  return 'logo';
-};
+const AnimatedWord = memo(function AnimatedWord({
+  word,
+  isActive,
+}: {
+  word: string;
+  isActive: boolean;
+}) {
+  return (
+    <motion.span
+      aria-hidden={!isActive}
+      className="col-start-1 row-start-1 flex items-center justify-center whitespace-nowrap"
+      initial={false}
+      animate={{ opacity: isActive ? 1 : 0, y: isActive ? 0 : 10 }}
+      transition={{
+        duration: 0.5,
+        ease: [0.25, 0.1, 0.25, 1.0],
+      }}
+      style={{
+        transform: 'translate3d(0, 0, 0)',
+        backfaceVisibility: 'hidden',
+        willChange: 'opacity, transform',
+      }}
+    >
+      {word}
+    </motion.span>
+  );
+});
 
-// Memoized word component to prevent re-renders
-const WordDisplay = memo(({ word }: { word: string }) => (
-  <motion.div
-    key={word}
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -10 }}
-    transition={{
-      duration: 0.5,
-      ease: [0.25, 0.1, 0.25, 1.0],
-    }}
-    style={{ transform: 'translateZ(0)' }}
-  >
-    {word}
-  </motion.div>
-));
-
-WordDisplay.displayName = 'WordDisplay';
+AnimatedWord.displayName = 'AnimatedWord';
 
 export const LandingIntroSequence = memo(function LandingIntroSequence({
   playAnimation = false,
   warmupOnly = false,
   onComplete,
 }: LandingIntroSequenceProps) {
+  const initializedRef = useRef(false);
+  const cancelledRef = useRef(false);
   const timerRef = useRef<number | null>(null);
+  const introRafOneRef = useRef<number | null>(null);
+  const introRafTwoRef = useRef<number | null>(null);
   const [stage, setStage] = useState<SequenceStage>(() =>
     warmupOnly || playAnimation ? 'brand' : 'logo',
   );
-  const isFirstRenderRef = useRef(true);
+  const activeWordIndex = stage === 'brand' ? 0 : stage === 'business' ? 1 : stage === 'beyond' ? 2 : 0;
 
-  const currentWord = useMemo(() => {
-    if (stage === 'brand') return landingWords[0];
-    if (stage === 'business') return landingWords[1];
-    if (stage === 'beyond') return landingWords[2];
-    return landingWords[0];
-  }, [stage]);
+  const clearTimers = useCallback(() => {
+    if (introRafOneRef.current !== null) {
+      window.cancelAnimationFrame(introRafOneRef.current);
+      introRafOneRef.current = null;
+    }
 
-  // Stage progression with extended hold ONLY for first state
-  // Brand: 1500ms (extra 300ms for mobile render stability)
-  // Business & Beyond: 1200ms each (original timing)
-  useEffect(() => {
+    if (introRafTwoRef.current !== null) {
+      window.cancelAnimationFrame(introRafTwoRef.current);
+      introRafTwoRef.current = null;
+    }
+
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+  }, []);
 
-    if (!playAnimation || warmupOnly || stage === 'logo') {
+  const advanceSequence = useCallback(function runSequence(stepIndex: number) {
+    if (cancelledRef.current) return;
+
+    const nextStage = sequenceStages[stepIndex];
+    if (!nextStage) {
+      setStage('logo');
       return;
     }
 
-    // ONLY the first state gets extended hold time
-    // This ensures "We Build Brand" is fully visible on mobile before transition
-    const isFirstState = isFirstRenderRef.current && stage === 'brand';
-    const holdTime = isFirstState ? 1500 : 1200; // +300ms only for Brand state
+    setStage(nextStage);
 
-    if (isFirstState) {
-      isFirstRenderRef.current = false;
+    const holdTime = nextStage === 'brand' ? brandHoldMs : otherHoldMs;
+    timerRef.current = window.setTimeout(() => {
+      runSequence(stepIndex + 1);
+    }, holdTime);
+  }, []);
+
+  useEffect(() => {
+    if (!playAnimation || warmupOnly || initializedRef.current) {
+      return;
     }
 
-    timerRef.current = window.setTimeout(() => {
-      setStage((currentStage) => getNextStage(currentStage));
-    }, holdTime);
+    initializedRef.current = true;
+    cancelledRef.current = false;
+
+    introRafOneRef.current = window.requestAnimationFrame(() => {
+      introRafTwoRef.current = window.requestAnimationFrame(() => {
+        if (cancelledRef.current) return;
+
+        timerRef.current = window.setTimeout(() => {
+          if (cancelledRef.current) return;
+          advanceSequence(0);
+        }, introStabilizationDelayMs);
+      });
+    });
 
     return () => {
-      if (timerRef.current !== null) {
-        window.clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
+      cancelledRef.current = true;
+      clearTimers();
+      initializedRef.current = false;
     };
-  }, [playAnimation, warmupOnly, stage]);
+  }, [advanceSequence, clearTimers, playAnimation, warmupOnly]);
 
   // Memoized completion callback
   const handleComplete = useCallback(() => {
@@ -105,8 +137,8 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
     <div
       className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black [contain:layout_paint_style]"
       style={{ 
-        transform: 'translateZ(0)', 
-        willChange: 'contents',
+        transform: 'translate3d(0, 0, 0)',
+        willChange: 'transform, opacity',
         backfaceVisibility: 'hidden',
         perspective: '1000px',
       }}
@@ -120,24 +152,44 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
             exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}
             className="relative z-20 flex w-full flex-col items-center justify-center gap-1 px-4 text-center"
             style={{ 
-              willChange: 'transform, opacity', 
-              transform: 'translateZ(0)',
+              willChange: 'transform, opacity',
+              transform: 'translate3d(0, 0, 0)',
               backfaceVisibility: 'hidden',
+              contain: 'layout paint style',
             }}
           >
             <div
               className="font-light text-white/90"
-              style={{ fontSize: 'clamp(2rem, 7.5vw, 4rem)' }}
+              style={{
+                fontSize: 'clamp(2rem, 7.5vw, 4rem)',
+                backfaceVisibility: 'hidden',
+                transform: 'translate3d(0, 0, 0)',
+              }}
             >
               We <span className="italic">Build</span>
             </div>
             <div
               className="font-bold text-white"
-              style={{ fontSize: 'clamp(2rem, 7.5vw, 4rem)' }}
+              style={{
+                fontSize: 'clamp(2rem, 7.5vw, 4rem)',
+                backfaceVisibility: 'hidden',
+                transform: 'translate3d(0, 0, 0)',
+              }}
             >
-              <AnimatePresence mode="wait">
-                <WordDisplay word={currentWord} />
-              </AnimatePresence>
+              <span
+                className="relative inline-grid min-w-[8ch] items-center justify-center"
+                style={{
+                  contain: 'layout paint style',
+                }}
+              >
+                {landingWords.map((word, index) => (
+                  <AnimatedWord
+                    key={word}
+                    word={word}
+                    isActive={index === activeWordIndex}
+                  />
+                ))}
+              </span>
             </div>
           </motion.div>
         ) : (

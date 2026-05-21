@@ -4,6 +4,7 @@ import { useState, useEffect, memo } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MobileSlide } from './MobileSlide';
+import { fetchJsonIfAvailable } from '@/lib/adminApi';
 
 interface Client {
   id: string;
@@ -28,10 +29,15 @@ const ClientsSlideComponent = ({ id, onInView }: ClientsSlideProps) => {
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
-    fetch('/api/admin/clients')
-      .then((r) => r.json())
-      .then(setData)
-      .catch(console.error);
+    fetchJsonIfAvailable<ClientsData>('/api/admin/clients')
+      .then((payload) => {
+        if (payload) {
+          setData(payload);
+        }
+      })
+      .catch(() => {
+        // Silently ignore missing admin data during mobile intro.
+      });
   }, []);
 
   const clients = data?.clients || [];
