@@ -20,6 +20,7 @@ interface MobileServicePageProps {
 
 export const MobileServicePage = ({ skipPreloader = false }: MobileServicePageProps) => {
   const [isPreloading, setIsPreloading] = useState(true);
+  const [hasLandingIntroCompleted, setHasLandingIntroCompleted] = useState(false);
   const [, startTransition] = useTransition();
   
   // Ref-based tracking to avoid unnecessary re-renders
@@ -28,9 +29,14 @@ export const MobileServicePage = ({ skipPreloader = false }: MobileServicePagePr
 
   const shouldShowPreloader = !skipPreloader && isPreloading;
   const shouldPlayLandingAnimation = !isPreloading || skipPreloader;
+  const isScrollLocked = shouldPlayLandingAnimation && !hasLandingIntroCompleted;
 
   const handlePreloaderComplete = useCallback(() => {
     setIsPreloading(false);
+  }, []);
+
+  const handleLandingIntroComplete = useCallback(() => {
+    setHasLandingIntroCompleted(true);
   }, []);
 
   // Debounced handler for slide changes
@@ -96,11 +102,12 @@ export const MobileServicePage = ({ skipPreloader = false }: MobileServicePagePr
   return (
     <>
       <div className={shouldShowPreloader ? 'pointer-events-none' : ''} aria-hidden={shouldShowPreloader}>
-        <MobileLayout backgroundLayer={backgroundLayer}>
+        <MobileLayout backgroundLayer={backgroundLayer} scrollLocked={isScrollLocked}>
           {/* Landing Slide */}
           <LandingSlide
             playLogoAnimation={shouldPlayLandingAnimation}
             warmupOnly={!skipPreloader && isPreloading}
+            onIntroComplete={handleLandingIntroComplete}
             {...slideProps("landing")}
           />
 

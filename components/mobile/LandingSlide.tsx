@@ -12,6 +12,7 @@ interface LandingSlideProps {
   warmupOnly?: boolean;
   id?: string;
   onInView?: (id: string) => void;
+  onIntroComplete?: () => void;
 }
 
 const navTargets: Record<string, string> = {
@@ -42,6 +43,7 @@ export const LandingSlide = memo(function LandingSlide({
   warmupOnly = false,
   id,
   onInView,
+  onIntroComplete,
 }: LandingSlideProps) {
   const router = useRouter();
   const [showControls, setShowControls] = useState(!playLogoAnimation);
@@ -65,7 +67,8 @@ export const LandingSlide = memo(function LandingSlide({
   // Optimized sequence complete handler
   const handleSequenceComplete = useCallback(() => {
     setShowControls(true);
-  }, []);
+    onIntroComplete?.();
+  }, [onIntroComplete]);
 
   // Memoize sequence key to prevent unnecessary re-renders
   const sequenceKey = useMemo(
