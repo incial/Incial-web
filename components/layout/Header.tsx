@@ -11,12 +11,14 @@ interface HeaderProps {
   menuOpen: boolean;
   onToggleMenu: () => void;
   variant?: "default" | "pill";
+  hidden?: boolean;
 }
 
 export default function Header({
   menuOpen,
   onToggleMenu,
   variant = "default",
+  hidden = false,
 }: HeaderProps) {
   if (variant === "pill") {
     return (
@@ -117,8 +119,9 @@ export default function Header({
       <motion.header
         initial={{ y: 0 }}
         animate={{
-          y: menuOpen ? 100 : 0,
+          y: hidden ? -100 : menuOpen ? 100 : 0,
           scale: menuOpen ? 0.95 : 1,
+          opacity: hidden ? 0 : 1,
         }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="fixed left-0 right-0 top-0 z-50 origin-top items-center justify-between px-10 pb-4 pt-10 md:px-20 hidden md:flex"

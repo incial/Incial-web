@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -200,7 +200,7 @@ function ContentRenderer({
   galleryImages?: string[];
   altText: string;
 }) {
-  const rendered: JSX.Element[] = [];
+  const rendered: React.JSX.Element[] = [];
   let galleryIndex = 0;
   let sentencesSinceGallery = 0;
   let paragraphIndex = 0;

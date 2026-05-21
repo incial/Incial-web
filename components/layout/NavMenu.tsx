@@ -6,7 +6,11 @@ import Link from "next/link";
 import { navLinks } from "@/lib/constants";
 import type { SectionConfig } from "@/lib/dataLoader";
 
-export default function NavMenu() {
+interface NavMenuProps {
+  onClose?: () => void;
+}
+
+export default function NavMenu({ onClose }: NavMenuProps) {
   const [enabledSections, setEnabledSections] = useState<string[] | null>(null);
 
   useEffect(() => {
