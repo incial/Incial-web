@@ -1,11 +1,12 @@
 'use client';
 
-import { memo, useState, ReactNode, useEffect } from 'react';
+import { memo, useState, ReactNode, useEffect, useRef } from 'react';
 import { MobileMenu } from './MobileMenu';
 
 interface MobileLayoutProps {
   children: ReactNode;
   backgroundLayer?: ReactNode;
+  scrollLocked?: boolean;
 }
 
 const MobileHeader = memo(function MobileHeader({
@@ -54,14 +55,15 @@ const MobileHeader = memo(function MobileHeader({
 
 MobileHeader.displayName = 'MobileHeader';
 
-export const MobileLayout = ({ children, backgroundLayer }: MobileLayoutProps) => {
+export const MobileLayout = ({ children, backgroundLayer, scrollLocked = false }: MobileLayoutProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Add scroll optimization styles at component level
   useEffect(() => {
     // Disable the default scroll snap behavior if it's causing frame drops
     // on low-end devices. Browsers handle snap calculations on every scroll frame.
-    const scrollContainer = document.querySelector('.snap-y');
+    const scrollContainer = scrollContainerRef.current;
     if (scrollContainer) {
       // Optional: add scroll behavior optimization
       scrollContainer.addEventListener('scroll', () => {
@@ -72,7 +74,7 @@ export const MobileLayout = ({ children, backgroundLayer }: MobileLayoutProps) =
 
   // Throttle scroll events for low-end devices
   useEffect(() => {
-    const scrollContainer = document.querySelector('.snap-y');
+    const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
     let ticking = false;
@@ -88,6 +90,34 @@ export const MobileLayout = ({ children, backgroundLayer }: MobileLayoutProps) =
     scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
     return () => scrollContainer.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer || !scrollLocked) return;
+
+    const preventScroll = (event: Event) => {
+      event.preventDefault();
+    };
+
+    const pinToTop = () => {
+      if (scrollContainer.scrollTop !== 0) {
+        scrollContainer.scrollTop = 0;
+      }
+    };
+
+    // Ensure we're always at the landing slide while intro animation is running.
+    pinToTop();
+
+    scrollContainer.addEventListener('wheel', preventScroll, { passive: false });
+    scrollContainer.addEventListener('touchmove', preventScroll, { passive: false });
+    scrollContainer.addEventListener('scroll', pinToTop, { passive: true });
+
+    return () => {
+      scrollContainer.removeEventListener('wheel', preventScroll);
+      scrollContainer.removeEventListener('touchmove', preventScroll);
+      scrollContainer.removeEventListener('scroll', pinToTop);
+    };
+  }, [scrollLocked]);
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
@@ -112,11 +142,14 @@ export const MobileLayout = ({ children, backgroundLayer }: MobileLayoutProps) =
 
       {/* Scroll Container - Optimized for smooth scrolling */}
       <div 
+        ref={scrollContainerRef}
         className="relative z-10 mt-[110px] h-[calc(100dvh-110px)] w-full overflow-y-scroll snap-y snap-mandatory"
         style={{
+          overflowY: scrollLocked ? 'hidden' : 'scroll',
+          touchAction: scrollLocked ? 'none' : 'pan-y',
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-          scrollBehavior: 'smooth',
+          scrollBehavior: scrollLocked ? 'auto' : 'smooth',
         }}
       >
         {/* Remove scrollbar styling */}
