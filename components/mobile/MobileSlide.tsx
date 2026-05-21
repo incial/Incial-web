@@ -11,27 +11,23 @@ interface MobileSlideProps {
 export const MobileSlide = memo(function MobileSlide({ children, id, onInView }: MobileSlideProps) {
   const ref = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastCalledRef = useRef<string | null>(null);
+  const wasInViewRef = useRef(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Memoized callback to prevent unnecessary observer updates
   const handleIntersection = useCallback((intersectionId: string) => {
     if (!onInView) return;
-    
-    // Debounce: only call if different slide or first time
-    if (lastCalledRef.current !== intersectionId) {
-      lastCalledRef.current = intersectionId;
-      
-      // Clear existing timer
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      
-      // Debounce the callback by 30ms for better performance on low-end devices
-      debounceTimerRef.current = setTimeout(() => {
-        onInView(intersectionId);
-      }, 30);
+
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
+
+    // Debounce the callback by 30ms for better performance on low-end devices.
+    // This should run on every re-entry, not just the first visit.
+    debounceTimerRef.current = setTimeout(() => {
+      onInView(intersectionId);
+    }, 30);
   }, [onInView]);
 
   useEffect(() => {
@@ -40,9 +36,16 @@ export const MobileSlide = memo(function MobileSlide({ children, id, onInView }:
     // Use passive observer with reduced threshold for better performance
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        // Only fire when visible (lower threshold for faster detection)
-        if (entries[0].isIntersecting && entries[0].intersectionRatio > 0.1) {
+        const entry = entries[0];
+        const isVisible = entry.isIntersecting && entry.intersectionRatio > 0.1;
+
+        // Trigger only on enter transitions so scrolling back to a slide
+        // updates shared animation state correctly.
+        if (isVisible && !wasInViewRef.current) {
+          wasInViewRef.current = true;
           handleIntersection(id);
+        } else if (!isVisible && wasInViewRef.current) {
+          wasInViewRef.current = false;
         }
       },
       { 
