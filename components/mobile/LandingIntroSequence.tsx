@@ -13,7 +13,7 @@ interface LandingIntroSequenceProps {
 
 const landingWords = ['Brand', 'Business', 'Beyond'];
 const introStabilizationDelayMs = 180;
-const brandHoldMs = 1600;
+const brandHoldMs = 2200;
 const otherHoldMs = 1200;
 type SequenceStage = 'brand' | 'business' | 'beyond' | 'logo';
 const sequenceStages: SequenceStage[] = ['brand', 'business', 'beyond'];
