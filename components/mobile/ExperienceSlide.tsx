@@ -15,7 +15,7 @@ interface ExperienceSlideProps {
   onInView?: (id: string) => void;
 }
 
-export const ExperienceSlide = ({ id, onInView }: ExperienceSlideProps) => {
+export function ExperienceSlide({ id, onInView }: ExperienceSlideProps) {
   return (
     <MobileSlide id={id} onInView={onInView}>
       <div className="relative h-full w-full overflow-hidden">
@@ -71,4 +71,4 @@ export const ExperienceSlide = ({ id, onInView }: ExperienceSlideProps) => {
         </div>
     </MobileSlide>
   );
-};
+}

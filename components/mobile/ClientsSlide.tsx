@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MobileSlide } from './MobileSlide';
 
@@ -22,7 +23,7 @@ interface ClientsSlideProps {
   onInView?: (id: string) => void;
 }
 
-export const ClientsSlide = ({ id, onInView }: ClientsSlideProps) => {
+const ClientsSlideComponent = ({ id, onInView }: ClientsSlideProps) => {
   const [data, setData] = useState<ClientsData | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -67,11 +68,13 @@ export const ClientsSlide = ({ id, onInView }: ClientsSlideProps) => {
                   }}
                   className="flex h-[58px] items-center justify-center overflow-hidden rounded-[4px] bg-white px-2"
                 >
-                  <img
+                  <Image
                     src={client.src}
                     alt={client.name}
-                    className="w-auto max-h-[30px] object-contain"
-                    loading="lazy"
+                    width={160}
+                    height={30}
+                    className="h-auto w-auto max-h-[30px] object-contain"
+                    unoptimized
                   />
                 </motion.div>
               ))}
@@ -118,3 +121,10 @@ export const ClientsSlide = ({ id, onInView }: ClientsSlideProps) => {
     </MobileSlide>
   );
 };
+
+export const ClientsSlide = memo(ClientsSlideComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.id === nextProps.id &&
+    prevProps.onInView === nextProps.onInView
+  );
+});

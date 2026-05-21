@@ -8,13 +8,15 @@ import { FiArrowDown } from "react-icons/fi";
 interface LogoScreenProps {
   onNextClick?: () => void;
   skipAnimation?: boolean;
-  sizeMode?: "desktop" | "mobile";
+  sizeMode?: "mobile" | "desktop";
 }
 
 export default function LogoScreen({
   onNextClick,
   skipAnimation,
+  sizeMode = "desktop",
 }: LogoScreenProps) {
+
 
 
   const pathVariants: Variants = {
@@ -53,7 +55,12 @@ export default function LogoScreen({
         </Link>
       </motion.div>
 
-      <div className="relative flex h-80 w-80 items-center justify-center md:h-[32rem] md:w-[32rem] lg:h-[40rem] lg:w-[40rem]">
+      <div 
+        className={sizeMode === "mobile" 
+          ? "relative flex h-full w-full items-center justify-center" 
+          : "relative flex h-80 w-80 items-center justify-center md:h-[32rem] md:w-[32rem] lg:h-[40rem] lg:w-[40rem]"
+        }
+      >
         {/* Sharp Stroke Layer */}
         <motion.svg
           viewBox="0 0 626 590"

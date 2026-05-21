@@ -15,7 +15,7 @@ interface TechnologySlideProps {
   onInView?: (id: string) => void;
 }
 
-export const TechnologySlide = ({ id, onInView }: TechnologySlideProps) => {
+export function TechnologySlide({ id, onInView }: TechnologySlideProps) {
   return (
     <MobileSlide id={id} onInView={onInView}>
       <div className="relative h-full w-full overflow-hidden">
@@ -70,4 +70,4 @@ export const TechnologySlide = ({ id, onInView }: TechnologySlideProps) => {
         </div>
     </MobileSlide>
   );
-};
+}

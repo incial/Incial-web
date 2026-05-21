@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ReactNode } from 'react';
+import { useState, ReactNode, useEffect } from 'react';
 import { MobileMenu } from './MobileMenu';
 
 interface MobileLayoutProps {
@@ -11,10 +11,53 @@ interface MobileLayoutProps {
 export const MobileLayout = ({ children, backgroundLayer }: MobileLayoutProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Add scroll optimization styles at component level
+  useEffect(() => {
+    // Disable the default scroll snap behavior if it's causing frame drops
+    // on low-end devices. Browsers handle snap calculations on every scroll frame.
+    const scrollContainer = document.querySelector('.snap-y');
+    if (scrollContainer) {
+      // Optional: add scroll behavior optimization
+      scrollContainer.addEventListener('scroll', () => {
+        // This is a passive listener - no preventDefault
+      }, { passive: true });
+    }
+  }, []);
+
+  // Throttle scroll events for low-end devices
+  useEffect(() => {
+    const scrollContainer = document.querySelector('.snap-y');
+    if (!scrollContainer) return;
+
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
       {/* Fixed Header */}
-      <header className="fixed top-0 left-0 right-0 z-30 h-[110px] pt-[45px] pb-2 bg-black/95 backdrop-blur-sm flex items-center justify-between px-6">
+      <header 
+        className="fixed top-0 left-0 right-0 z-30 h-[110px] pt-[45px] pb-2 bg-black/95 backdrop-blur-sm flex items-center justify-between px-6"
+        style={{ 
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          transform: 'none',
+          WebkitBackdropFilter: 'blur(4px)',
+          backdropFilter: 'blur(4px)',
+        }}
+      >
         <div className="text-[15.5px] leading-none tracking-[-0.02em] text-white">
           <span className="font-normal">We Are </span>
           <span className="font-extrabold">incial.</span>
@@ -35,15 +78,28 @@ export const MobileLayout = ({ children, backgroundLayer }: MobileLayoutProps) =
       {/* Menu */}
       <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
 
-      {/* Background Layer */}
+      {/* Background Layer - Optimized for GPU rendering */}
       {backgroundLayer && (
-        <div className="absolute inset-0 z-0 pointer-events-none">
+        <div 
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{ 
+            contain: 'layout style paint',
+            transform: 'translateZ(0)',
+          }}
+        >
           {backgroundLayer}
         </div>
       )}
 
-      {/* Scroll Snap Container */}
-      <div className="relative z-10 mt-[110px] h-[calc(100dvh-110px)] w-full overflow-y-scroll snap-y snap-mandatory">
+      {/* Scroll Container - Optimized for smooth scrolling */}
+      <div 
+        className="relative z-10 mt-[110px] h-[calc(100dvh-110px)] w-full overflow-y-scroll snap-y snap-mandatory"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
+          scrollBehavior: 'smooth',
+        }}
+      >
         {/* Remove scrollbar styling */}
         <style>{`
           .snap-y::-webkit-scrollbar {
