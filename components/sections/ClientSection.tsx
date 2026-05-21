@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import type { ClientsData, Client, Testimonial } from "@/lib/dataLoader";
+import type { ClientsData } from "@/lib/dataLoader";
+import { fetchJsonIfAvailable } from "@/lib/adminApi";
 
 interface ClientSectionProps {
   onBack?: () => void;
@@ -20,23 +21,25 @@ export default function ClientSection({
   );
 
   useEffect(() => {
-    fetch("/api/admin/clients")
-      .then((r) => r.json())
-      .then(setData)
-      .catch(console.error);
+    fetchJsonIfAvailable<ClientsData>("/api/admin/clients")
+      .then((payload) => {
+        if (payload) {
+          setData(payload);
+        }
+      })
+      .catch(() => {});
 
-    fetch("/api/admin/sections")
-      .then((res) => res.json())
-      .then((d) => {
-        if (d?.sections) {
+    fetchJsonIfAvailable<{ sections: Array<{ id: string; enabled: boolean }> }>("/api/admin/sections")
+      .then((payload) => {
+        if (payload?.sections) {
           const configMap: Record<string, boolean> = {};
-          d.sections.forEach((s: any) => {
+          payload.sections.forEach((s) => {
             configMap[s.id] = s.enabled;
           });
           setSectionsConfig(configMap);
         }
       })
-      .catch(console.error);
+      .catch(() => {});
   }, []);
   useEffect(() => {
     let isScrolling = false;

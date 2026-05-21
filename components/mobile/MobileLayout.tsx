@@ -1,12 +1,58 @@
 'use client';
 
-import { useState, ReactNode, useEffect } from 'react';
+import { memo, useState, ReactNode, useEffect } from 'react';
 import { MobileMenu } from './MobileMenu';
 
 interface MobileLayoutProps {
   children: ReactNode;
   backgroundLayer?: ReactNode;
 }
+
+const MobileHeader = memo(function MobileHeader({
+  menuOpen,
+  onToggleMenu,
+}: {
+  menuOpen: boolean;
+  onToggleMenu: () => void;
+}) {
+  return (
+    <header
+      className={`fixed left-0 right-0 top-0 z-50 flex h-[110px] items-center justify-between bg-black/95 px-6 pt-[45px] pb-2 backdrop-blur-sm md:hidden ${
+        menuOpen ? 'hidden' : ''
+      }`}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        transform: 'translate3d(0, 0, 0)',
+        willChange: 'transform',
+        backfaceVisibility: 'hidden',
+        contain: 'layout paint style',
+        WebkitBackdropFilter: 'blur(4px)',
+        backdropFilter: 'blur(4px)',
+      }}
+    >
+      <div className="text-[15.5px] leading-none tracking-[-0.02em] text-white">
+        <span className="font-normal">We Are </span>
+        <span className="font-extrabold">incial.</span>
+      </div>
+      <button
+        onClick={onToggleMenu}
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-white/90 text-white focus:outline-none"
+        aria-label="Toggle menu"
+      >
+        <span className="relative block h-3.5 w-3.5">
+          <span className="absolute left-0 top-0.5 h-[1.5px] w-3.5 bg-white/90" />
+          <span className="absolute left-0 top-[6px] h-[1.5px] w-3.5 bg-white/90" />
+          <span className="absolute left-0 top-[11px] h-[1.5px] w-3.5 bg-white/90" />
+        </span>
+      </button>
+    </header>
+  );
+});
+
+MobileHeader.displayName = 'MobileHeader';
 
 export const MobileLayout = ({ children, backgroundLayer }: MobileLayoutProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -46,34 +92,7 @@ export const MobileLayout = ({ children, backgroundLayer }: MobileLayoutProps) =
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
       {/* Fixed Header */}
-      <header 
-        className="fixed top-0 left-0 right-0 z-30 h-[110px] pt-[45px] pb-2 bg-black/95 backdrop-blur-sm flex items-center justify-between px-6"
-        style={{ 
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          transform: 'none',
-          WebkitBackdropFilter: 'blur(4px)',
-          backdropFilter: 'blur(4px)',
-        }}
-      >
-        <div className="text-[15.5px] leading-none tracking-[-0.02em] text-white">
-          <span className="font-normal">We Are </span>
-          <span className="font-extrabold">incial.</span>
-        </div>
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/90 text-white focus:outline-none"
-          aria-label="Toggle menu"
-        >
-          <span className="relative block h-3.5 w-3.5">
-            <span className="absolute left-0 top-0.5 h-[1.5px] w-3.5 bg-white/90" />
-            <span className="absolute left-0 top-[6px] h-[1.5px] w-3.5 bg-white/90" />
-            <span className="absolute left-0 top-[11px] h-[1.5px] w-3.5 bg-white/90" />
-          </span>
-        </button>
-      </header>
+      <MobileHeader menuOpen={menuOpen} onToggleMenu={() => setMenuOpen(!menuOpen)} />
 
       {/* Menu */}
       <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { navLinks } from '@/lib/constants';
 import type { SectionConfig } from '@/lib/dataLoader';
+import { fetchJsonIfAvailable } from '@/lib/adminApi';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -13,33 +14,24 @@ interface MobileMenuProps {
 
 export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
   const [enabledSections, setEnabledSections] = useState<string[] | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
 
-    setIsLoading(true);
-    
-    // Use AbortController for cleaner async management
-    const controller = new AbortController();
-    
-    fetch('/api/admin/sections', { signal: controller.signal })
-      .then((res) => res.json())
-      .then((data: { sections: SectionConfig[] }) => {
-        const enabled = data.sections
-          .filter((s) => s.enabled)
-          .map((s) => s.id);
+    fetchJsonIfAvailable<{ sections: SectionConfig[] }>('/api/admin/sections')
+      .then((data) => {
+        const enabled = data?.sections
+          ? data.sections.filter((s) => s.enabled).map((s) => s.id)
+          : [];
+
         setEnabledSections(enabled);
       })
-      .catch((err) => {
-        if (err.name !== 'AbortError') {
-          setEnabledSections([]);
-        }
-      })
-      .finally(() => setIsLoading(false));
-
-    return () => controller.abort();
+      .catch(() => {
+        setEnabledSections([]);
+      });
   }, [isOpen]);
+
+  const isLoading = isOpen && enabledSections === null;
 
   // Memoize filtered links to prevent unnecessary recalculations
   const visibleLinks = useMemo(() => {
