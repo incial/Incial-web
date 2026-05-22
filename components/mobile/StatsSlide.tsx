@@ -20,7 +20,7 @@ const StatsSlideComponent = ({ id, onInView }: StatsSlideProps) => {
         <div className="flex flex-col items-center text-center">
           <div className="flex flex-col items-center leading-none">
             <div className="text-[30px] font-semibold italic leading-none text-[#56A6FF]">
-              50+
+              60+
             </div>
             <div className="mt-1 text-[13px] font-normal leading-none text-white/90">
               Happy Clients
@@ -29,7 +29,7 @@ const StatsSlideComponent = ({ id, onInView }: StatsSlideProps) => {
 
           <div className="mt-16 flex flex-col items-center leading-none">
             <div className="text-[30px] font-semibold italic leading-none text-[#56A6FF]">
-              10+
+              100+
             </div>
             <div className="mt-1 text-[13px] font-normal leading-none text-white/90">
               Projects Completed
