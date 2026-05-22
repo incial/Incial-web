@@ -18,7 +18,7 @@ const BrandingSlideComponent = ({ id, onInView }: BrandingSlideProps) => {
   } as const;
 
   const subTextStyle = {
-    fontSize: '10px',
+    fontSize: '10.5px',
     lineHeight: 1,
     letterSpacing: '0.08em',
   } as const;
