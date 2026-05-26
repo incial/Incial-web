@@ -83,14 +83,14 @@ export default function SkillsTogetherSlide({ onNext, onPrev }: SlideProps) {
               <span className="whitespace-nowrap">Where Skills</span> <br />
               <motion.span 
                 animate={{ color: isTransitioned ? '#4ADE80' : '#FFFFFF' }}
-                transition={{ duration: 0.8, delay: isTransitioned ? 0.6 : 0 }}
+                transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                 className="inline-block"
               >
                 Are Built
               </motion.span> <br />
               <motion.span 
                 animate={{ color: isTransitioned ? '#FB7185' : '#FFFFFF' }}
-                transition={{ duration: 0.8, delay: isTransitioned ? 0.8 : 0 }}
+                transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                 className="inline-block"
               >
                 Together.
@@ -103,9 +103,9 @@ export default function SkillsTogetherSlide({ onNext, onPrev }: SlideProps) {
             <AnimatePresence>
               {isTransitioned && (
                 <motion.div
-                  initial={{ opacity: 0, x: 120 }}
+                  initial={{ opacity: 0, x: rightOffset - leftTarget }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 1, delay: 0.8 }}
+                  transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                   className="w-full max-w-[34rem]"
                 >
                   <p className="text-lg md:text-xl text-gray-200 leading-[1.35] font-medium">
