@@ -87,21 +87,7 @@ export default function LearnTogetherPage() {
         {slide === 0 && <LearnLandingSlide />}
         {slide === 1 && <SkillsTogetherSlide onNext={goNext} onPrev={goPrev} />}
 
-        {/* Simple keyboard / click controls to advance slides for testing */}
-        <div className="absolute bottom-6 left-6 z-40 flex gap-3">
-          <button
-            onClick={goPrev}
-            className="rounded border border-white/20 px-3 py-1 text-sm"
-          >
-            Prev
-          </button>
-          <button
-            onClick={goNext}
-            className="rounded bg-white/10 px-3 py-1 text-sm"
-          >
-            Next
-          </button>
-        </div>
+
       </motion.div>
     </div>
   );
