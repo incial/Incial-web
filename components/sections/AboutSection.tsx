@@ -245,13 +245,15 @@ export default function AboutSection({
             custom={i * 0.1}
             className="flex flex-col items-center text-center"
           >
-            <Image
-              src={award.icon || imgAwardsIcon}
-              alt={award.name}
-              width={72}
-              height={72}
-              className="mb-3 sm:mb-4 opacity-90 sm:w-24 sm:h-24"
-            />
+            <div className="relative mb-3 sm:mb-4 w-16 h-16 sm:w-24 sm:h-24 shrink-0">
+              <Image
+                src={award.icon || imgAwardsIcon}
+                alt={award.name}
+                fill
+                sizes="(max-width: 640px) 64px, 96px"
+                className="object-contain opacity-90 p-1"
+              />
+            </div>
             <h3 className="font-[Poppins,sans-serif] font-bold text-[20px] sm:text-[24px] text-white">
               {award.name}
             </h3>
