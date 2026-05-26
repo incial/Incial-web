@@ -32,7 +32,7 @@ export default function Header({
   }, [pathname]);
 
   useEffect(() => {
-    if (menuOpen) {
+    if (menuOpen || pathname === "/") {
       setScrollHidden(false);
       return;
     }
@@ -74,7 +74,7 @@ export default function Header({
       window.removeEventListener("scroll", handleScroll);
       document.removeEventListener("scroll", handleScroll, true);
     };
-  }, [menuOpen]);
+  }, [menuOpen, pathname]);
 
   const shouldHide = !menuOpen && (hidden ?? scrollHidden);
 
