@@ -3,6 +3,7 @@
 import { memo, useState, ReactNode, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { MobileMenu } from './MobileMenu';
+import { usePathname } from 'next/navigation';
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -61,10 +62,16 @@ const MobileHeader = memo(function MobileHeader({
 MobileHeader.displayName = 'MobileHeader';
 
 export const MobileLayout = ({ children, backgroundLayer, scrollLocked = false }: MobileLayoutProps) => {
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastScrollTopRef = useRef(0);
+
+  // Reset header state on page change
+  useEffect(() => {
+    setHeaderHidden(false);
+  }, [pathname]);
 
   // Add scroll optimization styles at component level
   useEffect(() => {
@@ -128,7 +135,7 @@ export const MobileLayout = ({ children, backgroundLayer, scrollLocked = false }
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer || scrollLocked || menuOpen) return;
+    if (!scrollContainer || scrollLocked || menuOpen || pathname === "/") return;
 
     const threshold = 6;
     const topThreshold = 24;
@@ -151,7 +158,7 @@ export const MobileLayout = ({ children, backgroundLayer, scrollLocked = false }
 
     scrollContainer.addEventListener('scroll', handleHeaderScroll, { passive: true });
     return () => scrollContainer.removeEventListener('scroll', handleHeaderScroll);
-  }, [menuOpen, scrollLocked]);
+  }, [menuOpen, scrollLocked, pathname]);
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
