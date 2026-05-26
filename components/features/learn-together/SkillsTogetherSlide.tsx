@@ -2,7 +2,6 @@
 
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { ArrowUp, ArrowDown } from 'lucide-react';
 
 interface SlideProps {
   onNext?: () => void;
@@ -136,23 +135,7 @@ export default function SkillsTogetherSlide({ onNext, onPrev }: SlideProps) {
           </p>
         </div>
 
-        {/* Navigation Arrows in bottom right */}
-        <div className="absolute bottom-12 right-12 flex flex-col gap-6 text-white/50">
-          <motion.button 
-            whileHover={{ scale: 1.2, color: '#fff' }}
-            onClick={onPrev}
-            className="p-2 transition-colors"
-          >
-            <ArrowUp size={28} strokeWidth={2} />
-          </motion.button>
-          <motion.button 
-            whileHover={{ scale: 1.2, color: '#fff' }}
-            onClick={onNext}
-            className="p-2 transition-colors"
-          >
-            <ArrowDown size={28} strokeWidth={2} />
-          </motion.button>
-        </div>
+
       </div>
     </div>
   );
