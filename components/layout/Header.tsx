@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { HiMenuAlt3 } from "react-icons/hi";
 import { IoCloseOutline } from "react-icons/io5";
@@ -18,16 +20,74 @@ export default function Header({
   menuOpen,
   onToggleMenu,
   variant = "default",
-  hidden = false,
+  hidden,
 }: HeaderProps) {
+  const pathname = usePathname();
+  const [scrollHidden, setScrollHidden] = useState(false);
+  const lastScrollYRef = useRef(0);
+
+  useEffect(() => {
+    setScrollHidden(false);
+    lastScrollYRef.current = 0;
+  }, [pathname]);
+
+  useEffect(() => {
+    if (menuOpen || pathname === "/") {
+      setScrollHidden(false);
+      return;
+    }
+
+    const threshold = 6;
+    const topThreshold = 24;
+
+    lastScrollYRef.current =
+      window.scrollY || document.documentElement.scrollTop || 0;
+
+    const handleScroll = (event: Event) => {
+      const target = event.target;
+      const currentScrollY =
+        target instanceof Element &&
+        target !== document.documentElement &&
+        target !== document.body
+          ? target.scrollTop
+          : window.scrollY || document.documentElement.scrollTop || 0;
+
+      const delta = currentScrollY - lastScrollYRef.current;
+      if (Math.abs(delta) < threshold) return;
+
+      if (currentScrollY <= topThreshold) {
+        setScrollHidden(false);
+      } else {
+        setScrollHidden(delta > 0);
+      }
+
+      lastScrollYRef.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    document.addEventListener("scroll", handleScroll, {
+      passive: true,
+      capture: true,
+    });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [menuOpen, pathname]);
+
+  const shouldHide = !menuOpen && (hidden ?? scrollHidden);
+
   if (variant === "pill") {
     return (
       <>
         {/* ── MOBILE header bar (pill variant) ── */}
-        <div
-          className={`fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-transparent px-6 py-5 md:hidden ${
-            menuOpen ? "hidden" : ""
-          }`}
+        <motion.div
+          initial={false}
+          animate={{ y: shouldHide ? -96 : 0, opacity: shouldHide ? 0 : 1 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          style={{ pointerEvents: menuOpen || shouldHide ? "none" : "auto" }}
+          className="fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-transparent px-6 py-5 md:hidden"
         >
           <div className="text-sm font-light tracking-wide text-white">
             We Are <span className="font-bold">incial.</span>
@@ -39,7 +99,7 @@ export default function Header({
           >
             <HiMenuAlt3 className="text-2xl" />
           </button>
-        </div>
+        </motion.div>
 
         <AnimatePresence>
           {menuOpen && <MobileMenu isOpen={menuOpen} onClose={onToggleMenu} />}
@@ -49,8 +109,8 @@ export default function Header({
         <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{
-            y: menuOpen ? 100 : 0,
-            opacity: 1,
+            y: shouldHide ? -110 : menuOpen ? 100 : 0,
+            opacity: shouldHide ? 0 : 1,
             scale: menuOpen ? 0.95 : 1,
           }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -85,10 +145,12 @@ export default function Header({
   return (
     <>
       {/* ── MOBILE header bar ── */}
-      <div
-        className={`fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-transparent px-6 py-5 md:hidden ${
-          menuOpen ? "hidden" : ""
-        }`}
+      <motion.div
+        initial={false}
+        animate={{ y: shouldHide ? -96 : 0, opacity: shouldHide ? 0 : 1 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        style={{ pointerEvents: menuOpen || shouldHide ? "none" : "auto" }}
+        className="fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-transparent px-6 py-5 md:hidden"
       >
         <div className="text-sm font-light tracking-wide text-white">
           We Are <span className="font-bold">incial.</span>
@@ -100,7 +162,7 @@ export default function Header({
         >
           <HiMenuAlt3 className="text-2xl" />
         </button>
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {menuOpen && (
@@ -119,9 +181,9 @@ export default function Header({
       <motion.header
         initial={{ y: 0 }}
         animate={{
-          y: hidden ? -100 : menuOpen ? 100 : 0,
+          y: shouldHide ? -100 : menuOpen ? 100 : 0,
           scale: menuOpen ? 0.95 : 1,
-          opacity: hidden ? 0 : 1,
+          opacity: shouldHide ? 0 : 1,
         }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="fixed left-0 right-0 top-0 z-50 origin-top items-center justify-between px-10 pb-4 pt-10 md:px-20 hidden md:flex"

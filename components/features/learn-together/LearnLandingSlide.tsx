@@ -1,7 +1,6 @@
 'use client';
 
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const ringClass = 'absolute rounded-full border-[1px] border-white/14 pointer-events-none';
@@ -275,21 +274,7 @@ export default function LearnLandingSlide() {
         </motion.div>
       )}
 
-      {/* Arrow down indicator */}
-      {reduce ? (
-        <div className="absolute bottom-[clamp(1.2rem,2vw,2rem)] right-[clamp(1.2rem,2vw,2.2rem)] z-20 text-white/90">
-          <ArrowDown size={26} strokeWidth={1.8} />
-        </div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.7, duration: 0.5 }}
-          className="absolute bottom-[clamp(1.2rem,2vw,2rem)] right-[clamp(1.2rem,2vw,2.2rem)] z-20 text-white/90"
-        >
-          <ArrowDown size={26} strokeWidth={1.8} />
-        </motion.div>
-      )}
+
     </section>
   );
 }

@@ -57,7 +57,7 @@ export default function LogoScreen({
 
       <div 
         className={sizeMode === "mobile" 
-          ? "relative flex h-full w-full items-center justify-center" 
+          ? "relative flex h-full w-full items-center justify-center scale-[1.35]" 
           : "relative flex h-80 w-80 items-center justify-center md:h-[32rem] md:w-[32rem] lg:h-[40rem] lg:w-[40rem]"
         }
       >

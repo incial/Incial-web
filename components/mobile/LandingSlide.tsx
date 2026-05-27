@@ -23,16 +23,24 @@ const navTargets: Record<string, string> = {
 
 // Memoized CTA Button component
 const CTAButton = memo(
-  ({ label, action, onClick }: { label: string; action: string; onClick: (action: string) => void }) => (
-    <motion.button
-      onClick={() => onClick(action)}
-      whileTap={{ scale: 0.98 }}
-      className="rounded-full border border-white/80 px-[24px] py-[11px] text-[12px] font-medium text-white transition-colors hover:bg-white hover:text-black active:bg-white active:text-black"
-      style={{ transform: 'translateZ(0)' }}
-    >
-      {label}
-    </motion.button>
-  )
+  ({ label, action, onClick }: { label: string; action: string; onClick: (action: string) => void }) => {
+    const formattedLabel = label.split(' ').map((word, index) => (
+      <span key={index} className="block">
+        {word}
+      </span>
+    ));
+
+    return (
+      <motion.button
+        onClick={() => onClick(action)}
+        whileTap={{ scale: 0.98 }}
+        className="flex-1 aspect-[1.4/1] rounded-full border border-white/80 flex flex-col items-center justify-center text-[12px] font-medium text-white transition-colors hover:bg-white hover:text-black active:bg-white active:text-black text-center leading-tight"
+        style={{ transform: 'translateZ(0)' }}
+      >
+        {formattedLabel}
+      </motion.button>
+    );
+  }
 );
 
 CTAButton.displayName = 'CTAButton';

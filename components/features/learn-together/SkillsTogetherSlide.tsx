@@ -2,7 +2,6 @@
 
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { ArrowUp, ArrowDown } from 'lucide-react';
 
 interface SlideProps {
   onNext?: () => void;
@@ -102,14 +101,14 @@ export default function SkillsTogetherSlide({ onNext, onPrev }: SlideProps) {
               <span className="whitespace-nowrap">Where Skills</span> <br />
               <motion.span 
                 animate={{ color: isTransitioned ? '#4ADE80' : '#FFFFFF' }}
-                transition={{ duration: 0.8, delay: isTransitioned ? 0.6 : 0 }}
+                transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                 className="inline-block"
               >
                 Are Built
               </motion.span> <br />
               <motion.span 
                 animate={{ color: isTransitioned ? '#FB7185' : '#FFFFFF' }}
-                transition={{ duration: 0.8, delay: isTransitioned ? 0.8 : 0 }}
+                transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                 className="inline-block"
               >
                 Together.
@@ -122,9 +121,9 @@ export default function SkillsTogetherSlide({ onNext, onPrev }: SlideProps) {
             <AnimatePresence>
               {isTransitioned && (
                 <motion.div
-                  initial={{ opacity: 0, x: 120 }}
+                  initial={{ opacity: 0, x: rightOffset - leftTarget }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 1, delay: 0.8 }}
+                  transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                   className="w-full max-w-[34rem]"
                 >
                   <p className="text-base sm:text-lg md:text-xl text-gray-200 leading-[1.5] font-medium text-center md:text-right">
@@ -154,23 +153,6 @@ export default function SkillsTogetherSlide({ onNext, onPrev }: SlideProps) {
           </p>
         </div>
 
-        {/* Navigation Arrows in bottom right */}
-        <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 flex flex-col gap-4 sm:gap-6 text-white/50">
-          <motion.button 
-            whileHover={{ scale: 1.2, color: '#fff' }}
-            onClick={onPrev}
-            className="p-2 transition-colors"
-          >
-            <ArrowUp size={28} strokeWidth={2} />
-          </motion.button>
-          <motion.button 
-            whileHover={{ scale: 1.2, color: '#fff' }}
-            onClick={onNext}
-            className="p-2 transition-colors"
-          >
-            <ArrowDown size={28} strokeWidth={2} />
-          </motion.button>
-        </div>
       </div>
     </div>
   );
