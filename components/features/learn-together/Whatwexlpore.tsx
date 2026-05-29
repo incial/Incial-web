@@ -38,8 +38,8 @@ const Whatwexlpore = ({ onNext, onPrev }: SlideProps) => {
         <div className="relative mt-10 flex w-full max-w-[640px] items-center justify-center">
           <AnimatePresence>
             {showCircle && (
-                <motion.svg
-                className="h-[360px] w-[360px] sm:h-[420px] sm:w-[420px] lg:h-[480px] lg:w-[480px]"
+              <motion.svg
+                className="h-[320px] w-[320px] sm:h-[360px] sm:w-[360px]"
                 viewBox="0 0 360 360"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -49,7 +49,7 @@ const Whatwexlpore = ({ onNext, onPrev }: SlideProps) => {
                 <motion.circle
                   cx="180"
                   cy="180"
-                  r="60"
+                  r="44"
                   stroke="rgba(115, 210, 140, 0.75)"
                   strokeWidth="2"
                   fill="none"
@@ -61,7 +61,7 @@ const Whatwexlpore = ({ onNext, onPrev }: SlideProps) => {
                 <motion.circle
                   cx="180"
                   cy="180"
-                  r="150"
+                  r="120"
                   stroke="rgba(115, 210, 140, 0.65)"
                   strokeWidth="2"
                   fill="none"
@@ -78,7 +78,7 @@ const Whatwexlpore = ({ onNext, onPrev }: SlideProps) => {
                   stroke="rgba(115, 210, 140, 0.75)"
                   strokeWidth="2"
                   initial={{ opacity: 0 }}
-                  animate={{ y1: 224, y2: 300, opacity: 1 }}
+                  animate={{ y1: 300, y2: 6000, opacity: 1 }}
                   transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.28 }}
                 />
               </motion.svg>

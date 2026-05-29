@@ -8,13 +8,22 @@ import SkillsTogetherSlide from './SkillsTogetherSlide';
 import Itstatedwith from "./itstartedwith";
 import { useCallback, useEffect, useRef } from 'react';
 import Whatwexlpore from './Whatwexlpore';
+import Explore1 from './Explore1';
+import Notjustech from './Notjustech';
+import Itsaboutbuild from './Itsaboutbuild';
+import weDont from './Wedont';
+import Wedont from './Wedont';
+import Ourapproach from './OurApproach';
+import ReadyToStartBuilding from './ReadyToStartBuilding';
+
+
 
 export default function LearnTogetherPage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [slide, setSlide] = useState(0);
 
-  const goNext = useCallback(() => setSlide((s) => Math.min(3, s + 1)), []);
+  const goNext = useCallback(() => setSlide((s) => Math.min(9, s + 1)), []);
   const goPrev = useCallback(() => setSlide((s) => Math.max(0, s - 1)), []);
 
   // Cooldown to avoid overly-sensitive scroll triggering
@@ -119,6 +128,14 @@ export default function LearnTogetherPage() {
         {slide === 1 && <SkillsTogetherSlide onNext={goNext} onPrev={goPrev} />}
         {slide === 2 && <Itstatedwith onNext={goNext} onPrev={goPrev} />}
         {slide === 3 && <Whatwexlpore onNext={goNext} onPrev={goPrev} />}
+        {slide === 4 && <Explore1 onNext={goNext} onPrev={goPrev} />}
+        {slide === 5 && <Notjustech onNext={goNext} onPrev={goPrev} />}
+        {slide === 6 && <Itsaboutbuild onNext={goNext} onPrev={goPrev} />}
+        {slide === 7 && <Wedont onNext={goNext} onPrev={goPrev} />}
+          {slide === 8 && <Ourapproach onNext={goNext} onPrev={goPrev} />}
+          {slide === 9 && <ReadyToStartBuilding onNext={goNext} onPrev={goPrev} />}
+
+
 
         {/* Placeholder for third slide */}
 
