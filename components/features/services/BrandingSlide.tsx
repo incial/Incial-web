@@ -8,13 +8,13 @@ export default function BrandingSlide() {
   } as const;
 
   const mobileBrandingTextStyle = {
-    fontSize: "clamp(0.5rem, 1.2vw, 0.64rem)",
+    fontSize: "clamp(0.38rem, 0.9vw, 0.48rem)",
     lineHeight: 1,
     letterSpacing: "0.01em",
   } as const;
 
   const desktopBrandingTextStyle = {
-    fontSize: "clamp(0.56rem, 0.72vw, 0.64rem)",
+    fontSize: "clamp(0.42rem, 0.54vw, 0.5rem)",
     lineHeight: 1,
   } as const;
 
@@ -36,7 +36,7 @@ export default function BrandingSlide() {
       <div className="relative flex items-center justify-center">
         {/* Main Circle Group */}
         <div
-          className="relative flex h-[70vmin] w-[70vmin] translate-x-[-36%] translate-y-[20%] items-center justify-center md:h-[60vmin] md:w-[60vmin] md:translate-x-[-75%] lg:h-[50vmin] lg:w-[50vmin] lg:translate-x-[-85%]"
+          className="relative flex h-[70vmin] w-[70vmin] translate-x-[-42%] translate-y-[20%] items-center justify-center md:h-[60vmin] md:w-[60vmin] md:translate-x-[-80%] lg:h-[50vmin] lg:w-[50vmin] lg:translate-x-[-92%]"
         >
           {/* Inner Thin Circle */}
           <div
@@ -44,7 +44,7 @@ export default function BrandingSlide() {
             style={circleBorderStyle}
           />
 
-          <motion.div className="absolute inset-[-12vmin] md:inset-[-12vmin]">
+          <motion.div className="absolute inset-[-25%]">
             {/* Mobile layout aligned like desktop geometry */}
             <svg
               className="h-full w-full md:hidden"
@@ -54,7 +54,7 @@ export default function BrandingSlide() {
               <defs>
                 <path
                   id="brandingHeadingPathMobile"
-                  d="M 14, 50 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0"
+                  d="M 15, 50 a 35,35 0 1,1 70,0 a 35,35 0 1,1 -70,0"
                   transform="rotate(-90 50 50)"
                 />
               </defs>
@@ -76,16 +76,16 @@ export default function BrandingSlide() {
                 className="uppercase font-medium fill-blue-300"
                 style={{ textAnchor: "start", dominantBaseline: "middle" }}
               >
-                <text x="86" y="50" transform="rotate(-18 50 50)" style={mobileSubTextStyle}>
+                <text x="92" y="50" transform="rotate(-18 50 50)" style={mobileSubTextStyle}>
                   BRANDING
                 </text>
-                <text x="86" y="50" transform="rotate(-6 50 50)" style={mobileSubTextStyle}>
+                <text x="92" y="50" transform="rotate(-6 50 50)" style={mobileSubTextStyle}>
                   SOCIAL MEDIA MANAGEMENT
                 </text>
-                <text x="86" y="50" transform="rotate(6 50 50)" style={mobileSubTextStyle}>
+                <text x="92" y="50" transform="rotate(6 50 50)" style={mobileSubTextStyle}>
                   DIGITAL MARKETING
                 </text>
-                <text x="86" y="50" transform="rotate(18 50 50)" style={mobileSubTextStyle}>
+                <text x="92" y="50" transform="rotate(18 50 50)" style={mobileSubTextStyle}>
                   SEO & DIGITAL ADS
                 </text>
               </g>
@@ -100,13 +100,13 @@ export default function BrandingSlide() {
               <defs>
                 <path
                   id="textPathDesktop"
-                  d="M 14, 50 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0"
+                  d="M 15, 50 a 35,35 0 1,1 70,0 a 35,35 0 1,1 -70,0"
                   transform="rotate(-90 50 50)"
                 />
               </defs>
               <text
                 className="font-bold fill-white tracking-tighter"
-                style={{ ...desktopBrandingTextStyle, transform: "translateY(-7px)" }}
+                style={desktopBrandingTextStyle}
               >
                 <textPath
                   href="#textPathDesktop"
@@ -121,16 +121,16 @@ export default function BrandingSlide() {
                 className="uppercase font-medium fill-blue-300"
                 style={{ textAnchor: "start", dominantBaseline: "middle" }}
               >
-                <text x="86" y="50" transform="rotate(-18 50 50)" style={desktopSubTextStyle}>
+                <text x="92" y="50" transform="rotate(-18 50 50)" style={desktopSubTextStyle}>
                   BRANDING
                 </text>
-                <text x="86" y="50" transform="rotate(-6 50 50)" style={desktopSubTextStyle}>
+                <text x="92" y="50" transform="rotate(-6 50 50)" style={desktopSubTextStyle}>
                   SOCIAL MEDIA MANAGEMENT
                 </text>
-                <text x="86" y="50" transform="rotate(6 50 50)" style={desktopSubTextStyle}>
+                <text x="92" y="50" transform="rotate(6 50 50)" style={desktopSubTextStyle}>
                   DIGITAL MARKETING
                 </text>
-                <text x="86" y="50" transform="rotate(18 50 50)" style={desktopSubTextStyle}>
+                <text x="92" y="50" transform="rotate(18 50 50)" style={desktopSubTextStyle}>
                   SEO & DIGITAL ADS
                 </text>
               </g>

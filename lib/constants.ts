@@ -29,5 +29,6 @@ export const socialLinks = [
   { label: "LinkedIn", href: "https://www.linkedin.com/company/incial/" },
   { label: "Instagram", href: "https://www.instagram.com/incial.in" },
   { label: "Facebook", href: "https://www.facebook.com/profile.php?id=61571585243145" },
+  { label: "X", href: "https://x.com/incial" },
   { label: "WhatsApp", href: "https://wa.me/+919074549901" },
 ] as const;

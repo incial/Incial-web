@@ -6,15 +6,16 @@ import {
   FaFacebookF,
   FaWhatsapp,
 } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
 
 import { socialLinks } from "@/lib/constants";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LinkedIn: FaLinkedinIn,
-
   Instagram: FaInstagram,
   Facebook: FaFacebookF,
   WhatsApp: FaWhatsapp,
+  X: FaXTwitter,
 };
 
 interface SocialLinksProps {

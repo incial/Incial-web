@@ -12,13 +12,13 @@ interface BrandingSlideProps {
 
 const BrandingSlideComponent = ({ id, onInView }: BrandingSlideProps) => {
   const brandingTextStyle = {
-    fontSize: '23px',
+    fontSize: '27px',
     lineHeight: 1,
     letterSpacing: '0.04em',
   } as const;
 
   const subTextStyle = {
-    fontSize: '10.5px',
+    fontSize: '12.5px',
     lineHeight: 1,
     letterSpacing: '0.08em',
   } as const;
@@ -39,13 +39,14 @@ const BrandingSlideComponent = ({ id, onInView }: BrandingSlideProps) => {
   return (
     <MobileSlide id={id} onInView={onInView}>
       <div className="relative h-full w-full overflow-hidden text-white">
-        <MobileArtboard baseWidth={390} baseHeight={620}>
+        <MobileArtboard baseWidth={390} baseHeight={620} clipContent={false}>
           <motion.svg
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 h-full w-full"
             viewBox="0 0 390 780"
+            style={{ overflow: 'visible' }}
             fill="none"
             aria-hidden="true"
           >

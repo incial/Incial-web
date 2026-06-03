@@ -37,86 +37,6 @@ export default function RotatingEarth({
 
     const path = d3.geoPath().projection(projection).context(ctx);
 
-    const pointInPolygon = (
-      point: [number, number],
-      polygon: number[][],
-    ): boolean => {
-      const [x, y] = point;
-      let inside = false;
-
-      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-        const [xi, yi] = polygon[i];
-        const [xj, yj] = polygon[j];
-
-        if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
-          inside = !inside;
-        }
-      }
-
-      return inside;
-    };
-
-    const pointInFeature = (point: [number, number], feature: any): boolean => {
-      const geometry = feature.geometry;
-
-      if (geometry.type === "Polygon") {
-        const coordinates = geometry.coordinates;
-        // Check if point is in outer ring
-        if (!pointInPolygon(point, coordinates[0])) {
-          return false;
-        }
-        // Check if point is in any hole (inner rings)
-        for (let i = 1; i < coordinates.length; i++) {
-          if (pointInPolygon(point, coordinates[i])) {
-            return false; // Point is in a hole
-          }
-        }
-        return true;
-      } else if (geometry.type === "MultiPolygon") {
-        // Check each polygon in the MultiPolygon
-        for (const polygon of geometry.coordinates) {
-          // Check if point is in outer ring
-          if (pointInPolygon(point, polygon[0])) {
-            // Check if point is in any hole
-            let inHole = false;
-            for (let i = 1; i < polygon.length; i++) {
-              if (pointInPolygon(point, polygon[i])) {
-                inHole = true;
-                break;
-              }
-            }
-            if (!inHole) {
-              return true;
-            }
-          }
-        }
-        return false;
-      }
-
-      return false;
-    };
-
-    const generateDotsInPolygon = (feature: any, dotSpacing = 16) => {
-      const dots: [number, number][] = [];
-      const bounds = d3.geoBounds(feature);
-      const [[minLng, minLat], [maxLng, maxLat]] = bounds;
-
-      const stepSize = dotSpacing * 0.08;
-      let pointsGenerated = 0;
-
-      for (let lng = minLng; lng <= maxLng; lng += stepSize) {
-        for (let lat = minLat; lat <= maxLat; lat += stepSize) {
-          const point: [number, number] = [lng, lat];
-          if (pointInFeature(point, feature)) {
-            dots.push(point);
-            pointsGenerated++;
-          }
-        }
-      }
-
-      return dots;
-    };
-
     interface DotData {
       lng: number;
       lat: number;
@@ -169,30 +89,30 @@ export default function RotatingEarth({
         ctx.strokeStyle = "rgba(100, 150, 255, 0.6)";
         ctx.lineWidth = 1 * scaleFactor;
         ctx.stroke();
-
-        // Draw halftone dots
-        allDots.forEach((dot) => {
-          const projected = projection([dot.lng, dot.lat]);
-          if (
-            projected &&
-            projected[0] >= 0 &&
-            projected[0] <= containerSize &&
-            projected[1] >= 0 &&
-            projected[1] <= containerSize
-          ) {
-            ctx.beginPath();
-            ctx.arc(
-              projected[0],
-              projected[1],
-              1.2 * scaleFactor,
-              0,
-              2 * Math.PI,
-            );
-            ctx.fillStyle = "rgba(150, 200, 255, 0.8)";
-            ctx.fill();
-          }
-        });
       }
+
+      // Draw halftone dots
+      allDots.forEach((dot) => {
+        const projected = projection([dot.lng, dot.lat]);
+        if (
+          projected &&
+          projected[0] >= 0 &&
+          projected[0] <= containerSize &&
+          projected[1] >= 0 &&
+          projected[1] <= containerSize
+        ) {
+          ctx.beginPath();
+          ctx.arc(
+            projected[0],
+            projected[1],
+            1.2 * scaleFactor,
+            0,
+            2 * Math.PI,
+          );
+          ctx.fillStyle = "rgba(150, 200, 255, 0.8)";
+          ctx.fill();
+        }
+      });
     }
 
     const fitCanvasToContainer = () => {
@@ -207,7 +127,7 @@ export default function RotatingEarth({
       );
 
       containerSize = nextSize;
-      radius = nextSize / 2.5;
+      radius = nextSize / 2.1;
 
       const dpr = window.devicePixelRatio || 1;
       canvas.width = nextSize * dpr;
@@ -223,21 +143,19 @@ export default function RotatingEarth({
       try {
         setIsLoading(true);
 
-        const response = await fetch(
-          "https://raw.githubusercontent.com/martynafford/natural-earth-geojson/refs/heads/master/110m/physical/ne_110m_land.json",
-        );
-        if (!response.ok) throw new Error("Failed to load land data");
+        const [landRes, dotsRes] = await Promise.all([
+          fetch("https://raw.githubusercontent.com/martynafford/natural-earth-geojson/refs/heads/master/110m/physical/ne_110m_land.json"),
+          fetch("/data/land-dots.json")
+        ]);
 
-        landFeatures = await response.json();
+        if (!landRes.ok) throw new Error("Failed to load land outline data");
+        if (!dotsRes.ok) throw new Error("Failed to load precomputed land dots");
 
-        // Generate dots for all land features
-        let totalDots = 0;
-        landFeatures.features.forEach((feature: any) => {
-          const dots = generateDotsInPolygon(feature, 16);
-          dots.forEach(([lng, lat]) => {
-            allDots.push({ lng, lat, visible: true });
-            totalDots++;
-          });
+        landFeatures = await landRes.json();
+        const dotsData: [number, number][] = await dotsRes.json();
+
+        dotsData.forEach(([lng, lat]) => {
+          allDots.push({ lng, lat, visible: true });
         });
 
         render();

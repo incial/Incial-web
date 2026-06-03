@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -9,12 +9,14 @@ interface LandingIntroSequenceProps {
   playAnimation?: boolean;
   warmupOnly?: boolean;
   onComplete?: () => void;
+  onStageChange?: (stage: string) => void;
 }
 
 const landingWords = ['Brand', 'Business', 'Beyond'];
 const introStabilizationDelayMs = 180;
-const brandHoldMs = 2200;
-const otherHoldMs = 1200;
+const brandHoldMs = 1400;
+const businessHoldMs = 800;
+const beyondHoldMs = 2200;
 type SequenceStage = 'brand' | 'business' | 'beyond' | 'logo';
 const sequenceStages: SequenceStage[] = ['brand', 'business', 'beyond'];
 
@@ -28,7 +30,7 @@ const AnimatedWord = memo(function AnimatedWord({
   return (
     <motion.span
       aria-hidden={!isActive}
-      className="col-start-1 row-start-1 flex items-center justify-center whitespace-nowrap"
+      className="col-start-1 row-start-1 flex items-center justify-start whitespace-nowrap"
       initial={false}
       animate={{ opacity: isActive ? 1 : 0, y: isActive ? 0 : 10 }}
       transition={{
@@ -52,6 +54,7 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
   playAnimation = false,
   warmupOnly = false,
   onComplete,
+  onStageChange,
 }: LandingIntroSequenceProps) {
   const initializedRef = useRef(false);
   const cancelledRef = useRef(false);
@@ -62,6 +65,12 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
     warmupOnly || playAnimation ? 'brand' : 'logo',
   );
   const activeWordIndex = stage === 'brand' ? 0 : stage === 'business' ? 1 : stage === 'beyond' ? 2 : 0;
+
+  useEffect(() => {
+    if (onStageChange) {
+      onStageChange(stage);
+    }
+  }, [stage, onStageChange]);
 
   const clearTimers = useCallback(() => {
     if (introRafOneRef.current !== null) {
@@ -91,7 +100,12 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
 
     setStage(nextStage);
 
-    const holdTime = nextStage === 'brand' ? brandHoldMs : otherHoldMs;
+    const holdTime =
+      nextStage === 'brand'
+        ? brandHoldMs
+        : nextStage === 'business'
+        ? businessHoldMs
+        : beyondHoldMs;
     timerRef.current = window.setTimeout(() => {
       runSequence(stepIndex + 1);
     }, holdTime);
@@ -135,7 +149,7 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
 
   return (
     <div
-      className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black [contain:layout_paint_style]"
+      className="relative flex h-full w-full items-center justify-center overflow-hidden [contain:layout_paint_style]"
       style={{ 
         transform: 'translate3d(0, 0, 0)',
         willChange: 'transform, opacity',
@@ -159,25 +173,55 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
             }}
           >
             <div
-              className="font-light text-white/90"
+              className="flex flex-row items-center justify-center gap-x-2.5 font-light text-white whitespace-nowrap overflow-hidden"
               style={{
-                fontSize: 'clamp(2rem, 7.5vw, 4rem)',
+                fontSize: 'clamp(1.75rem, 6.5vw, 3.5rem)',
                 backfaceVisibility: 'hidden',
                 transform: 'translate3d(0, 0, 0)',
               }}
             >
-              We <span className="italic">Build</span>
-            </div>
-            <div
-              className="font-bold text-white"
-              style={{
-                fontSize: 'clamp(2rem, 7.5vw, 4rem)',
-                backfaceVisibility: 'hidden',
-                transform: 'translate3d(0, 0, 0)',
-              }}
-            >
+              <AnimatePresence mode="wait">
+                {stage !== 'beyond' ? (
+                  <motion.span
+                    key="prefix-we-build"
+                    initial={{ opacity: 1, x: 0 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: '-100%' }}
+                    transition={{
+                      duration: 0.5,
+                      ease: [0.25, 0.1, 0.25, 1.0],
+                    }}
+                    className="inline-block"
+                    style={{
+                      backfaceVisibility: 'hidden',
+                      transform: 'translate3d(0, 0, 0)',
+                    }}
+                  >
+                    We <span className="italic">Build</span>
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="prefix-and"
+                    initial={{ opacity: 0, x: '100%' }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: '-100%' }}
+                    transition={{
+                      duration: 0.5,
+                      ease: [0.25, 0.1, 0.25, 1.0],
+                    }}
+                    className="inline-block italic"
+                    style={{
+                      backfaceVisibility: 'hidden',
+                      transform: 'translate3d(0, 0, 0)',
+                    }}
+                  >
+                    And
+                  </motion.span>
+                )}
+              </AnimatePresence>
+
               <span
-                className="relative inline-grid min-w-[8ch] items-center justify-center"
+                className="relative inline-grid min-w-[6.5ch] items-center justify-start text-left"
                 style={{
                   contain: 'layout paint style',
                 }}

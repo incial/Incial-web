@@ -32,11 +32,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full w-full">
+    <html lang="en" className="h-full w-full" suppressHydrationWarning>
       <body
         suppressHydrationWarning
         className={`${poppins.variable} ${notoSans.variable} font-sans antialiased h-full w-full`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (sessionStorage.getItem('initial-load-done')) {
+                  document.documentElement.classList.add('initial-load-done');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
         <MarketingShell>{children}</MarketingShell>
       </body>
     </html>

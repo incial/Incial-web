@@ -11,7 +11,7 @@ interface IntroSlideProps {
 const IntroSlideComponent = ({ id, onInView }: IntroSlideProps) => {
   return (
     <MobileSlide id={id} onInView={onInView}>
-      <div className="w-full h-full flex flex-col items-start justify-center px-6 pb-32">
+      <div className="w-full h-full flex flex-col items-start justify-center px-6">
         {/* Main Heading */}
         <div className="space-y-0">
           <h2 className="text-4xl font-bold text-white leading-tight">

@@ -19,13 +19,28 @@ type Phase = "greetings" | (typeof ALL_PHASES)[number];
 
 const sectionVariants = {
   enter: (direction: number) => ({
-    y: direction > 0 ? "100vh" : "-100vh",
-    opacity: 0,
+    y: direction > 0 ? "100vh" : 0,
+    scale: direction > 0 ? 0.96 : 0.94,
+    opacity: direction > 0 ? 0.96 : 0.42,
+    borderTopLeftRadius: direction > 0 ? 40 : 0,
+    borderTopRightRadius: direction > 0 ? 40 : 0,
+    zIndex: direction > 0 ? 10 : 0,
   }),
-  center: { y: 0, opacity: 1 },
+  center: {
+    y: 0,
+    scale: 1,
+    opacity: 1,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    zIndex: 5,
+  },
   exit: (direction: number) => ({
-    y: direction < 0 ? "100vh" : "-100vh",
-    opacity: 0,
+    y: direction > 0 ? 0 : "100vh",
+    scale: direction > 0 ? 0.94 : 0.96,
+    opacity: direction > 0 ? 0.42 : 0.96,
+    borderTopLeftRadius: direction > 0 ? 0 : 40,
+    borderTopRightRadius: direction > 0 ? 0 : 40,
+    zIndex: direction > 0 ? 0 : 10,
   }),
 };
 
@@ -37,6 +52,7 @@ export default function Home() {
   const [greetingIndex, setGreetingIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeHash, setActiveHash] = useState("");
   const [scrollSectionStartAtEnd, setScrollSectionStartAtEnd] = useState(false);
   const [hasCompletedInitialCrawl, setHasCompletedInitialCrawl] =
     useState(false);
@@ -87,6 +103,20 @@ export default function Home() {
   useEffect(() => {
     if (phase !== "greetings") return;
 
+    if (sessionStorage.getItem("initial-load-done")) {
+      const hash = window.location.hash.replace("#", "");
+      setActiveHash(hash);
+      if (hash === "services") {
+        setPhase("scrolling");
+      } else if (hash && enabledSections.includes(hash)) {
+        setPhase(hash as Phase);
+      } else {
+        setPhase("scrolling");
+      }
+      setHasCompletedInitialCrawl(true);
+      return;
+    }
+
     if (greetingIndex < greetings.length - 1) {
       const timer = setTimeout(() => setGreetingIndex((prev) => prev + 1), 500);
       return () => clearTimeout(timer);
@@ -94,9 +124,13 @@ export default function Home() {
 
     const timer = setTimeout(() => {
       setDirection(1);
+      sessionStorage.setItem("initial-load-done", "true");
 
       const hash = window.location.hash.replace("#", "");
-      if (hash && enabledSections.includes(hash)) {
+      setActiveHash(hash);
+      if (hash === "services") {
+        setPhase("scrolling");
+      } else if (hash && enabledSections.includes(hash)) {
         setPhase(hash as Phase);
       } else {
         setPhase("scrolling");
@@ -110,7 +144,12 @@ export default function Home() {
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.replace("#", "");
-      if (hash && enabledSections.includes(hash)) {
+      setActiveHash(hash);
+      if (hash === "services") {
+        setPhase("scrolling");
+        setDirection(1);
+        setMenuOpen(false); // Close menu if we navigated from NavMenu
+      } else if (hash && enabledSections.includes(hash)) {
         setPhase(hash as Phase);
         setDirection(1);
         setMenuOpen(false); // Close menu if we navigated from NavMenu
@@ -159,7 +198,7 @@ export default function Home() {
           }}
           className="relative origin-top overflow-hidden bg-black text-white"
         >
-          <AnimatePresence mode="wait" custom={direction}>
+          <AnimatePresence mode="popLayout" custom={direction}>
             {phase === "scrolling" && (
               <motion.div
                 key="scroll"
@@ -169,8 +208,10 @@ export default function Home() {
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full h-screen overflow-hidden"
               >
                 <ScrollSection
+                  activeHash={activeHash}
                   startAtEnd={scrollSectionStartAtEnd}
                   skipAnimation={hasCompletedInitialCrawl}
                   onScrollComplete={() => {
@@ -200,6 +241,7 @@ export default function Home() {
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full h-screen overflow-hidden"
               >
                 <TrustSection
                   onBack={() => {
@@ -227,6 +269,7 @@ export default function Home() {
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full h-screen overflow-hidden"
               >
                 <ClientSection
                   onBack={() => goBack("client")}
@@ -250,6 +293,7 @@ export default function Home() {
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full h-screen overflow-hidden"
               >
                 <ContactSection onBack={() => goBack("contact")} />
               </motion.div>

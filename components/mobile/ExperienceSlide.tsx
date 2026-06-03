@@ -30,7 +30,7 @@ export function ExperienceSlide({ id, onInView }: ExperienceSlideProps) {
             className="absolute text-white font-semibold leading-[0.95]"
             style={{
               left: '62px',
-              top: '290px',
+              top: '190px',
               fontSize: '36px',
               letterSpacing: '-0.01em',
             }}
@@ -45,7 +45,7 @@ export function ExperienceSlide({ id, onInView }: ExperienceSlideProps) {
             className="absolute flex flex-col text-[#4FA0FF] font-medium"
             style={{
               left: '52px',
-              top: '480px',
+              top: '360px',
               fontSize: '12px',
               letterSpacing: '0.02em',
             }}

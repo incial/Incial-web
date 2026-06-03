@@ -45,47 +45,48 @@ const ClientsSlideComponent = ({ id, onInView }: ClientsSlideProps) => {
 
   return (
     <MobileSlide id={id} onInView={onInView}>
-      <div className="h-full w-full overflow-y-auto bg-black px-6 pb-16 pt-6 text-white [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="mb-4 text-center text-[14px] font-normal italic text-white/85">
-          {data?.headerText || 'Some of Our Awesome Clients:'}
-        </div>
-
-        <div className="relative mx-auto w-full max-w-[286px]">
-          <div className="grid grid-cols-2 gap-1.5">
-            <AnimatePresence>
-              {visibleClients.map((client, index) => (
-                <motion.div
-                  key={client.id}
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ 
-                    opacity: 0, 
-                    scale: 0.92,
-                    transition: {
-                      duration: 0.2,
-                      delay: index < INITIAL_COUNT ? 0 : (clients.length - 1 - index) * 0.03,
-                      ease: [0.22, 1, 0.36, 1],
-                    }
-                  }}
-                  transition={{
-                    duration: 0.3,
-                    delay: index < INITIAL_COUNT ? 0 : (index - INITIAL_COUNT) * 0.04,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  className="flex h-[58px] items-center justify-center overflow-hidden rounded-[4px] bg-white px-2"
-                >
-                  <Image
-                    src={client.src}
-                    alt={client.name}
-                    width={160}
-                    height={30}
-                    className="h-auto w-auto max-h-[30px] object-contain"
-                    unoptimized
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
+      <div className="h-full w-full overflow-y-auto bg-black flex flex-col justify-center items-center px-6 pb-6 pt-6 text-white [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="w-full flex flex-col items-center">
+          <div className="mb-6 text-center text-[17px] font-normal italic text-white/85">
+            {data?.headerText || 'Some of Our Awesome Clients:'}
           </div>
+
+          <div className="relative mx-auto w-full max-w-[320px]">
+            <div className="grid grid-cols-2 gap-2.5">
+              <AnimatePresence>
+                {visibleClients.map((client, index) => (
+                  <motion.div
+                    key={client.id}
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ 
+                      opacity: 0, 
+                      scale: 0.92,
+                      transition: {
+                        duration: 0.2,
+                        delay: index < INITIAL_COUNT ? 0 : (clients.length - 1 - index) * 0.03,
+                        ease: [0.22, 1, 0.36, 1],
+                      }
+                    }}
+                    transition={{
+                      duration: 0.3,
+                      delay: index < INITIAL_COUNT ? 0 : (index - INITIAL_COUNT) * 0.04,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="flex h-[68px] items-center justify-center overflow-hidden rounded-[4px] bg-white px-2"
+                  >
+                    <Image
+                      src={client.src}
+                      alt={client.name}
+                      width={160}
+                      height={30}
+                      className="h-auto w-auto max-h-[36px] object-contain"
+                      unoptimized
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
 
           {clients.length > INITIAL_COUNT && (
             <button
@@ -124,7 +125,8 @@ const ClientsSlideComponent = ({ id, onInView }: ClientsSlideProps) => {
           )}
         </div>
       </div>
-    </MobileSlide>
+    </div>
+  </MobileSlide>
   );
 };
 

@@ -15,7 +15,7 @@ export default function GreetingsOverlay({
       key="greetings-overlay"
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black greetings-preloader"
     >
       <AnimatePresence mode="wait">
         <motion.div

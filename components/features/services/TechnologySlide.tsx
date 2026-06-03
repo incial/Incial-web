@@ -5,36 +5,39 @@ import { motion } from "framer-motion";
 export default function TechnologySlide() {
   return (
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
-      <div className="relative w-full h-full max-w-6xl flex items-center justify-center">
-
-        {/* ✅ CURVED TEXT (FIXED) */}
-        <div
-          className="absolute w-full flex items-center justify-center pointer-events-none"
-          style={{
-            top: "20%",
-            left: "-15%",
-            height: "55vmin",
-          }}
-        >
-          <svg viewBox="0 0 1000 500" className="w-[120%] h-full">
+      {/* ✅ CURVED TEXT (FIXED) - Positioned relative to the viewport to match the global circle */}
+      <div
+        className="absolute pointer-events-none rounded-full"
+        style={{
+          top: "-130vh",
+          left: "40%",
+          transform: "translateX(-50%)",
+          width: "180vh",
+          height: "180vh",
+        }}
+      >
+        <svg viewBox="0 0 1000 1000" className="w-full h-full overflow-visible">
+          <defs>
             <path
-              id="techCurve"
-              d="M 100,250 Q 500,380 900,250" // smoother curve
-              fill="transparent"
+              id="techCurveCircle"
+              d="M 35,500 A 465,465 0 0,0 965,500"
             />
-            <text
-              fontWeight="bold"
-              fill="white"
-              letterSpacing="-2"
-              dominantBaseline="middle"
-              style={{ fontSize: "clamp(3rem, 9vmin, 7rem)" }} // ✅ fixed
-            >
-              <textPath href="#techCurve" startOffset="50%" textAnchor="middle">
-                Technology
-              </textPath>
-            </text>
-          </svg>
-        </div>
+          </defs>
+          <text
+            fontWeight="bold"
+            fill="white"
+            letterSpacing="-2"
+            dominantBaseline="middle"
+            style={{ fontSize: "clamp(3rem, 9vmin, 7rem)" }}
+          >
+            <textPath href="#techCurveCircle" startOffset="50%" textAnchor="middle">
+              Technology
+            </textPath>
+          </text>
+        </svg>
+      </div>
+
+      <div className="relative w-full h-full max-w-6xl flex items-center justify-center">
 
         {/* ✅ SERVICES (FIXED POSITION) */}
         <div

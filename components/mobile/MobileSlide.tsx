@@ -70,8 +70,10 @@ export const MobileSlide = memo(function MobileSlide({ children, id, onInView }:
     <div 
       ref={ref} 
       id={id} 
-      className="w-full h-[calc(100dvh-110px)] shrink-0 snap-start snap-always flex items-center justify-center"
+      className="w-full shrink-0 snap-start snap-always flex items-center justify-center"
       style={{
+        height: 'var(--slide-height, calc(100dvh - 76px))',
+        transition: 'height 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
         contain: 'layout style paint',
         transform: 'translateZ(0)',
         backfaceVisibility: 'hidden',

@@ -6,6 +6,7 @@ interface MobileArtboardProps {
   children: ReactNode;
   baseWidth?: number;
   baseHeight?: number;
+  clipContent?: boolean;
 }
 
 interface ArtboardLayout {
@@ -18,6 +19,7 @@ export const MobileArtboard = ({
   children,
   baseWidth = 390,
   baseHeight = 780,
+  clipContent = true,
 }: MobileArtboardProps) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState<ArtboardLayout>({
@@ -78,7 +80,7 @@ export const MobileArtboard = ({
   return (
     <div 
       ref={hostRef} 
-      className="relative h-full w-full overflow-hidden"
+      className={`relative h-full w-full ${clipContent ? 'overflow-hidden' : 'overflow-visible'}`}
       style={{ contain: 'layout style paint' }}
     >
       <div

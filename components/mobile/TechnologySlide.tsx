@@ -19,7 +19,7 @@ export function TechnologySlide({ id, onInView }: TechnologySlideProps) {
   return (
     <MobileSlide id={id} onInView={onInView}>
       <div className="relative h-full w-full overflow-hidden">
-        <MobileArtboard baseWidth={390} baseHeight={620}>
+        <MobileArtboard baseWidth={390} baseHeight={620} clipContent={false}>
           <div className="relative h-full w-full text-white">
           <motion.svg
             initial={{ opacity: 0 }}
@@ -27,12 +27,13 @@ export function TechnologySlide({ id, onInView }: TechnologySlideProps) {
             transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 h-full w-full"
             viewBox="0 0 390 780"
+            style={{ overflow: 'visible' }}
             fill="none"
             aria-hidden="true"
           >
 
             <defs>
-              <path id="techCurveMobile" d="M 195 -223 A 299 299 0 0 0 195 375 A 299 299 0 0 0 195 -223" />
+              <path id="techCurveMobile" d="M 195 -238 A 314 314 0 0 0 195 390 A 314 314 0 0 0 195 -238" />
             </defs>
 
             <motion.text
@@ -40,7 +41,7 @@ export function TechnologySlide({ id, onInView }: TechnologySlideProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               fill="white"
-              fontSize="24"
+              fontSize="34"
               fontWeight="700"
               letterSpacing="2"
             >
@@ -51,14 +52,14 @@ export function TechnologySlide({ id, onInView }: TechnologySlideProps) {
           </motion.svg>
 
           <div className="absolute top-[450px] w-full flex flex-col items-center">
-            <div className="flex flex-col items-center text-[#58A9FF] -rotate-[12deg]">
+            <div className="flex flex-col items-start text-[#58A9FF] -rotate-[12deg]">
               {technologyItems.map((item, index) => (
                 <motion.div
                   key={item}
                   initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.42 + index * 0.12, duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
-                  className={index === 0 ? 'text-[10.5px] font-medium uppercase tracking-[0.14em]' : 'mt-5 text-[10.5px] font-medium uppercase tracking-[0.14em]'}
+                  className={index === 0 ? 'text-[13px] font-medium uppercase tracking-[0.14em]' : 'mt-6 text-[13px] font-medium uppercase tracking-[0.14em]'}
                 >
                   {item}
                 </motion.div>

@@ -404,6 +404,7 @@ function TeamMemberCard({ member, delay }: { member: any; delay: number }) {
               sizes="(max-width: 640px) 160px, 247px"
               className={`object-cover ${member.objectPos || "object-top"} grayscale hover:grayscale-0 transition-all duration-500`}
               onError={() => setImgError(true)}
+              referrerPolicy="no-referrer"
             />
           </>
         )}

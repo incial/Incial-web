@@ -13,6 +13,7 @@ interface LandingSlideProps {
   id?: string;
   onInView?: (id: string) => void;
   onIntroComplete?: () => void;
+  onStageChange?: (stage: string) => void;
 }
 
 const navTargets: Record<string, string> = {
@@ -34,10 +35,10 @@ const CTAButton = memo(
       <motion.button
         onClick={() => onClick(action)}
         whileTap={{ scale: 0.98 }}
-        className="flex-1 aspect-[1.4/1] rounded-full border border-white/80 flex flex-col items-center justify-center text-[12px] font-medium text-white transition-colors hover:bg-white hover:text-black active:bg-white active:text-black text-center leading-tight"
+        className="rounded-full border border-white/80 flex items-center justify-center px-7 py-3.5 text-[12px] font-medium text-white whitespace-nowrap transition-colors hover:bg-white hover:text-black active:bg-white active:text-black text-center leading-tight"
         style={{ transform: 'translateZ(0)' }}
       >
-        {formattedLabel}
+        {label}
       </motion.button>
     );
   }
@@ -52,6 +53,7 @@ export const LandingSlide = memo(function LandingSlide({
   id,
   onInView,
   onIntroComplete,
+  onStageChange,
 }: LandingSlideProps) {
   const router = useRouter();
   const [showControls, setShowControls] = useState(!playLogoAnimation);
@@ -86,20 +88,19 @@ export const LandingSlide = memo(function LandingSlide({
 
   return (
     <MobileSlide id={id} onInView={onInView}>
-      <div className="w-full h-full flex flex-col items-center justify-between px-6 pb-8 pt-8" style={{ transform: 'translateZ(0)' }}>
-        {/* Post-preloader intro animation */}
-        <div className="flex flex-1 items-center justify-center w-full">
-          <div className="relative h-full w-full" style={{ contain: 'layout style paint' }}>
-            <LandingIntroSequence
-              key={sequenceKey}
-              playAnimation={playLogoAnimation}
-              warmupOnly={warmupOnly}
-              onComplete={handleSequenceComplete}
-            />
-          </div>
+      <div className="relative w-full h-full overflow-hidden" style={{ transform: 'translateZ(0)' }}>
+        {/* Post-preloader intro animation - takes full slide area to center correctly */}
+        <div className="absolute inset-0 w-full h-full flex items-center justify-center z-10">
+          <LandingIntroSequence
+            key={sequenceKey}
+            playAnimation={playLogoAnimation}
+            warmupOnly={warmupOnly}
+            onComplete={handleSequenceComplete}
+            onStageChange={onStageChange}
+          />
         </div>
 
-        {/* Bottom Section */}
+        {/* Bottom Section - absolute positioned to overlay without shifting layout */}
         <AnimatePresence>
           {showControls && (
             <motion.div
@@ -107,16 +108,18 @@ export const LandingSlide = memo(function LandingSlide({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-              className="w-[96%] max-w-[370px] mb-[45px] flex flex-col items-center"
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[90%] max-w-[320px] mb-[50px] flex flex-col items-center z-20"
               style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden' }}
             >
               {/* Divider */}
               <div className="h-[1px] w-full bg-white/40" />
 
               {/* CTA Buttons */}
-              <div className="flex w-full items-center justify-between pt-6 gap-2">
+              <div className="flex w-full items-center justify-center pt-4 gap-3">
                 <CTAButton label="About Us" action="about" onClick={handleCTA} />
                 <CTAButton label="Our Works" action="works" onClick={handleCTA} />
+              </div>
+              <div className="flex w-full items-center justify-center pt-3">
                 <CTAButton label="Our Products" action="products" onClick={handleCTA} />
               </div>
             </motion.div>

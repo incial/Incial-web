@@ -175,6 +175,7 @@ function SortableMemberFormCard({
 
 // ─── Sortable grid card (right preview) ──────────────────────────────────────
 function SortableTeamPreviewCard({ member }: { member: TeamMember }) {
+  const [imgError, setImgError] = useState(false);
   const {
     attributes,
     listeners,
@@ -191,6 +192,17 @@ function SortableTeamPreviewCard({ member }: { member: TeamMember }) {
     zIndex: isDragging ? 50 : undefined,
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((word) => word[0]?.toUpperCase() ?? "")
+      .join("");
+  };
+
+  const initials = getInitials(member.name || "");
+
   return (
     <div
       ref={setNodeRef}
@@ -199,8 +211,8 @@ function SortableTeamPreviewCard({ member }: { member: TeamMember }) {
       {...listeners}
       className="flex flex-col items-center text-center cursor-grab active:cursor-grabbing select-none touch-none group"
     >
-      <div className="w-16 h-16 rounded-full bg-[#d5d5d5] relative overflow-hidden mb-2 ring-2 ring-transparent group-hover:ring-white/30 transition-all">
-        {member.img && (
+      <div className="w-16 h-16 rounded-full bg-[#d5d5d5] relative overflow-hidden mb-2 ring-2 ring-transparent group-hover:ring-white/30 transition-all flex items-center justify-center">
+        {member.img && !imgError ? (
           <Image
             src={member.img}
             alt={member.name}
@@ -208,7 +220,13 @@ function SortableTeamPreviewCard({ member }: { member: TeamMember }) {
             sizes="64px"
             quality={60}
             className="object-cover pointer-events-none"
+            onError={() => setImgError(true)}
+            referrerPolicy="no-referrer"
           />
+        ) : (
+          <span className="text-black font-bold text-xs select-none">
+            {initials || "?"}
+          </span>
         )}
       </div>
       <p className="text-white text-xs font-semibold font-[Poppins,sans-serif] leading-tight">

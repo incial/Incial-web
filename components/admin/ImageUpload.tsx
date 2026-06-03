@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
   UploadCloud,
@@ -33,6 +33,11 @@ export default function ImageUpload({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [previewError, setPreviewError] = useState(false);
+
+  useEffect(() => {
+    setPreviewError(false);
+  }, [value]);
 
   // Simulated smooth progress bar tick
   const startProgress = () => {
@@ -278,15 +283,28 @@ export default function ImageUpload({
           ) : value ? (
             /* Preview state */
             <div className="relative group p-2">
-              <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-[#1e1e1e] bg-black">
-                <Image
-                  src={value}
-                  alt="Preview"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 300px"
-                  quality={60}
-                  className="object-contain object-center"
-                />
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-[#1e1e1e] bg-black flex items-center justify-center">
+                {!previewError ? (
+                  <Image
+                    src={value}
+                    alt="Preview"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 300px"
+                    quality={60}
+                    className="object-contain object-center"
+                    onError={() => setPreviewError(true)}
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-4 text-center">
+                    <span className="text-[#ff4444] text-xs font-semibold mb-1">
+                      Image load error
+                    </span>
+                    <span className="text-[#8e8e8e] text-[10px] max-w-[200px]">
+                      The image link has likely expired or is blocked.
+                    </span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button
                     type="button"
@@ -308,7 +326,7 @@ export default function ImageUpload({
               </div>
               <div className="mt-2 px-1">
                 <span
-                  className="text-xs text-[#8e8e8e] truncate block"
+                  className={`text-xs truncate block ${previewError ? 'text-[#ff4444]' : 'text-[#8e8e8e]'}`}
                   title={value}
                 >
                   {value}

@@ -6,7 +6,7 @@ import BrandingSlide from "@/components/features/services/BrandingSlide";
 import TechnologySlide from "@/components/features/services/TechnologySlide";
 import ExperienceSlide from "@/components/features/services/ExperienceSlide";
 
-const SLIDES = ["intro", "branding", "technology", "experience"] as const;
+const SLIDES = ["branding", "technology", "experience"] as const;
 
 interface ServicesSectionProps {
   onComplete?: () => void;
@@ -35,7 +35,7 @@ export default function ServicesSection({
           setCurrentSlide((prev) => prev + 1);
           setTimeout(() => {
             isScrolling.current = false;
-          }, 1500);
+          }, 800);
         } else if (onComplete) {
           // End of section, trigger parent transition
           onComplete();
@@ -48,7 +48,7 @@ export default function ServicesSection({
           setCurrentSlide((prev) => prev - 1);
           setTimeout(() => {
             isScrolling.current = false;
-          }, 1500);
+          }, 800);
         } else if (onBack) {
           onBack();
         }
@@ -74,7 +74,7 @@ export default function ServicesSection({
             setCurrentSlide((prev) => prev + 1);
             setTimeout(() => {
               isScrolling.current = false;
-            }, 1500);
+            }, 800);
           } else if (onComplete) {
             onComplete();
           }
@@ -86,7 +86,7 @@ export default function ServicesSection({
             setCurrentSlide((prev) => prev - 1);
             setTimeout(() => {
               isScrolling.current = false;
-            }, 1500);
+            }, 800);
           } else if (onBack) {
             onBack();
           }
@@ -103,7 +103,7 @@ export default function ServicesSection({
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [currentSlide]);
+  }, [currentSlide, onBack, onComplete]);
 
   const slideVariants = {
     enter: (direction: number) => ({
@@ -143,24 +143,15 @@ export default function ServicesSection({
       <motion.div
         className="absolute rounded-full border-2 border-white/80 pointer-events-none z-10"
         animate={
-          currentSlide === 1
+          currentSlide === 0
             ? "branding"
-            : currentSlide === 2
+            : currentSlide === 1
               ? "technology"
-              : currentSlide === 3
+              : currentSlide === 2
                 ? "experience"
-                : "intro"
+                : "branding"
         }
         variants={{
-          intro: {
-            left: "calc(100% - 210vh)",
-            top: "50%",
-            y: "100vh",
-            x: "0%",
-            width: "180vh",
-            height: "180vh",
-            opacity: 0,
-          },
           branding: {
             left: "calc(100% - 210vh)",
             top: "50%",
@@ -169,7 +160,7 @@ export default function ServicesSection({
             width: "180vh",
             height: "180vh",
             opacity: 1,
-            transition: { duration: 1, ease: [0.22, 1, 0.36, 1] },
+            transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
           },
           technology: {
             top: "-130vh",
@@ -179,7 +170,7 @@ export default function ServicesSection({
             width: "180vh",
             height: "180vh",
             opacity: 1,
-            transition: { duration: 1, ease: [0.22, 1, 0.36, 1] },
+            transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
           },
           experience: {
             top: "50%",
@@ -189,34 +180,14 @@ export default function ServicesSection({
             width: "160vh",
             height: "160vh",
             opacity: 1,
-            transition: { duration: 1, ease: [0.22, 1, 0.36, 1] },
+            transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
           },
         }}
-        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
       />
 
       <AnimatePresence custom={direction}>
         {currentSlide === 0 && (
-          <motion.div
-            key="intro"
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center z-10"
-          >
-            <h2 className="text-4xl font-bold text-white md:text-6xl">
-              Services That Make Magic Happen
-            </h2>
-            <p className="mt-4 text-xl text-white/80 italic md:text-2xl">
-              (And Seriously Grow Your Business)
-            </p>
-          </motion.div>
-        )}
-
-        {currentSlide === 1 && (
           <motion.div
             key="branding"
             custom={direction}
@@ -224,14 +195,14 @@ export default function ServicesSection({
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 z-20"
           >
             <BrandingSlide />
           </motion.div>
         )}
 
-        {currentSlide === 2 && (
+        {currentSlide === 1 && (
           <motion.div
             key="technology"
             custom={direction}
@@ -239,14 +210,14 @@ export default function ServicesSection({
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 z-30"
           >
             <TechnologySlide />
           </motion.div>
         )}
 
-        {currentSlide === 3 && (
+        {currentSlide === 2 && (
           <motion.div
             key="experience"
             custom={direction}
@@ -254,7 +225,7 @@ export default function ServicesSection({
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 z-40"
           >
             <ExperienceSlide />

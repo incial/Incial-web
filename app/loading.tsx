@@ -6,13 +6,22 @@ import { greetings } from "@/lib/constants";
 
 export default function Loading() {
   const [index, setIndex] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem("initial-load-done")) {
+      setIsInitialLoad(false);
+      return;
+    }
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % greetings.length);
     }, 500);
     return () => clearInterval(interval);
   }, []);
+
+  if (!isInitialLoad) {
+    return null;
+  }
 
   const currentGreeting = greetings[index];
   return (
