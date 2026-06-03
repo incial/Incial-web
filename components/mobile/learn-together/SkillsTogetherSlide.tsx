@@ -1,18 +1,20 @@
 'use client';
 
 import { MobileSlide } from '../MobileSlide';
-import DesktopLearnLandingSlide from '../../features/learn-together/LearnLandingSlide';
+import DesktopSkillsTogetherSlide from '../../features/learn-together/SkillsTogetherSlide';
 
 interface SlideProps {
   id?: string;
   onInView?: (id: string) => void;
+  onNext?: () => void;
+  onPrev?: () => void;
 }
 
-export const LearnLandingSlide = ({ id, onInView }: SlideProps) => {
+export const SkillsTogetherSlide = ({ id, onInView, onNext, onPrev }: SlideProps) => {
   return (
     <MobileSlide id={id} onInView={onInView}>
       <div className="h-full w-full origin-top scale-[0.9] sm:scale-100">
-        <DesktopLearnLandingSlide />
+        <DesktopSkillsTogetherSlide onNext={onNext} onPrev={onPrev} />
       </div>
     </MobileSlide>
   );

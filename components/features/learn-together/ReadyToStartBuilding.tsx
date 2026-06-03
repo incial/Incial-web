@@ -6,9 +6,10 @@ import { ArrowUp, ArrowDown, Search, Wrench, Sparkles } from 'lucide-react';
 interface SlideProps {
   onNext?: () => void;
   onPrev?: () => void;
+  hideNav?: boolean;
 }
 
-const ReadyToStartBuilding = ({ onPrev }: SlideProps) => {
+const ReadyToStartBuilding = ({ onPrev, hideNav }: SlideProps) => {
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-black font-['Poppins',sans-serif] text-white">
       {/* Left Blue Border */}
@@ -22,7 +23,7 @@ const ReadyToStartBuilding = ({ onPrev }: SlideProps) => {
           transition={{ duration: 0.7 }}
           className="text-center"
         >
-          <h1 className="text-[56px] font-semibold italic tracking-[-0.04em] text-white">
+          <h1 className="text-[clamp(2.2rem,7vw,3.5rem)] font-semibold italic tracking-[-0.04em] text-white">
             Ready to Start Building?
           </h1>
 
@@ -88,16 +89,18 @@ const ReadyToStartBuilding = ({ onPrev }: SlideProps) => {
       </div>
 
       {/* Bottom Right Arrow */}
-      <div className="absolute bottom-6 right-6">
-        <motion.button
-          whileHover={{ scale: 1.12 }}
-          whileTap={{ scale: 0.94 }}
-          onClick={onPrev}
-          className="text-white/80 transition"
-        >
-          <ArrowUp size={18} strokeWidth={2} />
-        </motion.button>
-      </div>
+      {!hideNav && (
+        <div className="absolute bottom-6 right-6">
+          <motion.button
+            whileHover={{ scale: 1.12 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={onPrev}
+            className="text-white/80 transition"
+          >
+            <ArrowUp size={18} strokeWidth={2} />
+          </motion.button>
+        </div>
+      )}
     </div>
   );
 };
