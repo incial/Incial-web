@@ -6,9 +6,10 @@ import { ArrowUp, ArrowDown } from 'lucide-react';
 interface SlideProps {
   onNext?: () => void;
   onPrev?: () => void;
+  hideNav?: boolean;
 }
 
-const Itsaboutbuild = ({ onNext, onPrev }: SlideProps) => {
+const Itsaboutbuild = ({ onNext, onPrev, hideNav }: SlideProps) => {
   return (
     <div className="relative flex min-h-screen w-full overflow-hidden bg-black font-['Poppins',sans-serif] text-white">
       {/* Left Blue Line */}
@@ -72,25 +73,27 @@ const Itsaboutbuild = ({ onNext, onPrev }: SlideProps) => {
       </div>
 
       {/* Navigation */}
-      <div className="absolute bottom-8 right-8 z-20 flex flex-col gap-5 text-white/70">
-        <motion.button
-          whileHover={{ scale: 1.15 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={onPrev}
-          className="transition"
-        >
-          <ArrowUp size={18} strokeWidth={2} />
-        </motion.button>
+      {!hideNav && (
+        <div className="absolute bottom-8 right-8 z-20 flex flex-col gap-5 text-white/70">
+          <motion.button
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onPrev}
+            className="transition"
+          >
+            <ArrowUp size={18} strokeWidth={2} />
+          </motion.button>
 
-        <motion.button
-          whileHover={{ scale: 1.15 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={onNext}
-          className="transition"
-        >
-          <ArrowDown size={18} strokeWidth={2} />
-        </motion.button>
-      </div>
+          <motion.button
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onNext}
+            className="transition"
+          >
+            <ArrowDown size={18} strokeWidth={2} />
+          </motion.button>
+        </div>
+      )}
     </div>
   );
 };

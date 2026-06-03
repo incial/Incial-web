@@ -6,9 +6,10 @@ import { ArrowUp, ArrowDown } from 'lucide-react';
 interface SlideProps {
   onNext?: () => void;
   onPrev?: () => void;
+  hideNav?: boolean;
 }
 
-const OurApproach = ({ onNext, onPrev }: SlideProps) => {
+const OurApproach = ({ onNext, onPrev, hideNav }: SlideProps) => {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-black font-['Poppins',sans-serif] text-white pl-10">
 
@@ -21,7 +22,7 @@ const OurApproach = ({ onNext, onPrev }: SlideProps) => {
         transition={{ duration: 0.7 }}
         className="absolute left-6 top-5 leading-[0.9]"
       >
-        <h1 className="text-[92px] font-bold tracking-[-0.06em] pt-[100px]">
+        <h1 className="text-[clamp(2.6rem,10vw,5.75rem)] font-bold tracking-[-0.06em] pt-[100px]">
           Our
           <br />
           Approach
@@ -117,25 +118,27 @@ const OurApproach = ({ onNext, onPrev }: SlideProps) => {
       </div>
 
       {/* Navigation */}
-      <div className="absolute right-5 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-5 text-white/70">
-        <motion.button
-          whileHover={{ scale: 1.15 }}
-          whileTap={{ scale: 0.94 }}
-          onClick={onPrev}
-          className="transition"
-        >
-          <ArrowUp size={18} />
-        </motion.button>
+      {!hideNav && (
+        <div className="absolute right-5 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-5 text-white/70">
+          <motion.button
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={onPrev}
+            className="transition"
+          >
+            <ArrowUp size={18} />
+          </motion.button>
 
-        <motion.button
-          whileHover={{ scale: 1.15 }}
-          whileTap={{ scale: 0.94 }}
-          onClick={onNext}
-          className="transition"
-        >
-          <ArrowDown size={18} />
-        </motion.button>
-      </div>
+          <motion.button
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={onNext}
+            className="transition"
+          >
+            <ArrowDown size={18} />
+          </motion.button>
+        </div>
+      )}
     </div>
   );
 };

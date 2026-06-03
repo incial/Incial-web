@@ -6,6 +6,7 @@ import { ArrowUp, ArrowDown, Search, Wrench, Sparkles } from 'lucide-react';
 interface SlideProps {
   onNext?: () => void;
   onPrev?: () => void;
+  hideNav?: boolean;
 }
 
 const cardTransition: Transition = {
@@ -14,7 +15,7 @@ const cardTransition: Transition = {
   damping: 16,
 };
 
-const Wedont = ({ onNext, onPrev }: SlideProps) => {
+const Wedont = ({ onNext, onPrev, hideNav }: SlideProps) => {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-black font-['Poppins',sans-serif] text-white">
       {/* Left Blue Line */}
@@ -25,7 +26,7 @@ const Wedont = ({ onNext, onPrev }: SlideProps) => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="text-[44px] font-semibold tracking-[-0.04em]"
+          className="text-[clamp(2rem,6vw,2.75rem)] font-semibold tracking-[-0.04em]"
         >
           We Don’t List Sessions.
         </motion.h1>
@@ -34,7 +35,7 @@ const Wedont = ({ onNext, onPrev }: SlideProps) => {
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className="mt-4 text-[32px] font-semibold tracking-[-0.03em]"
+          className="mt-4 text-[clamp(1.6rem,5vw,2rem)] font-semibold tracking-[-0.03em]"
         >
           We Design Journeys.
         </motion.h2>
@@ -153,25 +154,27 @@ const Wedont = ({ onNext, onPrev }: SlideProps) => {
       </motion.div>
 
       {/* Navigation */}
-      <div className="absolute bottom-7 right-7 z-30 flex flex-col gap-5 text-white/70">
-        <motion.button
-          whileHover={{ scale: 1.15 }}
-          whileTap={{ scale: 0.94 }}
-          onClick={onPrev}
-          className="transition"
-        >
-          <ArrowUp size={18} />
-        </motion.button>
+      {!hideNav && (
+        <div className="absolute bottom-7 right-7 z-30 flex flex-col gap-5 text-white/70">
+          <motion.button
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={onPrev}
+            className="transition"
+          >
+            <ArrowUp size={18} />
+          </motion.button>
 
-        <motion.button
-          whileHover={{ scale: 1.15 }}
-          whileTap={{ scale: 0.94 }}
-          onClick={onNext}
-          className="transition"
-        >
-          <ArrowDown size={18} />
-        </motion.button>
-      </div>
+          <motion.button
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={onNext}
+            className="transition"
+          >
+            <ArrowDown size={18} />
+          </motion.button>
+        </div>
+      )}
     </div>
   );
 };

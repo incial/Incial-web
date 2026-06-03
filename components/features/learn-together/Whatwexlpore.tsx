@@ -8,9 +8,10 @@ import { useEffect, useState } from 'react';
 interface SlideProps {
   onNext?: () => void;
   onPrev?: () => void;
+  hideNav?: boolean;
 }
 
-const Whatwexlpore = ({ onNext, onPrev }: SlideProps) => {
+const Whatwexlpore = ({ onNext, onPrev, hideNav }: SlideProps) => {
   const [showCircle, setShowCircle] = useState(false);
 
   const circleTraceTransitions: Transition = {
@@ -87,22 +88,24 @@ const Whatwexlpore = ({ onNext, onPrev }: SlideProps) => {
         </div>
       </div>
 
-      <div className="absolute bottom-6 right-6 flex flex-col gap-4 text-white/50">
-        <motion.button
-          whileHover={{ scale: 1.2, color: '#fff' }}
-          onClick={onPrev}
-          className="p-2 transition-colors"
-        >
-          <ArrowUp size={28} strokeWidth={2} />
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.2, color: '#fff' }}
-          onClick={onNext}
-          className="p-2 transition-colors"
-        >
-          <ArrowDown size={28} strokeWidth={2} />
-        </motion.button>
-      </div>
+      {!hideNav && (
+        <div className="absolute bottom-6 right-6 flex flex-col gap-4 text-white/50">
+          <motion.button
+            whileHover={{ scale: 1.2, color: '#fff' }}
+            onClick={onPrev}
+            className="p-2 transition-colors"
+          >
+            <ArrowUp size={28} strokeWidth={2} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.2, color: '#fff' }}
+            onClick={onNext}
+            className="p-2 transition-colors"
+          >
+            <ArrowDown size={28} strokeWidth={2} />
+          </motion.button>
+        </div>
+      )}
     </div>
   );
 };
