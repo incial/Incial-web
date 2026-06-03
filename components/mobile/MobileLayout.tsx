@@ -9,6 +9,7 @@ interface MobileLayoutProps {
   children: ReactNode;
   backgroundLayer?: ReactNode;
   scrollLocked?: boolean;
+  hideHeader?: boolean;
 }
 
 const MobileHeader = memo(function MobileHeader({
@@ -61,7 +62,7 @@ const MobileHeader = memo(function MobileHeader({
 
 MobileHeader.displayName = 'MobileHeader';
 
-export const MobileLayout = ({ children, backgroundLayer, scrollLocked = false }: MobileLayoutProps) => {
+export const MobileLayout = ({ children, backgroundLayer, scrollLocked = false, hideHeader = false }: MobileLayoutProps) => {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
@@ -165,7 +166,7 @@ export const MobileLayout = ({ children, backgroundLayer, scrollLocked = false }
       {/* Fixed Header */}
       <MobileHeader
         menuOpen={menuOpen}
-        hidden={headerHidden && !menuOpen && !scrollLocked}
+        hidden={hideHeader || (headerHidden && !menuOpen && !scrollLocked)}
         onToggleMenu={() => {
           setHeaderHidden(false);
           setMenuOpen(!menuOpen);
