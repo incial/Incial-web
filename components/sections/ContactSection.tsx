@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Footer from "@/components/layout/Footer";
+import { isGlobalScrollLocked, lockGlobalScroll } from "@/lib/scrollLock";
+
 
 interface ContactSectionProps {
   onBack?: () => void;
@@ -26,10 +28,11 @@ export default function ContactSection({ onBack }: ContactSectionProps) {
 
     const handleScroll = (e: WheelEvent) => {
       if (Math.abs(e.deltaY) < scrollThreshold) return;
-      if (isScrolling) return;
-      // If scrolling UP and at the top of the page
+      if (isScrolling || isGlobalScrollLocked()) return;
+      // Only navigate back when scrolling UP at the very top of the page
       if (e.deltaY < 0 && window.scrollY === 0 && onBack) {
         e.preventDefault();
+        lockGlobalScroll(950);
         lockScroll();
         onBack();
       }
@@ -41,13 +44,14 @@ export default function ContactSection({ onBack }: ContactSectionProps) {
       touchStartY = e.touches[0].clientY;
     };
     const handleTouchMove = (e: TouchEvent) => {
-      if (isScrolling) return;
+      if (isScrolling || isGlobalScrollLocked()) return;
       const touchEndY = e.touches[0].clientY;
       const deltaY = touchStartY - touchEndY;
 
       // Swipe Down (negative deltaY) and at top
       if (deltaY < -scrollThreshold && window.scrollY === 0 && onBack) {
         e.preventDefault();
+        lockGlobalScroll(950);
         lockScroll();
         onBack();
       }
@@ -63,6 +67,7 @@ export default function ContactSection({ onBack }: ContactSectionProps) {
       window.removeEventListener("touchmove", handleTouchMove);
     };
   }, [onBack]);
+
 
   const [formData, setFormData] = useState({
     name: "",
@@ -123,7 +128,10 @@ export default function ContactSection({ onBack }: ContactSectionProps) {
   };
 
   return (
-    <section className="min-h-screen w-full bg-black text-white flex flex-col justify-between pt-16 pb-6 px-4 md:pt-24 md:pb-8 md:px-0 relative overflow-hidden">
+    <section
+      id="contact"
+      className="min-h-screen w-full bg-black text-white flex flex-col justify-between pt-16 pb-6 px-4 md:pt-24 md:pb-8 md:px-0 relative overflow-hidden rounded-t-[32px] sm:rounded-t-[40px] md:rounded-t-[44px] border-t border-white/20 shadow-[0_-25px_60px_rgba(0,0,0,0.95),inset_0_1px_0_rgba(255,255,255,0.2)]"
+    >
       <div className="layout-content grow flex flex-col justify-center items-center max-w-2xl w-full mx-auto z-10">
         <motion.div
           initial={{ opacity: 0, y: "1.25rem" }}

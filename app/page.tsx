@@ -4,27 +4,28 @@ import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { greetings } from "@/lib/constants";
 import { Header } from "@/components/layout";
-import { GreetingsOverlay, ScrollSection } from "@/components/sections";
+import {
+  GreetingsOverlay,
+  ScrollSection,
+  TrustSection,
+  ClientSection,
+  ContactSection,
+} from "@/components/sections";
 import { useDevice } from "@/hooks";
-import type { SectionConfig } from "@/lib/dataLoader";
-import { fetchJsonIfAvailable } from "@/lib/adminApi";
+import { lockGlobalScroll } from "@/lib/scrollLock";
 
-import TrustSection from "@/components/sections/TrustSection";
-import ClientSection from "@/components/sections/ClientSection";
-import ContactSection from "@/components/sections/ContactSection";
-
-// All scrollable section phases (greetings preloader is handled separately)
+// All scrollable section phases (preloader greetings is handled separately)
 const ALL_PHASES = ["scrolling", "trust", "client", "contact"] as const;
 type Phase = "greetings" | (typeof ALL_PHASES)[number];
 
 const sectionVariants = {
   enter: (direction: number) => ({
     y: direction > 0 ? "100vh" : 0,
-    scale: direction > 0 ? 0.96 : 0.94,
-    opacity: direction > 0 ? 0.96 : 0.42,
+    scale: direction > 0 ? 1 : 0.94,
+    opacity: direction > 0 ? 1 : 0.42,
     borderTopLeftRadius: direction > 0 ? 40 : 0,
     borderTopRightRadius: direction > 0 ? 40 : 0,
-    zIndex: direction > 0 ? 10 : 0,
+    zIndex: direction > 0 ? 20 : 5,
   }),
   center: {
     y: 0,
@@ -32,18 +33,19 @@ const sectionVariants = {
     opacity: 1,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
-    zIndex: 5,
+    zIndex: 20,
   },
   exit: (direction: number) => ({
     y: direction > 0 ? 0 : "100vh",
-    scale: direction > 0 ? 0.94 : 0.96,
-    opacity: direction > 0 ? 0.42 : 0.96,
+    scale: direction > 0 ? 0.94 : 1,
+    opacity: direction > 0 ? 0.42 : 1,
     borderTopLeftRadius: direction > 0 ? 0 : 40,
     borderTopRightRadius: direction > 0 ? 0 : 40,
-    zIndex: direction > 0 ? 0 : 10,
+    zIndex: direction > 0 ? 5 : 30,
   }),
 };
 
+const CARD_TRANSITION = { duration: 0.8, ease: [0.22, 1, 0.36, 1] } as const;
 const MENU_OFFSET_Y = "6.25rem";
 
 export default function Home() {
@@ -54,50 +56,7 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeHash, setActiveHash] = useState("");
   const [scrollSectionStartAtEnd, setScrollSectionStartAtEnd] = useState(false);
-  const [hasCompletedInitialCrawl, setHasCompletedInitialCrawl] =
-    useState(false);
-  const [enabledSections, setEnabledSections] = useState<string[]>(
-    ALL_PHASES as unknown as string[],
-  );
-
-  /* ── Load section config from API ────────────────── */
-  useEffect(() => {
-    fetchJsonIfAvailable<{ sections: SectionConfig[] }>("/api/admin/sections")
-      .then((data) => {
-        if (!data?.sections) {
-          setEnabledSections([...ALL_PHASES]);
-          return;
-        }
-
-        const enabled = data.sections.filter((s) => s.enabled).map((s) => s.id);
-        // Always keep scrolling (homepage) enabled as fallback
-        setEnabledSections(enabled.length > 0 ? enabled : ["scrolling"]);
-      })
-      .catch(() => {
-        // Fallback: show all sections if API fails
-        setEnabledSections([...ALL_PHASES]);
-      });
-  }, []);
-
-  /* ── Helper: get ordered list of enabled phases ─── */
-  const orderedEnabledPhases = ALL_PHASES.filter((p) =>
-    enabledSections.includes(p),
-  );
-
-  function getNextPhase(current: Phase, dir: 1 | -1): Phase {
-    if (current === "greetings") {
-      return "scrolling";
-    }
-
-    const idx = orderedEnabledPhases.indexOf(
-      current as (typeof ALL_PHASES)[number],
-    );
-    if (dir === 1) {
-      return orderedEnabledPhases[idx + 1] ?? current;
-    } else {
-      return orderedEnabledPhases[idx - 1] ?? current;
-    }
-  }
+  const [hasCompletedInitialCrawl, setHasCompletedInitialCrawl] = useState(false);
 
   /* ── Greeting Preloader Sequence ───────────────── */
   useEffect(() => {
@@ -108,7 +67,7 @@ export default function Home() {
       setActiveHash(hash);
       if (hash === "services") {
         setPhase("scrolling");
-      } else if (hash && enabledSections.includes(hash)) {
+      } else if (ALL_PHASES.includes(hash as any)) {
         setPhase(hash as Phase);
       } else {
         setPhase("scrolling");
@@ -125,12 +84,11 @@ export default function Home() {
     const timer = setTimeout(() => {
       setDirection(1);
       sessionStorage.setItem("initial-load-done", "true");
-
       const hash = window.location.hash.replace("#", "");
       setActiveHash(hash);
       if (hash === "services") {
         setPhase("scrolling");
-      } else if (hash && enabledSections.includes(hash)) {
+      } else if (ALL_PHASES.includes(hash as any)) {
         setPhase(hash as Phase);
       } else {
         setPhase("scrolling");
@@ -138,7 +96,7 @@ export default function Home() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [greetingIndex, phase, enabledSections]);
+  }, [greetingIndex, phase]);
 
   /* ── Hash Navigation ────────────────────────────── */
   useEffect(() => {
@@ -147,58 +105,57 @@ export default function Home() {
       setActiveHash(hash);
       if (hash === "services") {
         setPhase("scrolling");
-        setDirection(1);
-        setMenuOpen(false); // Close menu if we navigated from NavMenu
-      } else if (hash && enabledSections.includes(hash)) {
+      } else if (ALL_PHASES.includes(hash as any)) {
         setPhase(hash as Phase);
-        setDirection(1);
-        setMenuOpen(false); // Close menu if we navigated from NavMenu
       }
+      lockGlobalScroll(950);
+      setDirection(1);
+      setMenuOpen(false);
     };
 
-    // Check on initial load too. Since enabledSections is loaded asynchronously,
-    // we also check right away assuming default ALL_PHASES includes it.
     handleHash();
-
     window.addEventListener("hashchange", handleHash);
     return () => window.removeEventListener("hashchange", handleHash);
-  }, [enabledSections]);
+  }, []);
 
-  const handleToggleMenu = useCallback(() => setMenuOpen((prev) => !prev), []);
-
-  const goBack = (current: Phase) => {
-    setDirection(-1);
-    setPhase(getNextPhase(current, -1));
-  };
-
-  const isPreloading = phase === "greetings";
+  const handleToggleMenu = useCallback(() => {
+    setMenuOpen((prev) => !prev);
+  }, []);
 
   return (
     <>
-      {/* Greetings preloader overlay */}
-      <AnimatePresence>
-        {phase === "greetings" && (
-          <GreetingsOverlay greetingIndex={greetingIndex} />
-        )}
-      </AnimatePresence>
+      {phase === "greetings" && (
+        <GreetingsOverlay greetingIndex={greetingIndex} />
+      )}
 
-      {/* Main page */}
-      <div className="relative bg-white">
-        {!isPreloading && !(isMobile && phase === "scrolling") && (
-          <Header menuOpen={menuOpen} onToggleMenu={handleToggleMenu} />
-        )}
+      <div
+        className={`fixed inset-0 overflow-hidden ${
+          phase === "greetings" ? "bg-black" : "bg-white"
+        }`}
+        style={{
+          opacity: phase === "greetings" ? 0 : 1,
+          transition: "opacity 0.6s ease-in-out",
+          pointerEvents: phase === "greetings" ? "none" : "auto",
+        }}
+      >
+        <Header menuOpen={menuOpen} onToggleMenu={handleToggleMenu} hideMobile />
 
         <motion.div
-          initial={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
+          initial={{ borderRadius: 0 }}
           animate={{
             y: menuOpen ? MENU_OFFSET_Y : 0,
             scale: menuOpen ? 0.95 : 1,
-            borderTopLeftRadius: menuOpen ? 24 : 0,
-            borderTopRightRadius: menuOpen ? 24 : 0,
+            borderRadius: menuOpen ? 24 : 0,
           }}
-          className="relative origin-top overflow-hidden bg-black text-white"
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          onClick={() => {
+            if (menuOpen) setMenuOpen(false);
+          }}
+          className={`relative origin-top overflow-hidden bg-black text-white h-screen w-full ${
+            menuOpen ? "cursor-pointer shadow-[0_25px_60px_rgba(0,0,0,0.35)]" : ""
+          }`}
         >
-          <AnimatePresence mode="popLayout" custom={direction}>
+          <AnimatePresence mode="sync" custom={direction}>
             {phase === "scrolling" && (
               <motion.div
                 key="scroll"
@@ -207,8 +164,8 @@ export default function Home() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full h-screen overflow-hidden"
+                transition={CARD_TRANSITION}
+                className="absolute inset-0 w-full h-screen overflow-hidden"
               >
                 <ScrollSection
                   activeHash={activeHash}
@@ -216,23 +173,18 @@ export default function Home() {
                   skipAnimation={hasCompletedInitialCrawl}
                   onScrollComplete={() => {
                     setHasCompletedInitialCrawl(true);
-                    const next = getNextPhase("scrolling", 1);
-                    if (next !== "scrolling") {
-                      setDirection(1);
-                      setPhase(next);
-                    }
+                    setScrollSectionStartAtEnd(false);
+                    setDirection(1);
+                    setPhase("trust");
                   }}
                   onBack={() => {
-                    // Allow scrolling up from LogoScreen to trigger back behavior
-                    // Going back from scrolling section stays in scrolling phase
-                    setDirection(-1);
-                    setPhase("scrolling");
+                    setScrollSectionStartAtEnd(false);
                   }}
                 />
               </motion.div>
             )}
 
-            {phase === "trust" && enabledSections.includes("trust") && (
+            {phase === "trust" && (
               <motion.div
                 key="trust"
                 custom={direction}
@@ -240,8 +192,8 @@ export default function Home() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full h-screen overflow-hidden"
+                transition={CARD_TRANSITION}
+                className="absolute inset-0 w-full h-screen overflow-hidden"
               >
                 <TrustSection
                   onBack={() => {
@@ -250,17 +202,14 @@ export default function Home() {
                     setPhase("scrolling");
                   }}
                   onComplete={() => {
-                    const next = getNextPhase("trust", 1);
-                    if (next !== "trust") {
-                      setDirection(1);
-                      setPhase(next);
-                    }
+                    setDirection(1);
+                    setPhase("client");
                   }}
                 />
               </motion.div>
             )}
 
-            {phase === "client" && enabledSections.includes("client") && (
+            {phase === "client" && (
               <motion.div
                 key="client"
                 custom={direction}
@@ -268,23 +217,23 @@ export default function Home() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full h-screen overflow-hidden"
+                transition={CARD_TRANSITION}
+                className="absolute inset-0 w-full h-screen overflow-hidden"
               >
                 <ClientSection
-                  onBack={() => goBack("client")}
+                  onBack={() => {
+                    setDirection(-1);
+                    setPhase("trust");
+                  }}
                   onComplete={() => {
-                    const next = getNextPhase("client", 1);
-                    if (next !== "client") {
-                      setDirection(1);
-                      setPhase(next);
-                    }
+                    setDirection(1);
+                    setPhase("contact");
                   }}
                 />
               </motion.div>
             )}
 
-            {phase === "contact" && enabledSections.includes("contact") && (
+            {phase === "contact" && (
               <motion.div
                 key="contact"
                 custom={direction}
@@ -292,10 +241,15 @@ export default function Home() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full h-screen overflow-hidden"
+                transition={CARD_TRANSITION}
+                className="absolute inset-0 w-full h-screen overflow-hidden"
               >
-                <ContactSection onBack={() => goBack("contact")} />
+                <ContactSection
+                  onBack={() => {
+                    setDirection(-1);
+                    setPhase("client");
+                  }}
+                />
               </motion.div>
             )}
           </AnimatePresence>

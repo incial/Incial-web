@@ -30,6 +30,18 @@ export default function NavMenu({ onClose }: NavMenuProps) {
     return enabledSections.includes(link.sectionId);
   });
 
+  const handleLinkClick = (href: string) => {
+    if (onClose) onClose();
+
+    if (href.startsWith("/#") || href.startsWith("#")) {
+      const hash = href.replace(/^\/?#/, "");
+      if (typeof window !== "undefined" && window.location.pathname === "/") {
+        window.location.hash = hash;
+        window.dispatchEvent(new Event("hashchange"));
+      }
+    }
+  };
+
   return (
     <>
       {/* ── DESKTOP nav (horizontal bar, unchanged) ── */}
@@ -44,7 +56,7 @@ export default function NavMenu({ onClose }: NavMenuProps) {
           <div key={link.label} className="flex items-center">
             <Link
               href={link.href}
-              onClick={onClose}
+              onClick={() => handleLinkClick(link.href)}
               className="px-5 text-sm font-medium text-black transition-colors hover:text-black/60"
             >
               {link.label}
@@ -69,7 +81,7 @@ export default function NavMenu({ onClose }: NavMenuProps) {
             <div key={link.label} className="flex flex-col items-center w-48">
               <Link
                 href={link.href}
-                onClick={onClose}
+                onClick={() => handleLinkClick(link.href)}
                 className="w-full py-5 text-center text-base font-medium text-black transition-colors hover:text-black/50"
               >
                 {link.label}

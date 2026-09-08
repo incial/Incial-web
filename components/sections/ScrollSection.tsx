@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import { rotatingWords } from "@/lib/constants";
+import { isGlobalScrollLocked, lockGlobalScroll } from "@/lib/scrollLock";
 
 // Components
 import RotatingText from "@/components/features/home/RotatingText";
@@ -20,7 +21,7 @@ interface ScrollSectionProps {
   activeHash?: string;
 }
 
-type DesktopSection = "words" | "logo" | "serviceIntro" | "serviceDetails";
+type DesktopSection = "words" | "logo" | "services";
 
 const desktopSectionVariants: Variants = {
   enter: (direction: number) => ({
@@ -42,66 +43,29 @@ const desktopSectionTransition = {
   ease: [0.22, 1, 0.36, 1],
 } as const;
 
-const serviceIntroCardVariants: Variants = {
-  enter: {
-    y: "110%",
-    scale: 0.96,
-    opacity: 0.96,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-  },
-  center: {
-    y: 0,
-    scale: 1,
-    opacity: 1,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-  },
-  exit: {
-    y: "110%",
-    scale: 0.96,
-    opacity: 0.96,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-  },
-};
-
-const serviceDetailsCardVariants: Variants = {
+const servicesCardVariants: Variants = {
   enter: (direction: number) => ({
-    y: direction > 0 ? "110%" : 0,
-    scale: direction > 0 ? 0.96 : 1,
-    opacity: direction > 0 ? 0.96 : 1,
-    borderTopLeftRadius: direction > 0 ? 40 : 0,
-    borderTopRightRadius: direction > 0 ? 40 : 0,
+    y: direction > 0 ? "100%" : 0,
+    scale: direction > 0 ? 0.98 : 1,
+    opacity: 1,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
   }),
   center: {
     y: 0,
     scale: 1,
     opacity: 1,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
   },
   exit: (direction: number) => ({
-    y: direction > 0 ? 0 : "110%",
-    scale: direction > 0 ? 0.94 : 0.96,
-    opacity: direction > 0 ? 0.42 : 0.96,
-    borderTopLeftRadius: direction > 0 ? 0 : 40,
-    borderTopRightRadius: direction > 0 ? 0 : 40,
+    y: direction > 0 ? 0 : "100%",
+    scale: direction > 0 ? 0.94 : 0.98,
+    opacity: direction > 0 ? 0.4 : 1,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
   }),
 };
-
-function ServiceIntroSection() {
-  return (
-    <section className="absolute inset-0 flex h-full w-full flex-col items-center justify-center bg-black px-4 text-center shadow-[0_-40px_100px_rgba(216,232,255,0.16)]">
-      <h2 className="text-4xl font-bold text-white md:text-6xl">
-        Services That Make Magic Happen
-      </h2>
-      <p className="mt-4 text-xl italic text-white/80 md:text-2xl">
-        (And Seriously Grow Your Business)
-      </p>
-    </section>
-  );
-}
 
 export default function ScrollSection({
   onScrollComplete,
@@ -116,17 +80,21 @@ export default function ScrollSection({
     return startAtEnd ? rotatingWords.length - 1 : 0;
   });
   const [desktopSection, setDesktopSection] = useState<DesktopSection>(() => {
-    if (activeHash === "services") return "serviceDetails";
-    return startAtEnd ? "serviceDetails" : "words";
+    if (activeHash === "services") return "services";
+    return startAtEnd ? "services" : "words";
   });
   const [desktopDirection, setDesktopDirection] = useState(1);
   const [returnFromServices, setReturnFromServices] = useState(false);
+  const [servicesStartAtEnd, setServicesStartAtEnd] = useState(startAtEnd);
+
+  useEffect(() => {
+    setServicesStartAtEnd(startAtEnd);
+  }, [startAtEnd]);
 
   const isScrolling = useRef(false);
   const circleRef = useRef<HTMLDivElement>(null);
   const showLogo = desktopSection !== "words";
-  const showServices =
-    desktopSection === "serviceIntro" || desktopSection === "serviceDetails";
+  const showServices = desktopSection === "services";
 
   const goToDesktopSection = (
     nextSection: DesktopSection,
@@ -139,7 +107,7 @@ export default function ScrollSection({
   useEffect(() => {
     if (activeHash === "services") {
       requestAnimationFrame(() => {
-        setDesktopSection("serviceDetails");
+        setDesktopSection("services");
         setWordIndex(rotatingWords.length - 1);
       });
     }
@@ -179,9 +147,11 @@ export default function ScrollSection({
     };
 
     const handleScroll = (e: WheelEvent) => {
+      // When services is active, ServicesSection manages its own deliberate scroll catcher
+      if (desktopSection === "services") return;
       if (Math.abs(e.deltaY) < scrollThreshold) return;
       e.preventDefault();
-      if (isScrolling.current) return;
+      if (isScrolling.current || isGlobalScrollLocked()) return;
 
       if (e.deltaY > 0) {
         // Scroll Down
@@ -193,19 +163,14 @@ export default function ScrollSection({
           setReturnFromServices(true);
           goToDesktopSection("logo", 1);
         } else if (desktopSection === "logo") {
-          goToDesktopSection("serviceIntro", 1);
-        } else if (desktopSection === "serviceIntro") {
-          goToDesktopSection("serviceDetails", 1);
+          lockGlobalScroll(1000);
+          setServicesStartAtEnd(false);
+          goToDesktopSection("services", 1);
         }
       } else if (e.deltaY < 0) {
         // Scroll Up
         lockScroll();
-        if (desktopSection === "serviceDetails") {
-          // Handled by ServicesSection going back
-        } else if (desktopSection === "serviceIntro") {
-          setReturnFromServices(true);
-          goToDesktopSection("logo", -1);
-        } else if (desktopSection === "logo" && onBack) {
+        if (desktopSection === "logo" && onBack) {
           onBack();
         } else if (desktopSection === "words" && onBack) {
           // Allow backing out even while auto-animating
@@ -220,9 +185,12 @@ export default function ScrollSection({
       touchStartY = e.touches[0].clientY;
     };
     const handleTouchMove = (e: TouchEvent) => {
+      // When services is active, ServicesSection manages its own touch catcher
+      if (desktopSection === "services") return;
       e.preventDefault();
 
-      if (isScrolling.current) return;
+      if (isScrolling.current || isGlobalScrollLocked()) return;
+
       const touchEndY = e.touches[0].clientY;
       const deltaY = touchStartY - touchEndY;
 
@@ -235,19 +203,14 @@ export default function ScrollSection({
             setReturnFromServices(true);
             goToDesktopSection("logo", 1);
           } else if (desktopSection === "logo") {
-            goToDesktopSection("serviceIntro", 1);
-          } else if (desktopSection === "serviceIntro") {
-            goToDesktopSection("serviceDetails", 1);
+            lockGlobalScroll(1000);
+            setServicesStartAtEnd(false);
+            goToDesktopSection("services", 1);
           }
         } else {
           // Swipe Down / Scroll Up
           lockScroll();
-          if (desktopSection === "serviceDetails") {
-            // Handled by ServicesSection
-          } else if (desktopSection === "serviceIntro") {
-            setReturnFromServices(true);
-            goToDesktopSection("logo", -1);
-          } else if (desktopSection === "logo" && onBack) {
+          if (desktopSection === "logo" && onBack) {
             onBack();
           } else if (desktopSection === "words" && onBack) {
             onBack();
@@ -303,15 +266,16 @@ export default function ScrollSection({
                   key="logo"
                   initial={false}
                   animate={{
-                    opacity: (desktopSection === "serviceIntro" || desktopSection === "serviceDetails") ? 0.42 : 1,
-                    scale: (desktopSection === "serviceIntro" || desktopSection === "serviceDetails") ? 0.94 : 1,
+                    opacity: desktopSection === "services" ? 0.38 : 1,
+                    scale: desktopSection === "services" ? 0.94 : 1,
+                    y: desktopSection === "services" ? -24 : 0,
                   }}
                   transition={
                     desktopSection === "logo"
                       ? { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
-                      : { duration: 0.9, ease: [0.22, 1, 0.36, 1] }
+                      : { duration: 0.85, ease: [0.22, 1, 0.36, 1] }
                   }
-                  className="absolute inset-0 h-full w-full"
+                  className="absolute inset-0 h-full w-full origin-top"
                 >
                   <LogoScreen
                     skipAnimation={
@@ -321,69 +285,27 @@ export default function ScrollSection({
                 </motion.div>
               )}
 
-              <AnimatePresence>
-                {(desktopSection === "serviceIntro" || desktopSection === "serviceDetails") && (
-                  <motion.div
-                    key="service-intro"
-                    initial={startAtEnd ? "underneath" : "enter"}
-                    animate={desktopSection === "serviceDetails" ? "underneath" : "center"}
-                    variants={{
-                      enter: {
-                        y: "110%",
-                        scale: 0.96,
-                        opacity: 0.96,
-                        borderTopLeftRadius: 40,
-                        borderTopRightRadius: 40,
-                      },
-                      center: {
-                        y: 0,
-                        scale: 1,
-                        opacity: 1,
-                        borderTopLeftRadius: 0,
-                        borderTopRightRadius: 0,
-                      },
-                      underneath: {
-                        y: 0,
-                        scale: 0.94,
-                        opacity: 0.42,
-                        borderTopLeftRadius: 0,
-                        borderTopRightRadius: 0,
-                      },
-                      exit: {
-                        y: "110%",
-                        scale: 0.96,
-                        opacity: 0.96,
-                        borderTopLeftRadius: 40,
-                        borderTopRightRadius: 40,
-                      },
-                    }}
-                    exit="exit"
-                    transition={desktopSectionTransition}
-                    className="absolute inset-0 h-full w-full overflow-hidden"
-                  >
-                    <ServiceIntroSection />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
               <AnimatePresence custom={desktopDirection}>
-                {desktopSection === "serviceDetails" && (
+                {desktopSection === "services" && (
                   <motion.div
-                    key="service-details"
+                    key="services"
                     custom={desktopDirection}
-                    variants={serviceDetailsCardVariants}
+                    variants={servicesCardVariants}
                     initial={startAtEnd ? "center" : "enter"}
                     animate="center"
                     exit="exit"
                     transition={desktopSectionTransition}
-                    className="absolute inset-0 h-full w-full overflow-hidden"
+                    className="absolute inset-0 h-full w-full overflow-hidden rounded-t-[32px] sm:rounded-t-[40px] md:rounded-t-[44px] border-t border-x border-white/20 shadow-[0_-25px_60px_rgba(0,0,0,0.95),inset_0_1px_0_rgba(255,255,255,0.2)] z-30"
                   >
                     <ServicesSection
-                      initialSlide={0}
+                      initialSlide={1}
+                      startAtEnd={servicesStartAtEnd}
                       onComplete={onScrollComplete}
                       onBack={() => {
                         setReturnFromServices(true);
-                        goToDesktopSection("serviceIntro", -1);
+                        setServicesStartAtEnd(false);
+                        lockGlobalScroll(900);
+                        goToDesktopSection("logo", -1);
                       }}
                     />
                   </motion.div>

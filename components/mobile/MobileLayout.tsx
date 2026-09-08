@@ -26,8 +26,9 @@ const MobileHeader = memo(function MobileHeader({
       initial={false}
       animate={{ y: hidden ? -110 : 0, opacity: hidden ? 0 : 1 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed left-0 right-0 top-0 z-50 flex h-[110px] items-center justify-between bg-black/95 px-6 pt-[45px] pb-2 backdrop-blur-sm md:hidden"
+      className="fixed left-0 right-0 top-0 z-50 flex h-[110px] items-center justify-between px-6 pt-[45px] pb-2 md:hidden backdrop-blur-md"
       style={{
+        background: "linear-gradient(to bottom, rgba(7,8,11,0.55) 0%, transparent 100%)",
         position: 'fixed',
         top: 0,
         left: 0,
@@ -37,8 +38,6 @@ const MobileHeader = memo(function MobileHeader({
         willChange: 'transform',
         backfaceVisibility: 'hidden',
         contain: 'layout paint style',
-        WebkitBackdropFilter: 'blur(4px)',
-        backdropFilter: 'blur(4px)',
       }}
     >
       <div className="text-[15.5px] leading-none tracking-[-0.02em] text-white">
@@ -189,10 +188,10 @@ export const MobileLayout = ({ children, backgroundLayer, scrollLocked = false, 
         </div>
       )}
 
-      {/* Scroll Container - Optimized for smooth scrolling */}
+      {/* Scroll Container - fills full screen; fixed header floats above at z-50 */}
       <div 
         ref={scrollContainerRef}
-        className="relative z-10 mt-[110px] h-[calc(100dvh-110px)] w-full overflow-y-scroll snap-y snap-mandatory"
+        className="relative z-10 h-screen w-full overflow-y-scroll snap-y snap-mandatory"
         style={{
           overflowY: scrollLocked ? 'hidden' : 'scroll',
           touchAction: scrollLocked ? 'none' : 'pan-y',

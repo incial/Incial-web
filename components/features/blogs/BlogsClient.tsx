@@ -208,7 +208,7 @@ export default function BlogsClient({
         <div className="absolute bottom-20 right-[10%] h-40 w-40 rounded-full bg-white/10 blur-3xl" />
       </div>
 
-      <main className="relative pt-14 pb-24 px-4">
+      <main className="relative pt-[125px] min-[380px]:pt-[135px] pb-24 px-4">
         {/* Page title — no breadcrumbs */}
         <motion.h1
           initial={{ opacity: 0, y: 18 }}
