@@ -8,7 +8,15 @@ neonConfig.webSocketConstructor = ws;
 
 const prismaClientSingleton = () => {
   // Extract database URL from process environment
-  const connectionString = `${process.env.DATABASE_URL}`;
+  const connectionString =
+    process.env.DATABASE_URL ||
+    "postgresql://placeholder:dummy@localhost:5432/placeholder?sslmode=require";
+
+  if (!process.env.DATABASE_URL) {
+    console.warn(
+      "DATABASE_URL is not configured in process.env. Runtime database queries will fail until set."
+    );
+  }
 
   // Initialize PrismaNeon adapter with the config directly
   const adapter = new PrismaNeon({ connectionString });

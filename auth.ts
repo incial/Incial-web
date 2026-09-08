@@ -6,17 +6,27 @@ const ADMIN_EMAILS = (process.env.ADMIN_GOOGLE_EMAILS || "")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
+const authSecret =
+  process.env.AUTH_SECRET ||
+  process.env.NEXTAUTH_SECRET ||
+  "incial-nextauth-fallback-secret-production-key-min32";
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  debug: true,
+  debug: process.env.NODE_ENV !== "production",
   trustHost: true,
   // NextAuth v5 uses AUTH_SECRET env var (also accepts NEXTAUTH_SECRET for compat)
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
+  secret: authSecret,
+  providers:
+    googleClientId && googleClientSecret
+      ? [
+          Google({
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+          }),
+        ]
+      : [],
   pages: {
     signIn: "/admin/login",
     error: "/admin/login",
