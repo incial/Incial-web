@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import type { ClientsData } from "@/lib/dataLoader";
 import { fetchJsonIfAvailable } from "@/lib/adminApi";
+import { isGlobalScrollLocked, lockGlobalScroll } from "@/lib/scrollLock";
 
 interface ClientSectionProps {
   onBack?: () => void;
@@ -20,6 +21,8 @@ export default function ClientSection({
     {},
   );
 
+  const isScrollingRef = useRef(false);
+
   useEffect(() => {
     fetchJsonIfAvailable<ClientsData>("/api/admin/clients")
       .then((payload) => {
@@ -29,7 +32,9 @@ export default function ClientSection({
       })
       .catch(() => {});
 
-    fetchJsonIfAvailable<{ sections: Array<{ id: string; enabled: boolean }> }>("/api/admin/sections")
+    fetchJsonIfAvailable<{ sections: Array<{ id: string; enabled: boolean }> }>(
+      "/api/admin/sections",
+    )
       .then((payload) => {
         if (payload?.sections) {
           const configMap: Record<string, boolean> = {};
@@ -41,42 +46,56 @@ export default function ClientSection({
       })
       .catch(() => {});
   }, []);
+
   useEffect(() => {
-    let isScrolling = false;
+    const isCoarsePointer =
+      typeof window !== "undefined" &&
+      window.matchMedia("(pointer: coarse)").matches;
+    const scrollThreshold = isCoarsePointer ? 25 : 35;
+
     const handleScroll = (e: WheelEvent) => {
-      if (isScrolling) return;
-      isScrolling = true;
+      if (Math.abs(e.deltaY) < scrollThreshold) return;
+      if (isScrollingRef.current || isGlobalScrollLocked()) return;
+
+      e.preventDefault();
+      isScrollingRef.current = true;
+      lockGlobalScroll(900);
+
       if (e.deltaY > 0) {
-        if (onComplete) onComplete();
+        onComplete?.();
       } else {
-        if (onBack) onBack();
+        onBack?.();
       }
+
       setTimeout(() => {
-        isScrolling = false;
-      }, 1500);
+        isScrollingRef.current = false;
+      }, 850);
     };
 
     let touchStartY = 0;
     const handleTouchStart = (e: TouchEvent) => {
       touchStartY = e.touches[0].clientY;
     };
+
     const handleTouchMove = (e: TouchEvent) => {
-      if (isScrolling) return;
+      if (isScrollingRef.current || isGlobalScrollLocked()) return;
       const touchEndY = e.touches[0].clientY;
       const deltaY = touchStartY - touchEndY;
 
-      if (deltaY > 50) {
-        isScrolling = true;
-        if (onComplete) onComplete();
+      if (Math.abs(deltaY) > scrollThreshold) {
+        e.preventDefault();
+        isScrollingRef.current = true;
+        lockGlobalScroll(900);
+
+        if (deltaY > 0) {
+          onComplete?.();
+        } else {
+          onBack?.();
+        }
+
         setTimeout(() => {
-          isScrolling = false;
-        }, 1500);
-      } else if (deltaY < -50) {
-        isScrolling = true;
-        if (onBack) onBack();
-        setTimeout(() => {
-          isScrolling = false;
-        }, 1500);
+          isScrollingRef.current = false;
+        }, 850);
       }
     };
 
@@ -92,7 +111,7 @@ export default function ClientSection({
   }, [onBack, onComplete]);
 
   return (
-    <section className="h-screen w-full bg-black text-white flex flex-col justify-center items-center relative overflow-hidden">
+    <section className="h-full w-full bg-black text-white flex flex-col justify-center items-center relative overflow-hidden rounded-t-[32px] sm:rounded-t-[40px] md:rounded-t-[44px] border-t border-white/20 shadow-[0_-25px_60px_rgba(0,0,0,0.95),inset_0_1px_0_rgba(255,255,255,0.2)]">
       <div className="container mx-auto px-6 md:px-12 relative z-10 h-full flex flex-col justify-center items-center">
         <motion.div
           className="flex flex-col items-center w-full max-w-7xl"

@@ -3,13 +3,13 @@
   "stats": [
     {
       "id": "1",
-      "value": "60+",
-      "label": "Happy Clients"
+      "value": "100+",
+      "label": "Projects Completed"
     },
     {
       "id": "2",
-      "value": "100+",
-      "label": "Projects Completed"
+      "value": "60+",
+      "label": "Happy Clients"
     }
   ]
 }

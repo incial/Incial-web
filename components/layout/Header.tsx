@@ -14,6 +14,7 @@ interface HeaderProps {
   onToggleMenu: () => void;
   variant?: "default" | "pill";
   hidden?: boolean;
+  hideMobile?: boolean;
 }
 
 export default function Header({
@@ -21,8 +22,10 @@ export default function Header({
   onToggleMenu,
   variant = "default",
   hidden,
+  hideMobile = false,
 }: HeaderProps) {
   const pathname = usePathname();
+  const shouldHideMobile = hideMobile || pathname === "/";
   const [scrollHidden, setScrollHidden] = useState(false);
   const lastScrollYRef = useRef(0);
 
@@ -82,27 +85,29 @@ export default function Header({
     return (
       <>
         {/* ── MOBILE header bar (pill variant) ── */}
-        <motion.div
-          initial={false}
-          animate={{ y: shouldHide ? -96 : 0, opacity: shouldHide ? 0 : 1 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          style={{ pointerEvents: menuOpen || shouldHide ? "none" : "auto" }}
-          className="fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-transparent px-6 py-5 md:hidden"
-        >
-          <div className="text-sm font-light tracking-wide text-white">
-            We Are <span className="font-bold">incial.</span>
-          </div>
-          <button
-            onClick={onToggleMenu}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/60 text-white transition-colors hover:bg-white/10"
+        {!shouldHideMobile && (
+          <motion.div
+            initial={false}
+            animate={{ y: shouldHide ? -96 : 0, opacity: shouldHide ? 0 : 1 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            style={{ pointerEvents: menuOpen || shouldHide ? "none" : "auto" }}
+            className="fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-transparent px-6 py-5 md:hidden"
           >
-            <HiMenuAlt3 className="text-2xl" />
-          </button>
-        </motion.div>
+            <div className="text-sm font-light tracking-wide text-white">
+              We Are <span className="font-bold">incial.</span>
+            </div>
+            <button
+              onClick={onToggleMenu}
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/60 text-white transition-colors hover:bg-white/10"
+            >
+              <HiMenuAlt3 className="text-2xl" />
+            </button>
+          </motion.div>
+        )}
 
         <AnimatePresence>
-          {menuOpen && <MobileMenu isOpen={menuOpen} onClose={onToggleMenu} />}
+          {!shouldHideMobile && menuOpen && <MobileMenu isOpen={menuOpen} onClose={onToggleMenu} />}
         </AnimatePresence>
 
         {/* ── DESKTOP pill header (unchanged) ── */}
@@ -145,31 +150,35 @@ export default function Header({
   return (
     <>
       {/* ── MOBILE header bar ── */}
-      <motion.div
-        initial={false}
-        animate={{ y: shouldHide ? -96 : 0, opacity: shouldHide ? 0 : 1 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        style={{ pointerEvents: menuOpen || shouldHide ? "none" : "auto" }}
-        className="fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-transparent px-6 py-5 md:hidden"
-      >
-        <div className="text-sm font-light tracking-wide text-white">
-          We Are <span className="font-bold">incial.</span>
-        </div>
-        <button
-          onClick={onToggleMenu}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/60 text-white transition-colors hover:bg-white/10"
+      {!shouldHideMobile && (
+        <motion.div
+          initial={false}
+          animate={{ y: shouldHide ? -96 : 0, opacity: shouldHide ? 0 : 1 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          style={{ pointerEvents: menuOpen || shouldHide ? "none" : "auto" }}
+          className="fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-transparent px-6 py-5 md:hidden"
         >
-          <HiMenuAlt3 className="text-2xl" />
-        </button>
-      </motion.div>
+          <div className="text-sm font-light tracking-wide text-white">
+            We Are <span className="font-bold">incial.</span>
+          </div>
+          <button
+            onClick={onToggleMenu}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/60 text-white transition-colors hover:bg-white/10"
+          >
+            <HiMenuAlt3 className="text-2xl" />
+          </button>
+        </motion.div>
+      )}
 
       <AnimatePresence>
         {menuOpen && (
           <>
-            <div className="md:hidden">
-              <MobileMenu isOpen={menuOpen} onClose={onToggleMenu} />
-            </div>
+            {!shouldHideMobile && (
+              <div className="md:hidden">
+                <MobileMenu isOpen={menuOpen} onClose={onToggleMenu} />
+              </div>
+            )}
             <div className="hidden md:block">
               <NavMenu onClose={onToggleMenu} />
             </div>

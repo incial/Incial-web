@@ -17,22 +17,22 @@ const StatsSlideComponent = ({ id, onInView }: StatsSlideProps) => {
           <span className="font-semibold text-[#56A6FF]">Incial?</span>
         </h2>
 
-        <div className="flex flex-col items-center text-center">
+        <div className="flex flex-col items-center text-center gap-10">
+          <div className="flex flex-col items-center leading-none">
+            <div className="text-[54px] font-semibold italic leading-none text-[#56A6FF]">
+              100+
+            </div>
+            <div className="mt-2.5 text-[16px] font-normal leading-none text-white/90">
+              Projects Completed
+            </div>
+          </div>
+
           <div className="flex flex-col items-center leading-none">
             <div className="text-[54px] font-semibold italic leading-none text-[#56A6FF]">
               60+
             </div>
             <div className="mt-2.5 text-[16px] font-normal leading-none text-white/90">
               Happy Clients
-            </div>
-          </div>
-
-          <div className="mt-12 flex flex-col items-center leading-none">
-            <div className="text-[54px] font-semibold italic leading-none text-[#56A6FF]">
-              100+
-            </div>
-            <div className="mt-2.5 text-[16px] font-normal leading-none text-white/90">
-              Projects Completed
             </div>
           </div>
         </div>

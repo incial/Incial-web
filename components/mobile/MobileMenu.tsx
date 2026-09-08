@@ -42,8 +42,16 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
   }, [enabledSections]);
 
   // Memoize click handler
-  const handleLinkClick = useCallback(() => {
+  const handleLinkClick = useCallback((href: string) => {
     onClose();
+
+    if (href.startsWith("/#") || href.startsWith("#")) {
+      const hash = href.replace(/^\/?#/, "");
+      if (typeof window !== "undefined" && window.location.pathname === "/") {
+        window.location.hash = hash;
+        window.dispatchEvent(new Event("hashchange"));
+      }
+    }
   }, [onClose]);
 
   if (!isOpen) return null;
@@ -86,7 +94,7 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                 <div key={`${link.label}-${i}`} className="w-full">
                   <Link
                     href={link.href}
-                    onClick={handleLinkClick}
+                    onClick={() => handleLinkClick(link.href)}
                     className="block w-full py-6 text-center text-base font-medium text-black transition-colors hover:text-black/60"
                   >
                     {link.label}

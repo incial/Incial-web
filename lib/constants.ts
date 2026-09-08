@@ -16,7 +16,7 @@ export const navLinks = [
   { label: "Services", href: "/#services" },
   { label: "Careers", href: "/careers", sectionId: "careers" },
   { label: "Blogs", href: "/blogs", sectionId: "blogs" },
-  { label: "Contact Us", href: "/#contact" },
+  { label: "Contact Us", href: "/#contact", sectionId: "contact" },
 ];
 
 export const rotatingWords = [
