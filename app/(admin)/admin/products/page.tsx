@@ -71,7 +71,7 @@ export default function AdminProductsPage() {
     }
   }
 
-  function updateProduct(field: keyof Product, value: any) {
+  function updateProduct<K extends keyof Product>(field: K, value: Product[K]) {
     if (!data) return;
     const products = [...data.products];
     products[selected] = { ...products[selected], [field]: value };

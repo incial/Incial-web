@@ -120,9 +120,9 @@ export default function ContactSection({ onBack }: ContactSectionProps) {
 
       // Reset status after a few seconds
       setTimeout(() => setStatus("idle"), 5000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Form submission error:", error);
-      setErrorMessage(error.message || "Something went wrong.");
+      setErrorMessage(error instanceof Error && error.message ? error.message : "Something went wrong.");
       setStatus("error");
     }
   };

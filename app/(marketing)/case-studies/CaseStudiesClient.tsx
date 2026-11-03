@@ -1,0 +1,225 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import Image from "next/image";
+import Link from "next/link";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import type { CaseStudy, SectionConfig } from "@/lib/dataLoader";
+
+interface CaseStudiesClientProps {
+  caseStudies: CaseStudy[];
+  /** Banner exactly as set in the admin panel; empty when none is configured. */
+  heroBanner: string;
+}
+
+export default function CaseStudiesClient({
+  caseStudies,
+  heroBanner,
+}: CaseStudiesClientProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isDisabled, setIsDisabled] = useState(false);
+
+  useEffect(() => {
+    async function fetchConfig() {
+      try {
+        const res = await fetch("/api/admin/sections", { cache: "no-store" });
+        const data = await res.json();
+        const csConfig = data.sections?.find(
+          (s: SectionConfig) => s.id === "casestudies",
+        );
+        if (csConfig && !csConfig.enabled) {
+          setIsDisabled(true);
+        }
+      } catch {
+        // Ignore
+      }
+    }
+
+    fetchConfig();
+  }, []);
+
+  if (isDisabled) {
+    return (
+      <div className="relative min-h-screen bg-white">
+        <Header
+          menuOpen={menuOpen}
+          onToggleMenu={() => setMenuOpen(!menuOpen)}
+        />
+        <div className="flex min-h-[70vh] items-center justify-center bg-black text-white px-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4">Section Disabled</h1>
+            <p className="text-gray-400">This page is currently unavailable.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const handleToggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
+
+  return (
+    <div className="relative min-h-screen bg-white">
+      {/* Header */}
+      <Header menuOpen={menuOpen} onToggleMenu={handleToggleMenu} />
+
+      <motion.div
+        animate={{
+          y: menuOpen ? 100 : 0,
+          scale: menuOpen ? 0.95 : 1,
+          borderTopLeftRadius: menuOpen ? 24 : 0,
+          borderTopRightRadius: menuOpen ? 24 : 0,
+        }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="relative origin-top overflow-x-hidden bg-black text-white min-h-screen"
+        style={{ zIndex: 30 }}
+      >
+        {/* Main Content */}
+        <main className="pt-32 pb-20">
+          {/* Breadcrumb */}
+          <div className="hidden md:block mb-10 px-6 md:px-16 lg:px-24 xl:px-32 max-w-[1400px] mx-auto">
+            <Breadcrumbs
+              items={[{ label: "Home", href: "/" }, { label: "Work" }]}
+              variant="pill"
+              size="lg"
+            />
+          </div>
+
+          {/* Hero Section with Image - Full Width */}
+          <motion.section
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="mb-16 relative px-4 md:px-8 lg:px-12"
+          >
+            {/* Hero Image with overlay text */}
+            <div className="relative w-full h-[350px] md:h-[450px] lg:h-[500px] rounded-2xl overflow-hidden mb-12 max-w-[1600px] mx-auto bg-neutral-900">
+              {heroBanner ? (
+                <Image
+                  src={heroBanner}
+                  alt="Case Study Hero"
+                  fill
+                  sizes="(max-width: 1600px) 100vw, 1600px"
+                  className="object-cover"
+                  priority
+                />
+              ) : null}
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white">
+                  Case Study
+                </h1>
+              </div>
+            </div>
+
+            {/* Description */}
+            <p className="text-gray-400 text-sm md:text-base max-w-3xl mx-auto text-center leading-relaxed italic">
+              At Incial, we pride ourselves on developing tailored digital
+              solutions that make a real impact. Here&apos;s a glimpse of some of the
+              projects we&apos;ve brought to life across various industries:
+            </p>
+          </motion.section>
+
+          {/* Case Studies List */}
+          <div className="space-y-12 md:space-y-16 mt-20 px-6 md:px-16 lg:px-24 xl:px-32 max-w-[1400px] mx-auto">
+            {caseStudies.length === 0 ? (
+              <div className="text-center text-white/50 text-sm py-10 italic">
+                No case studies available.
+              </div>
+            ) : (
+              caseStudies.map((study, index) => {
+                const thumbnailSrc = study.coverImage || study.heroImage;
+                return (
+                  <motion.article
+                    key={study.id || study.slug}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.6, delay: index * 0.05 }}
+                    className="group relative border-b border-white/10 pb-12 md:pb-16 last:border-b-0"
+                  >
+                    <Link href={`/case-studies/${study.slug}`} className="block">
+                      {/* Mobile Layout (stacked) */}
+                      <div className="flex flex-col gap-5 md:hidden">
+                        {/* Image */}
+                        <div className="w-full overflow-hidden rounded-lg">
+                          <div className="relative w-full aspect-[16/9] min-h-[200px] bg-[#111] overflow-hidden rounded-lg">
+                            {thumbnailSrc ? (
+                              <Image
+                                src={thumbnailSrc}
+                                alt={study.title}
+                                fill
+                                sizes="(max-width: 768px) 100vw, 420px"
+                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-[#222]" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1">
+                          <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-light">
+                            {study.category || "Company"}
+                          </div>
+                          <h2 className="text-[22px] font-semibold mb-3 leading-tight">
+                            {study.title}
+                          </h2>
+                          <p className="text-gray-400 leading-relaxed text-[14px]">
+                            &quot;{study.heroQuote}&quot;
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Desktop Layout (side-by-side) - Hidden on mobile */}
+                      <div className="hidden md:flex flex-row gap-8 md:gap-10 items-start">
+                        {/* Image */}
+                        <div className="w-full md:w-[380px] lg:w-[420px] flex-shrink-0 overflow-hidden rounded-xl">
+                          <div className="relative aspect-[16/9] w-full min-h-[220px] bg-[#111] overflow-hidden rounded-xl">
+                            {thumbnailSrc ? (
+                              <Image
+                                src={thumbnailSrc}
+                                alt={study.title}
+                                fill
+                                sizes="(max-width: 1024px) 380px, 420px"
+                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-[#222]" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 pt-2">
+                          <div className="text-[11px] text-gray-500 uppercase tracking-widest mb-3 font-light">
+                            {study.category || "General"}
+                          </div>
+                          <h2 className="text-xl md:text-2xl lg:text-[28px] font-semibold mb-4 leading-tight group-hover:text-blue-400 transition-colors">
+                            {study.title}
+                          </h2>
+                          <p className="text-gray-400 leading-relaxed text-[15px] md:text-base line-clamp-3">
+                            &quot;{study.heroQuote}&quot;
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.article>
+                );
+              })
+            )}
+          </div>
+        </main>
+
+        {/* Footer */}
+        <div className="px-6 md:px-16 lg:px-24 xl:px-32 max-w-[1400px] mx-auto mt-20">
+          <Footer />
+        </div>
+      </motion.div>
+    </div>
+  );
+}

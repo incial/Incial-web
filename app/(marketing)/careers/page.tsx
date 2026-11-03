@@ -7,6 +7,7 @@ import Image from "next/image";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import type { SectionConfig } from "@/lib/dataLoader";
 
 // ── Job Card skeleton ──────────────────────────────────────────────────────
 interface Job {
@@ -76,7 +77,7 @@ function TestimonialCard({
       className="flex-1 min-w-0 flex flex-row justify-between gap-6"
     >
       <p className="text-[12px] text-gray-300 italic leading-relaxed max-w-[75%]">
-        "{text}"
+        &quot;{text}&quot;
       </p>
       <div className="text-right shrink-0 flex flex-col justify-start pt-0.5">
         <p className="text-[12px] text-white font-medium">
@@ -165,12 +166,12 @@ export default function CareersPage() {
         const res = await fetch("/api/admin/sections");
         const data = await res.json();
         const careersConfig = data.sections?.find(
-          (s: any) => s.id === "careers",
+          (s: SectionConfig) => s.id === "careers",
         );
         if (careersConfig && !careersConfig.enabled) {
           setIsDisabled(true);
         }
-      } catch (err) {
+      } catch {
         // Ignore
       }
     }
@@ -237,7 +238,7 @@ export default function CareersPage() {
               <div className="flex flex-col md:flex-row justify-between gap-6 md:gap-16">
                 <FadeIn delay={0.1} className="md:w-[38%] shrink-0">
                   <p className="text-[18px] md:text-[22px] font-bold leading-snug text-center md:text-left">
-                    We're not just building brands: we're building a team that
+                    We&apos;re not just building brands: we&apos;re building a team that
                     loves Mondays.{" "}
                     <span className="italic text-blue-400">
                       (most of the time)
@@ -273,8 +274,8 @@ export default function CareersPage() {
                 <FadeIn delay={0.2} className="md:w-[55%]">
                   {jobs.length === 0 ? (
                     <p className="text-[12px] md:text-[13px] text-gray-300 leading-relaxed text-center md:text-left">
-                      We're growing fast, but at the moment, there are no open
-                      positions. However, we're always eager to connect with
+                      We&apos;re growing fast, but at the moment, there are no open
+                      positions. However, we&apos;re always eager to connect with
                       passionate individuals who share our values and
                       creativity.
                     </p>
@@ -294,7 +295,7 @@ export default function CareersPage() {
               <div className="flex flex-col items-center sm:flex-row sm:items-center justify-between gap-3">
                 <p className="text-[12px] text-gray-400 italic text-center sm:text-left">
                   If that sounds like you, send us your portfolio or resume —
-                  we'd love to stay in touch.
+                  we&apos;d love to stay in touch.
                 </p>
                 <div className="flex items-center gap-3 shrink-0">
                   <a
@@ -338,7 +339,7 @@ export default function CareersPage() {
                     textAlign: "center",
                   }}
                 >
-                  Work at Incial goes beyond deliverables — it's about
+                  Work at Incial goes beyond deliverables — it&apos;s about
                   collaboration, innovation, and growth.
                 </p>
               </div>
@@ -412,7 +413,7 @@ export default function CareersPage() {
 
   <FadeIn delay={0.15} className="text-center mb-8">
     <p className="text-[13px] text-gray-400 max-w-[260px] mx-auto leading-relaxed">
-      If you'd like to be part of Incial's future opportunities, send us your resume at:
+      If you&apos;d like to be part of Incial&apos;s future opportunities, send us your resume at:
     </p>
   </FadeIn>
 

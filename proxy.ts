@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
 /**
- * Protect all /admin/* routes except /admin/login.
+ * Edge proxy (formerly "middleware"): protect all /admin/* routes except /admin/login.
  * Redirect unauthenticated users to the login page.
  */
 export default auth((req) => {

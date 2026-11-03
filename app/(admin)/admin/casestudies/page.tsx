@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Loader2, Save, Plus, Trash2, Star, StarOff } from "lucide-react";
 import { apiGetSection, apiSaveSection } from "@/lib/adminApi";
 import type { CaseStudiesData, CaseStudy } from "@/lib/dataLoader";
+import { pickImage } from "@/lib/imageUtils";
 import { toast } from "sonner";
 import SectionVisibilityToggle from "@/components/admin/SectionVisibilityToggle";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -21,6 +22,7 @@ function newCase(): CaseStudy {
     category: "",
     heroQuote: "",
     heroImage: "",
+    coverImage: "",
     introduction: "",
     sections: [],
     location: "",
@@ -52,7 +54,7 @@ export default function AdminCaseStudiesPage() {
     }
   }
 
-  function updateCase(field: keyof CaseStudy, value: any) {
+  function updateCase<K extends keyof CaseStudy>(field: K, value: CaseStudy[K]) {
     if (!data) return;
     const cases = [...data.cases];
     cases[selected] = { ...cases[selected], [field]: value };
@@ -144,6 +146,16 @@ export default function AdminCaseStudiesPage() {
             Save Changes
           </button>
         </div>
+      </div>
+
+            {/* ── Case Studies Section Banner ── */}
+      <div className="mb-4 p-4 rounded-2xl border border-[#1e1e1e] bg-[#050505] shrink-0">
+        <ImageUpload
+          label="Case Studies Page Header / Banner"
+          value={data.heroBanner || ""}
+          onChange={(v) => setData({ ...data, heroBanner: v })}
+          folder="images/case-studies"
+        />
       </div>
 
       {/* ── Split layout ── */}
@@ -271,13 +283,81 @@ export default function AdminCaseStudiesPage() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <ImageUpload
-                  label="Hero Image"
-                  value={active.heroImage}
-                  onChange={(v) => updateCase("heroImage", v)}
-                  folder="images/case-studies"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <p className="col-span-2 text-[11px] text-[#555] -mb-1">
+                  The website uses the Cover Image as the list thumbnail and the
+                  Hero Image as the page banner. If one is empty (or still the
+                  placeholder), the other is used.
+                </p>
+                <div className="space-y-1.5">
+                  <ImageUpload
+                    label="Cover Image (Thumbnail)"
+                    value={active.coverImage || ""}
+                    onChange={(v) => updateCase("coverImage", v)}
+                    folder="images/case-studies"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <ImageUpload
+                    label="Hero Image (Header/Banner)"
+                    value={active.heroImage || ""}
+                    onChange={(v) => updateCase("heroImage", v)}
+                    folder="images/case-studies"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-[#1e1e1e]">
+                <div className="flex items-center justify-between">
+                  <label className={labelCls}>Gallery Images</label>
+                  <button
+                    type="button"
+                    onClick={() => updateCase("images", [...(active.images || []), ""])}
+                    className="flex items-center gap-1 text-[11px] text-[#8e8e8e] hover:text-white transition-colors"
+                  >
+                    <Plus size={12} /> Add Image
+                  </button>
+                </div>
+                {(active.images || []).length === 0 ? (
+                  <p className="text-[11px] text-[#555]">
+                    No gallery images. Add as many as you like — they appear as
+                    a gallery at the bottom of the case study page.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {(active.images || []).map((url, gi) => (
+                      <div
+                        key={`gallery-${active.id ?? active.slug}-${gi}`}
+                        className="relative p-2 border border-[#1e1e1e] rounded-xl bg-[#050505]"
+                      >
+                        <ImageUpload
+                          label={`Gallery ${gi + 1}`}
+                          value={url}
+                          onChange={(v) =>
+                            updateCase(
+                              "images",
+                              (active.images || []).map((u, i) => (i === gi ? v : u)),
+                            )
+                          }
+                          folder="images/case-studies"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateCase(
+                              "images",
+                              (active.images || []).filter((_, i) => i !== gi),
+                            )
+                          }
+                          className="absolute top-2 right-2 text-red-500/70 hover:text-red-500 transition-colors"
+                          title="Remove gallery image"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -369,9 +449,9 @@ export default function AdminCaseStudiesPage() {
                 className={`mx-auto max-w-2xl bg-black rounded-xl overflow-hidden border border-[#1e1e1e] pb-10 shadow-xl`}
               >
                 <div className="relative w-full h-[220px]">
-                  {active.heroImage ? (
+                  {pickImage(active.heroImage, active.coverImage) ? (
                     <Image
-                      src={active.heroImage}
+                      src={pickImage(active.heroImage, active.coverImage)}
                       alt={active.title}
                       fill
                       className="object-cover"
@@ -387,7 +467,7 @@ export default function AdminCaseStudiesPage() {
                       {active.title || "Untitled Title"}
                     </h1>
                     <p className="text-white font-[Poppins] italic text-sm line-clamp-3">
-                      "{active.heroQuote || "Hero quote text goes here"}"
+                      &quot;{active.heroQuote || "Hero quote text goes here"}&quot;
                     </p>
                   </div>
                 </div>
@@ -434,9 +514,9 @@ export default function AdminCaseStudiesPage() {
                   className={`border rounded-xl overflow-hidden text-left transition-all ${selected === i ? "border-white" : "border-[#1e1e1e] hover:border-[#333]"}`}
                 >
                   <div className="h-24 bg-[#111] relative overflow-hidden">
-                    {c.heroImage ? (
+                    {pickImage(c.coverImage, c.heroImage) ? (
                       <Image
-                        src={c.heroImage}
+                        src={pickImage(c.coverImage, c.heroImage)}
                         alt={c.title}
                         fill
                         className="object-cover"

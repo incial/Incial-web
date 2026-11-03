@@ -1,7 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins, Noto_Sans } from "next/font/google";
 import "./globals.css";
-import MarketingShell from "@/components/layout/MarketingShell";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -17,13 +16,52 @@ const notoSans = Noto_Sans({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://incial.com";
+const SITE_NAME = "Incial";
+const SITE_DESCRIPTION =
+  "Incial is a creative digital agency building brands, experiences, and products — branding, technology, and digital experience under one roof.";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://incial.com",
-  ),
-  title: "Incial — We Build Brand,Business & Beyond",
-  description:
-    "Incial is a creative digital agency building brands, experiences, and products.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Incial — We Build Brand, Business & Beyond",
+    template: "%s | Incial",
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "en_US",
+    url: "/",
+    title: "Incial — We Build Brand, Business & Beyond",
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Incial — We Build Brand, Business & Beyond",
+    description: SITE_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#000000",
+};
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: SITE_NAME,
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
 };
 
 export default function RootLayout({
@@ -48,7 +86,11 @@ export default function RootLayout({
             `,
           }}
         />
-        <MarketingShell>{children}</MarketingShell>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        {children}
       </body>
     </html>
   );

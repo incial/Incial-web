@@ -39,8 +39,6 @@ export const MobileLearnTogetherPage = () => {
       <SkillsTogetherSlide
         id={slideIds[1]}
         onInView={() => {}}
-        onNext={() => scrollToSlide(slideIds[2])}
-        onPrev={() => scrollToSlide(slideIds[0])}
       />
       <Itstartedwith
         id={slideIds[2]}
@@ -57,8 +55,6 @@ export const MobileLearnTogetherPage = () => {
       <Explore1
         id={slideIds[4]}
         onInView={() => {}}
-        onNext={() => scrollToSlide(slideIds[5])}
-        onPrev={() => scrollToSlide(slideIds[3])}
       />
       <Notjustech
         id={slideIds[5]}

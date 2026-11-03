@@ -1,26 +1,29 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { Readable } from "stream";
 
 export async function GET() {
   const filePath = path.join(process.cwd(), "public", "pdf", "Brochure.pdf");
 
   try {
-    if (!fs.existsSync(filePath)) {
+    const stat = await fs.promises.stat(filePath).catch(() => null);
+    if (!stat?.isFile()) {
       return NextResponse.json(
         { error: "Brochure is not available at the moment. Please contact us directly." },
         { status: 404 }
       );
     }
 
-    const fileBuffer = fs.readFileSync(filePath);
+    // Stream from disk — the brochure is large and must not be buffered in memory.
+    const stream = Readable.toWeb(fs.createReadStream(filePath)) as ReadableStream;
 
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(stream, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": 'attachment; filename="Incial-Brochure.pdf"',
-        "Content-Length": fileBuffer.length.toString(),
+        "Content-Length": stat.size.toString(),
         "Cache-Control": "public, max-age=86400", // Cache for 24h — PDF rarely changes
       },
     });

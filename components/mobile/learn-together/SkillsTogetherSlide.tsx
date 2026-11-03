@@ -6,15 +6,13 @@ import DesktopSkillsTogetherSlide from '../../features/learn-together/SkillsToge
 interface SlideProps {
   id?: string;
   onInView?: (id: string) => void;
-  onNext?: () => void;
-  onPrev?: () => void;
 }
 
-export const SkillsTogetherSlide = ({ id, onInView, onNext, onPrev }: SlideProps) => {
+export const SkillsTogetherSlide = ({ id, onInView }: SlideProps) => {
   return (
     <MobileSlide id={id} onInView={onInView}>
       <div className="h-full w-full origin-top scale-[0.9] sm:scale-100">
-        <DesktopSkillsTogetherSlide onNext={onNext} onPrev={onPrev} />
+        <DesktopSkillsTogetherSlide />
       </div>
     </MobileSlide>
   );

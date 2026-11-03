@@ -266,7 +266,7 @@ export default function ServiceIntroDeck({ onAction }: ServiceIntroDeckProps) {
               hoverY={config.hoverY}
               onClick={() => {
                 if (slot === "center") {
-                  onAction && onAction(card.index);
+                  onAction?.(card.index);
                 } else {
                   setActiveIndex(card.index);
                 }

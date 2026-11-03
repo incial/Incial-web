@@ -11,7 +11,6 @@ import Whatwexlpore from './Whatwexlpore';
 import Explore1 from './Explore1';
 import Notjustech from './Notjustech';
 import Itsaboutbuild from './Itsaboutbuild';
-import weDont from './Wedont';
 import Wedont from './Wedont';
 import Ourapproach from './OurApproach';
 import ReadyToStartBuilding from './ReadyToStartBuilding';
@@ -125,10 +124,10 @@ export default function LearnTogetherPage() {
         tabIndex={0}
       >
         {slide === 0 && <LearnLandingSlide />}
-        {slide === 1 && <SkillsTogetherSlide onNext={goNext} onPrev={goPrev} />}
+        {slide === 1 && <SkillsTogetherSlide />}
         {slide === 2 && <Itstatedwith onNext={goNext} onPrev={goPrev} />}
         {slide === 3 && <Whatwexlpore onNext={goNext} onPrev={goPrev} />}
-        {slide === 4 && <Explore1 onNext={goNext} onPrev={goPrev} />}
+        {slide === 4 && <Explore1 />}
         {slide === 5 && <Notjustech onNext={goNext} onPrev={goPrev} />}
         {slide === 6 && <Itsaboutbuild onNext={goNext} onPrev={goPrev} />}
         {slide === 7 && <Wedont onNext={goNext} onPrev={goPrev} />}

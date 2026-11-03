@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { validateAdminAuth } from "@/lib/adminAuth";
 import fs from "fs";
 import path from "path";
 import { revalidatePath } from "next/cache";
@@ -32,6 +32,7 @@ interface BlogPost {
 }
 
 interface BlogsData {
+  heroBanner?: string;
   popularPosts: BlogPost[];
   newestPosts: BlogPost[];
 }
@@ -156,7 +157,7 @@ function validateBlogPost(
   if (incomingCategory && incomingCategory !== category) {
     errors.push({
       path: `${pathPrefix}.category`,
-      message: `category must be \"${category}\" in this list.`,
+      message: `category must be "${category}" in this list.`,
     });
   }
 
@@ -198,8 +199,13 @@ function validateBlogsData(input: unknown): {
     });
   }
 
-  const popularInput = Array.isArray(body.popularPosts) ? body.popularPosts : [];
-  const newestInput = Array.isArray(body.newestPosts) ? body.newestPosts : [];
+  const rawObj = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const heroBanner =
+    typeof rawObj.heroBanner === "string" && rawObj.heroBanner.trim().length > 0
+      ? rawObj.heroBanner.trim()
+      : undefined;
+  const popularInput = Array.isArray(rawObj.popularPosts) ? rawObj.popularPosts : [];
+  const newestInput = Array.isArray(rawObj.newestPosts) ? rawObj.newestPosts : [];
 
   const popularPosts = popularInput
     .map((post, index) => validateBlogPost(post, index, "popular", errors))
@@ -216,7 +222,7 @@ function validateBlogsData(input: unknown): {
     if (seenSlugs.has(post.slug)) {
       errors.push({
         path: "slug",
-        message: `Duplicate slug found: \"${post.slug}\". Slugs must be unique.`,
+        message: `Duplicate slug found: "${post.slug}". Slugs must be unique.`,
       });
     }
     seenSlugs.add(post.slug);
@@ -236,12 +242,15 @@ function validateBlogsData(input: unknown): {
 
   return {
     data: {
+      heroBanner,
       popularPosts,
       newestPosts,
     },
     errors,
   };
 }
+
+const MAX_BODY_BYTES = 2 * 1024 * 1024; // 2 MB
 
 export async function GET(
   _req: NextRequest,
@@ -254,8 +263,14 @@ export async function GET(
 
   try {
     const filePath = getDataFilePath(section);
-    const raw = fs.readFileSync(filePath, "utf-8");
-    return NextResponse.json(JSON.parse(raw));
+    const raw = await fs.promises.readFile(filePath, "utf-8");
+    return NextResponse.json(JSON.parse(raw), {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch {
     return NextResponse.json({ error: "Failed to read data" }, { status: 500 });
   }
@@ -265,9 +280,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ section: string }> }
 ) {
-  // Server-side session check — replaces the old Bearer token approach
-  const session = await auth();
-  if (!session) {
+  if (!(await validateAdminAuth(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -276,8 +289,19 @@ export async function PUT(
     return NextResponse.json({ error: "Section not found" }, { status: 404 });
   }
 
+  const declaredLength = Number(req.headers.get("content-length") ?? 0);
+  if (declaredLength > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+  }
+
   try {
     const body = await req.json();
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { error: "Body must be a JSON object or array." },
+        { status: 400 }
+      );
+    }
     let payload = body;
 
     if (section === "blogs") {
@@ -296,13 +320,28 @@ export async function PUT(
 
     const filePath = getDataFilePath(section);
 
-    fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf-8");
+    // Write to a temp file then rename so a crash can't leave truncated JSON.
+    const tmpPath = `${filePath}.${process.pid}.tmp`;
+    await fs.promises.writeFile(tmpPath, JSON.stringify(payload, null, 2), "utf-8");
+    await fs.promises.rename(tmpPath, filePath);
 
+    // Revalidate paths for real-time frontend reflection
     if (section === "blogs") {
       revalidatePath("/blogs");
       revalidatePath("/blogs/[slug]", "page");
-      revalidatePath("/admin/blogs");
+      revalidatePath("/sitemap.xml");
+    } else if (section === "casestudies") {
+      revalidatePath("/case-studies");
+      revalidatePath("/case-studies/[slug]", "page");
+      revalidatePath("/sitemap.xml");
+    } else if (section === "about") {
+      revalidatePath("/about");
+    } else if (section === "services") {
+      revalidatePath("/services");
+    } else if (section === "products") {
+      revalidatePath("/products");
     }
+    revalidatePath("/");
 
     return NextResponse.json({ ok: true });
   } catch {

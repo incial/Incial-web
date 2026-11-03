@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Save, Power } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { apiGetSection, apiSaveSection } from "@/lib/adminApi";
-import type { SectionsConfig, SectionConfig } from "@/lib/dataLoader";
+import type { SectionsConfig } from "@/lib/dataLoader";
 import { toast } from "sonner";
 
 export default function AdminSettingsPage() {

@@ -122,7 +122,7 @@ function GalleryImageFigure({
           src={src}
           alt={alt}
           fill
-          className="object-contain object-center"
+          className="object-cover object-center"
         />
       </div>
     </motion.figure>
@@ -299,13 +299,8 @@ function MetaRow({ post }: { post: BlogPost }) {
   );
 }
 
-function BlogHeroVisual({
-  post,
-  variant,
-}: {
-  post: BlogPost;
-  variant: LayoutVariant;
-}) {
+function BlogHeroVisual({ post }: { post: BlogPost }) {
+  const heroSrc = post.image || post.coverImage || post.heroImage || "";
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -314,14 +309,16 @@ function BlogHeroVisual({
       className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.02] shadow-[0_24px_80px_rgba(0,0,0,0.35)]"
     >
       <div className="absolute inset-0 bg-linear-to-tr from-white/10 via-transparent to-transparent" />
-      <div className="relative aspect-[16/9] sm:aspect-[18/8] min-h-[280px] sm:min-h-[360px]">
-        <Image
-          src={post.image}
-          alt={post.title}
-          fill
-          priority
-          className="object-contain object-center"
-        />
+      <div className="relative aspect-[16/9] sm:aspect-[18/8] min-h-[280px] sm:min-h-[360px] bg-neutral-900">
+        {heroSrc ? (
+          <Image
+            src={heroSrc}
+            alt={post.title}
+            fill
+            priority
+            className="object-cover object-center"
+          />
+        ) : null}
       </div>
       <div className="absolute inset-0 bg-linear-to-t from-black/35 via-transparent to-transparent" />
     </motion.div>
@@ -329,6 +326,7 @@ function BlogHeroVisual({
 }
 
 function RelatedCard({ post, index }: { post: BlogPost; index: number }) {
+  const cardImg = post.image || post.coverImage || post.heroImage || "";
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -338,13 +336,15 @@ function RelatedCard({ post, index }: { post: BlogPost; index: number }) {
     >
       <Link href={`/blogs/${post.slug}`} className="group block">
         <div className="bg-white rounded-[20px] p-[8px] flex flex-col gap-[8px] shadow-sm group-hover:shadow-md transition-shadow duration-300">
-          <div className="relative rounded-[14px] overflow-hidden aspect-video w-full">
-            <Image
-              src={post.image}
-              alt={post.title}
-              fill
-              className="object-contain object-center"
-            />
+          <div className="relative rounded-[14px] overflow-hidden aspect-video w-full bg-neutral-900">
+            {cardImg ? (
+              <Image
+                src={cardImg}
+                alt={post.title}
+                fill
+                className="object-cover object-center"
+              />
+            ) : null}
             <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-3">
               <h4 className="text-[13px] font-semibold leading-snug text-white line-clamp-2">
@@ -411,7 +411,7 @@ export default function BlogPostClient({
   const [menuOpen, setMenuOpen] = useState(false);
   const variant = getLayoutVariant(post.slug);
   const blocks = parseContentToBlocks(post.content);
-  const coverImage = post.image;
+  const coverImage = post.image || post.coverImage || post.heroImage || "";
   const galleryImages = getPostImages(post);
 
   const breadcrumbItems = [
@@ -446,7 +446,7 @@ export default function BlogPostClient({
                   alt={post.title}
                   fill
                   priority
-                  className="object-contain object-center"
+                  className="object-cover object-center"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
               </div>
@@ -493,7 +493,7 @@ export default function BlogPostClient({
                   alt={post.title}
                   fill
                   priority
-                  className="object-contain object-center"
+                  className="object-cover object-center"
                 />
                 <div className="absolute inset-0 bg-linear-to-b from-black/30 via-transparent to-black" />
 
@@ -604,7 +604,7 @@ export default function BlogPostClient({
                   alt={post.title}
                   fill
                   priority
-                  className="object-contain object-center"
+                  className="object-cover object-center"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               </motion.div>
@@ -683,7 +683,7 @@ export default function BlogPostClient({
                     alt={post.title}
                     fill
                     priority
-                    className="object-contain object-center"
+                    className="object-cover object-center"
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
                 </motion.div>
@@ -763,7 +763,7 @@ export default function BlogPostClient({
 
               {/* hero image */}
               <div className="mt-6 mb-8">
-                <BlogHeroVisual post={post} variant={variant} />
+                <BlogHeroVisual post={post} />
               </div>
 
               {/* content */}
@@ -810,7 +810,7 @@ export default function BlogPostClient({
               </section>
 
               <div className="max-w-5xl mx-auto mb-14">
-                <BlogHeroVisual post={post} variant={variant} />
+                <BlogHeroVisual post={post} />
               </div>
 
               <article className="max-w-3xl mx-auto">
@@ -881,7 +881,7 @@ export default function BlogPostClient({
 
               {/* hero image */}
               <div className="mt-6 mb-8">
-                <BlogHeroVisual post={post} variant={variant} />
+                <BlogHeroVisual post={post} />
               </div>
 
               {/* content */}
@@ -926,7 +926,7 @@ export default function BlogPostClient({
               </section>
 
               <div className="max-w-6xl mb-14">
-                <BlogHeroVisual post={post} variant={variant} />
+                <BlogHeroVisual post={post} />
               </div>
 
               <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">

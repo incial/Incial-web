@@ -3,12 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
-interface SlideProps {
-  onNext?: () => void;
-  onPrev?: () => void;
-}
-
-const Explore1 = ({ onNext, onPrev }: SlideProps) => {
+const Explore1 = () => {
   const [showLine, setShowLine] = useState(false);
 
   const [showFirstLabel, setShowFirstLabel] = useState(false);

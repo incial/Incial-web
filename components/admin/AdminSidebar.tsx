@@ -10,12 +10,10 @@ import {
   BookOpen,
   Briefcase,
   Package,
-  Settings2,
   LogOut,
   Layers,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -30,7 +28,6 @@ const navItems = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
 
   return (
     <aside className="w-60 shrink-0 border-r border-[#1e1e1e] flex flex-col bg-black">

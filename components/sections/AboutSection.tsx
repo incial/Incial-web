@@ -26,7 +26,7 @@ const fadeUp = {
   }),
 };
 
-import { AboutData } from "@/lib/dataLoader";
+import type { AboutData, TeamMember } from "@/lib/dataLoader";
 
 interface AboutSectionProps {
   onBack?: () => void;
@@ -41,12 +41,6 @@ export default function AboutSection({
   const [data, setData] = useState<AboutData | null>(null);
   const [brandSrc, setBrandSrc] = useState(imgBrand);
   const [impactSrc, setImpactSrc] = useState(imgImpact);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    message: "",
-  });
 
   const [showAllTeam, setShowAllTeam] = useState(false);
   const teamMembers = data?.teamMembers || [];
@@ -86,15 +80,6 @@ export default function AboutSection({
     container.addEventListener("wheel", handleScroll, { passive: false });
     return () => container.removeEventListener("wheel", handleScroll);
   }, [onBack, onComplete]);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Contact form submitted:", formData);
-  };
 
   return (
     <section
@@ -353,7 +338,7 @@ function getInitials(name: string): string {
 }
 
 // ── Team member card sub-component ───────────────────────────────────────
-function TeamMemberCard({ member, delay }: { member: any; delay: number }) {
+function TeamMemberCard({ member, delay }: { member: TeamMember; delay: number }) {
   const [imgError, setImgError] = useState(false);
 
   // Treat missing/empty src the same as a load error

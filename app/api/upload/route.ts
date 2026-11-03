@@ -1,46 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import ImageKit from "imagekit";
-import { auth } from "@/auth";
+import { validateAdminAuth } from "@/lib/adminAuth";
 
 interface UploadResult {
   url: string;
 }
 
-// Generate a random string for filename mapping
-function generateId(length: number = 8) {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
 
-async function validateAuth(req: NextRequest): Promise<boolean> {
-  const session = await auth();
-  if (session) {
-    return true;
-  }
+// Allow-list of raster image types; extension is derived from the MIME type,
+// never from the user-supplied filename.
+const ALLOWED_TYPES: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/avif": "avif",
+};
 
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) return false;
-  const token = authHeader.slice(7);
-  const adminSecret = process.env.ADMIN_SECRET || "incial-admin-2024";
-  return token === adminSecret;
-}
+const FOLDER_PATTERN = /^[a-z0-9_-]+(\/[a-z0-9_-]+)*$/i;
 
 export async function POST(req: NextRequest) {
-  if (!(await validateAuth(req))) {
+  if (!(await validateAdminAuth(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File | null;
+    const file = formData.get("file");
 
-    if (!file) {
+    if (!(file instanceof File)) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
+
+    const ext = ALLOWED_TYPES[file.type];
+    if (!ext) {
+      return NextResponse.json(
+        { error: "Unsupported file type. Use PNG, JPEG, WebP, GIF or AVIF." },
+        { status: 415 }
+      );
+    }
+
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json(
+        { error: "File too large. Maximum size is 10 MB." },
+        { status: 413 }
+      );
+    }
+
+    // Optional subfolder (e.g. "images/about", "clients") — strictly sanitized
+    // so callers cannot escape /incial-web via "..".
+    const rawFolder = String(formData.get("folder") ?? "")
+      .trim()
+      .replace(/^\/+|\/+$/g, "");
+    if (rawFolder && !FOLDER_PATTERN.test(rawFolder)) {
+      return NextResponse.json({ error: "Invalid folder." }, { status: 400 });
+    }
+    const targetFolder = rawFolder
+      ? `/incial-web/${rawFolder}`
+      : "/incial-web/uploads";
 
     const publicKey = process.env.IMAGEKIT_PUBLIC_KEY;
     const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
@@ -53,31 +72,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const imagekit = new ImageKit({
-      publicKey,
-      privateKey,
-      urlEndpoint,
-    });
+    const imagekit = new ImageKit({ publicKey, privateKey, urlEndpoint });
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    // Create a unique filename
-    const ext = file.name.split(".").pop() || "png";
-    const filename = `img-${Date.now()}-${generateId()}.${ext}`;
-
-    // Allow callers to specify a subfolder (e.g. "images/about", "clients")
-    const folder = (formData.get("folder") as string | null) || "";
-    const targetFolder = folder
-      ? `/incial-web/${folder.replace(/^\/|\/$/g, "")}`
-      : "/incial-web/uploads";
+    const filename = `img-${Date.now()}-${randomBytes(4).toString("hex")}.${ext}`;
 
     const uploadResponse = await new Promise<UploadResult>((resolve, reject) => {
       imagekit.upload(
-        {
-          file: buffer,
-          fileName: filename,
-          folder: targetFolder,
-        },
-        function(error, result) {
+        { file: buffer, fileName: filename, folder: targetFolder },
+        (error, result) => {
           if (error) reject(error);
           else resolve(result as UploadResult);
         }

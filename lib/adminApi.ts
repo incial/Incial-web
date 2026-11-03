@@ -1,6 +1,6 @@
 /**
  * Admin API helpers — used by admin pages to load/save section data.
- * Auth is handled entirely by NextAuth session cookies (server-side).
+ * Auth is handled by NextAuth session cookies (server-side) and Bearer token fallback.
  */
 
 export interface AdminValidationError {
@@ -21,7 +21,17 @@ export class AdminApiError extends Error {
 }
 
 export async function fetchJsonIfAvailable<T>(url: string): Promise<T | null> {
-  const res = await fetch(url);
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("admin_token") || ""
+      : "";
+
+  const headers: HeadersInit = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch(url, { headers });
 
   if (!res.ok) {
     return null;
@@ -49,12 +59,21 @@ export async function apiGetSection<T>(section: string): Promise<T> {
 }
 
 export async function apiSaveSection<T>(section: string, data: T): Promise<void> {
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("admin_token") || ""
+      : "";
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const res = await fetch(`/api/admin/${section}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      // Auth is verified server-side via NextAuth session cookie — no token needed here
-    },
+    headers,
     body: JSON.stringify(data),
   });
   if (!res.ok) {
