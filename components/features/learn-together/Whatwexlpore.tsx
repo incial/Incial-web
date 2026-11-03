@@ -1,7 +1,7 @@
 
 'use client';
 
-import { motion, AnimatePresence, type Transition } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -13,11 +13,6 @@ interface SlideProps {
 
 const Whatwexlpore = ({ onNext, onPrev, hideNav }: SlideProps) => {
   const [showCircle, setShowCircle] = useState(false);
-
-  const circleTraceTransitions: Transition = {
-    duration: 0.95,
-    ease: [0.22, 1, 0.36, 1],
-  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShowCircle(true), 350);

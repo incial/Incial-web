@@ -7,11 +7,13 @@ import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
-import type { BlogPost } from "@/lib/dataLoader";
+import type { BlogPost, SectionConfig } from "@/lib/dataLoader";
 import { useDevice } from "@/hooks";
 import { MobileLayout } from "@/components/mobile";
 
 function BlogCard({ post, index }: { post: BlogPost; index: number }) {
+  const imageSrc = post.image || post.coverImage || post.heroImage;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -22,14 +24,20 @@ function BlogCard({ post, index }: { post: BlogPost; index: number }) {
     >
       <Link href={`/blogs/${post.slug}`} className="group block">
         <div className="bg-white/95 rounded-[24px] p-3 flex flex-col gap-3 shadow-[0_10px_35px_rgba(0,0,0,0.2)] group-hover:shadow-[0_22px_52px_rgba(0,0,0,0.32)] transition-all duration-300 border border-white/30">
-          <div className="relative rounded-[18px] overflow-hidden aspect-4/3 w-full">
-            <Image
-              src={post.image}
-              alt={post.title}
-              fill
-              className="object-cover grayscale brightness-65 scale-[1.02] group-hover:scale-[1.07] group-hover:brightness-75 transition-all duration-500"
-            />
-            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/25 to-transparent" />
+          <div className="relative rounded-[18px] overflow-hidden aspect-[4/3] w-full min-h-[220px] bg-neutral-900">
+            {imageSrc ? (
+              <Image
+                src={imageSrc}
+                alt={post.title}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                priority={index < 3}
+              />
+            ) : (
+              <div className="w-full h-full bg-[#111]" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
             <div className="absolute top-3 left-3">
               <span className="inline-flex items-center rounded-full bg-white/90 text-black text-[11px] font-semibold px-3 py-1 tracking-[0.06em] uppercase">
                 {post.category}
@@ -73,11 +81,13 @@ function SectionLabel({ label, delay = 0 }: { label: string; delay?: number }) {
 }
 
 interface BlogsClientProps {
+  heroBanner?: string;
   popularPosts: BlogPost[];
   newestPosts: BlogPost[];
 }
 
 export default function BlogsClient({
+  heroBanner,
   popularPosts,
   newestPosts,
 }: BlogsClientProps) {
@@ -94,18 +104,18 @@ export default function BlogsClient({
       try {
         const res = await fetch("/api/admin/sections");
         const data = await res.json();
-        const blogsConfig = data.sections?.find((s: any) => s.id === "blogs");
+        const blogsConfig = data.sections?.find((s: SectionConfig) => s.id === "blogs");
         if (blogsConfig && !blogsConfig.enabled) {
           setIsDisabled(true);
         }
         if (data?.sections) {
           const configMap: Record<string, boolean> = {};
-          data.sections.forEach((s: any) => {
+          data.sections.forEach((s: SectionConfig) => {
             configMap[s.id] = s.enabled;
           });
           setSectionsConfig(configMap);
         }
-      } catch (err) {
+      } catch {
         // Ignore
       }
     }
@@ -126,7 +136,7 @@ export default function BlogsClient({
     </div>
   );
 
-  // ── Desktop page body (UNTOUCHED) ─────────────────────────────────────────
+  // ── Desktop page body ─────────────────────────────────────────
   const pageBody = (
     <>
       <div className="pointer-events-none absolute inset-0 opacity-40">
@@ -144,15 +154,33 @@ export default function BlogsClient({
           className="mb-8"
         />
 
-        {/* Page Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-4xl sm:text-5xl md:text-6xl font-bold text-center mb-4"
-        >
-          Blogs
-        </motion.h1>
+        {/* Page Hero Banner or Title */}
+        {heroBanner ? (
+          <div className="relative w-full h-[320px] md:h-[420px] lg:h-[480px] rounded-2xl overflow-hidden mb-12 max-w-[1431px] mx-auto bg-neutral-900">
+            <Image
+              src={heroBanner}
+              alt="Blogs Hero Banner"
+              fill
+              sizes="(max-width: 1440px) 100vw, 1440px"
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-black/45 flex items-center justify-center">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white">
+                Blogs
+              </h1>
+            </div>
+          </div>
+        ) : (
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-4xl sm:text-5xl md:text-6xl font-bold text-center mb-4"
+          >
+            Blogs
+          </motion.h1>
+        )}
 
         <motion.p
           initial={{ opacity: 0, y: 16 }}
@@ -198,7 +226,7 @@ export default function BlogsClient({
     </>
   );
 
-  // ── Mobile page body (no breadcrumbs, same full-width cards as desktop) ───
+  // ── Mobile page body ───
   const mobilePageBody = (
     <div className="relative min-h-screen bg-black text-white">
       {/* Ambient blobs */}
@@ -209,15 +237,32 @@ export default function BlogsClient({
       </div>
 
       <main className="relative pt-[125px] min-[380px]:pt-[135px] pb-24 px-4">
-        {/* Page title — no breadcrumbs */}
-        <motion.h1
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.05 }}
-          className="text-[32px] font-bold italic text-center mb-2"
-        >
-          Blogs
-        </motion.h1>
+        {heroBanner ? (
+          <div className="relative w-full h-[200px] rounded-xl overflow-hidden mb-6 bg-neutral-900">
+            <Image
+              src={heroBanner}
+              alt="Blogs Hero Banner"
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-black/45 flex items-center justify-center">
+              <h1 className="text-[28px] font-bold italic text-white">
+                Blogs
+              </h1>
+            </div>
+          </div>
+        ) : (
+          <motion.h1
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.05 }}
+            className="text-[32px] font-bold italic text-center mb-2"
+          >
+            Blogs
+          </motion.h1>
+        )}
 
         <motion.p
           initial={{ opacity: 0, y: 12 }}
@@ -281,7 +326,7 @@ export default function BlogsClient({
     return <MobileLayout>{mobilePageBody}</MobileLayout>;
   }
 
-  // ── Desktop render (UNTOUCHED) ────────────────────────────────────────────
+  // ── Desktop render ────────────────────────────────────────────
   return (
     <div className="relative min-h-screen bg-white">
       <Header menuOpen={menuOpen} onToggleMenu={() => setMenuOpen(!menuOpen)} />

@@ -9,11 +9,17 @@ interface LogoScreenProps {
   onNextClick?: () => void;
   skipAnimation?: boolean;
   sizeMode?: "mobile" | "desktop";
+  /** Desktop only: shrink the logo to the top of the screen, as the origin of the services lines. */
+  compact?: boolean;
 }
+
+/** Top offset of the compact logo; the services deck lays itself out below it. */
+export const COMPACT_LOGO_TOP = "clamp(4.25rem, 10vh, 6.5rem)";
 
 export default function LogoScreen({
   skipAnimation,
   sizeMode = "desktop",
+  compact = false,
 }: LogoScreenProps) {
   const isMobile = sizeMode === "mobile";
 
@@ -143,14 +149,15 @@ export default function LogoScreen({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className="relative flex h-full w-full items-center justify-center"
+      className={`relative flex h-full w-full justify-center ${compact ? "items-start" : "items-center"}`}
+      style={{ paddingTop: compact ? COMPACT_LOGO_TOP : 0 }}
     >
       {/* Left Button */}
       <motion.div
         initial={{ x: -50, opacity: skipAnimation ? 1 : 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={skipAnimation ? { duration: 0 } : { delay: 2.5 }}
-        className="absolute left-[10%] hidden md:block"
+        animate={{ x: 0, opacity: compact ? 0 : 1 }}
+        transition={compact ? { duration: 0.3 } : skipAnimation ? { duration: 0 } : { delay: 2.5 }}
+        className={`absolute left-[10%] hidden md:block ${compact ? "pointer-events-none" : ""}`}
       >
         <Link
           href="/about"
@@ -161,7 +168,15 @@ export default function LogoScreen({
       </motion.div>
 
       {/* Desktop Logo Container (Standard Flex centering, no offsets) */}
-      <div className="relative flex h-80 w-80 items-center justify-center md:h-[32rem] md:w-[32rem] lg:h-[40rem] lg:w-[40rem]">
+      <motion.div
+        layout
+        transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+        className={`relative flex items-center justify-center ${
+          compact
+            ? "h-[clamp(4.5rem,11vh,6.5rem)] w-[clamp(4.5rem,11vh,6.5rem)]"
+            : "h-80 w-80 md:h-[32rem] md:w-[32rem] lg:h-[40rem] lg:w-[40rem]"
+        }`}
+      >
         {/* Sharp Stroke Layer */}
         {!skipAnimation && (
           <motion.svg
@@ -195,6 +210,7 @@ export default function LogoScreen({
 
         {/* Full Finished Logo */}
         <motion.div
+          data-logo-source
           className="absolute inset-0 flex items-center justify-center"
           initial={skipAnimation ? { opacity: 1 } : { opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -212,14 +228,14 @@ export default function LogoScreen({
             priority
           />
         </motion.div>
-      </div>
+      </motion.div>
 
       {/* Right Button */}
       <motion.div
         initial={{ x: 50, opacity: skipAnimation ? 1 : 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={skipAnimation ? { duration: 0 } : { delay: 2.5 }}
-        className="absolute right-[10%] hidden md:block"
+        animate={{ x: 0, opacity: compact ? 0 : 1 }}
+        transition={compact ? { duration: 0.3 } : skipAnimation ? { duration: 0 } : { delay: 2.5 }}
+        className={`absolute right-[10%] hidden md:block ${compact ? "pointer-events-none" : ""}`}
       >
         <a
           href="/pdf/Brochure.pdf"

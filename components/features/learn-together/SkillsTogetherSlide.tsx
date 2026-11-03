@@ -3,50 +3,21 @@
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useState, useEffect } from 'react';
 
-interface SlideProps {
-  onNext?: () => void;
-  onPrev?: () => void;
-}
-
-export default function SkillsTogetherSlide({ onNext, onPrev }: SlideProps) {
+export default function SkillsTogetherSlide() {
   const [isTransitioned, setIsTransitioned] = useState(false);
-  const [rightOffset, setRightOffset] = useState(() => {
+  const [rightOffset] = useState(() => {
     if (typeof window === 'undefined') return 0;
     if (window.innerWidth < 768) return 0;
     if (window.innerWidth < 1024) return Math.max(20, Math.min(20, window.innerWidth * 0.175));
     return Math.max(20, Math.min(20, window.innerWidth * 0.06));
   });
-  const [leftTarget, setLeftTarget] = useState(() => {
+  const [leftTarget] = useState(() => {
     if (typeof window === 'undefined') return 0;
     if (window.innerWidth < 768) return -Math.max(20, Math.min(20, Math.round(window.innerWidth * 0.175)));
 ;
     if (window.innerWidth < 1155) return -Math.max(20, Math.min(20, Math.round(window.innerWidth * 0.1)));
     return -Math.max(90, Math.min(80, Math.round(window.innerWidth * 0.175)));
   });
-
-  useEffect(() => {
-    // Calculate responsive right offset (~5cm ≈ 189px)
-    const updateOffset = () => {
-      // if (window.innerWidth < 768) {
-      //   setRightOffset(0);
-      // setLeftTarget(-Math.max(100, Math.min(800, Math.round(window.innerWidth * 0.175))));
-      //   return;
-      // }
-
-      // if (window.innerWidth < 1024) {
-      //   setRightOffset(Math.max(40, Math.min(110, window.innerWidth * 0.05)));
-      //   setLeftTarget(-Math.max(100, Math.min(160, Math.round(window.innerWidth * 0.1))));
-      //   return;
-      // }
-
-      // setRightOffset(Math.max(80, Math.min(189, window.innerWidth * 0.06)));
-      // setLeftTarget(-Math.max(100, Math.min(150, Math.round(window.innerWidth * 0.175))));
-    };
-    
-    updateOffset();
-    window.addEventListener('resize', updateOffset);
-    return () => window.removeEventListener('resize', updateOffset);
-  }, []);
 
   const headingControls = useAnimation();
 

@@ -23,13 +23,26 @@ async function main() {
 
   try {
     const fileBuffer = fs.readFileSync(filePath);
-    const blob = new Blob([fileBuffer]);
+    const mimeByExt = {
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".webp": "image/webp",
+      ".gif": "image/gif",
+      ".avif": "image/avif",
+    };
+    const blob = new Blob([fileBuffer], {
+      type: mimeByExt[path.extname(filePath).toLowerCase()] || "",
+    });
 
     const formData = new FormData();
     formData.append("file", blob, path.basename(filePath));
 
-    // The API route currently uses this default secret if ADMIN_SECRET isn't in .env
-    const adminSecret = process.env.ADMIN_SECRET || "incial-admin-2024";
+    const adminSecret = process.env.ADMIN_SECRET;
+    if (!adminSecret) {
+      console.error("ADMIN_SECRET must be set in .env to use this script.");
+      process.exit(1);
+    }
 
     // Ensure Next.js server is running on localhost:3000
     const res = await fetch("http://localhost:3000/api/upload", {

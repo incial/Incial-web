@@ -9,7 +9,7 @@ import { isGlobalScrollLocked, lockGlobalScroll } from "@/lib/scrollLock";
 import RotatingText from "@/components/features/home/RotatingText";
 import LogoScreen from "@/components/features/home/LogoScreen";
 import BackgroundCircle from "@/components/features/home/BackgroundCircle";
-import ServicesSection from "@/components/sections/ServicesSection";
+import HomeServicesDeck from "@/components/features/services/HomeServicesDeck";
 import { MobileServicePage } from "@/components/mobile";
 import { useDevice } from "@/hooks";
 
@@ -42,30 +42,6 @@ const desktopSectionTransition = {
   duration: 0.8,
   ease: [0.22, 1, 0.36, 1],
 } as const;
-
-const servicesCardVariants: Variants = {
-  enter: (direction: number) => ({
-    y: direction > 0 ? "100%" : 0,
-    scale: direction > 0 ? 0.98 : 1,
-    opacity: 1,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-  }),
-  center: {
-    y: 0,
-    scale: 1,
-    opacity: 1,
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-  },
-  exit: (direction: number) => ({
-    y: direction > 0 ? 0 : "100%",
-    scale: direction > 0 ? 0.94 : 0.98,
-    opacity: direction > 0 ? 0.4 : 1,
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-  }),
-};
 
 export default function ScrollSection({
   onScrollComplete,
@@ -265,17 +241,13 @@ export default function ScrollSection({
                 <motion.div
                   key="logo"
                   initial={false}
-                  animate={{
-                    opacity: desktopSection === "services" ? 0.38 : 1,
-                    scale: desktopSection === "services" ? 0.94 : 1,
-                    y: desktopSection === "services" ? -24 : 0,
-                  }}
+                  animate={{ opacity: desktopSection === "services" ? 0 : 1 }}
                   transition={
-                    desktopSection === "logo"
-                      ? { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
-                      : { duration: 0.85, ease: [0.22, 1, 0.36, 1] }
+                    desktopSection === "services"
+                      ? { duration: 0, delay: 0.7 }
+                      : { duration: 0 }
                   }
-                  className="absolute inset-0 h-full w-full origin-top"
+                  className="absolute inset-0 h-full w-full"
                 >
                   <LogoScreen
                     skipAnimation={
@@ -285,20 +257,17 @@ export default function ScrollSection({
                 </motion.div>
               )}
 
-              <AnimatePresence custom={desktopDirection}>
+              <AnimatePresence>
                 {desktopSection === "services" && (
                   <motion.div
                     key="services"
-                    custom={desktopDirection}
-                    variants={servicesCardVariants}
-                    initial={startAtEnd ? "center" : "enter"}
-                    animate="center"
-                    exit="exit"
-                    transition={desktopSectionTransition}
-                    className="absolute inset-0 h-full w-full overflow-hidden rounded-t-[32px] sm:rounded-t-[40px] md:rounded-t-[44px] border-t border-x border-white/20 shadow-[0_-25px_60px_rgba(0,0,0,0.95),inset_0_1px_0_rgba(255,255,255,0.2)] z-30"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, transition: { duration: 0.5 } }}
+                    transition={{ duration: 0.35, delay: 0.15 }}
+                    className="absolute inset-0 z-30 bg-black"
                   >
-                    <ServicesSection
-                      initialSlide={1}
+                    <HomeServicesDeck
                       startAtEnd={servicesStartAtEnd}
                       onComplete={onScrollComplete}
                       onBack={() => {

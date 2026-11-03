@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import * as d3 from "d3";
+import { geoGraticule, geoOrthographic, geoPath, type GeoPermissibleObjects } from "d3-geo";
+import { timer } from "d3-timer";
 
 interface RotatingEarthProps {
   width?: number;
@@ -16,7 +17,6 @@ export default function RotatingEarth({
 }: RotatingEarthProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,13 +29,12 @@ export default function RotatingEarth({
     let radius = 0;
 
     // Create projection and path generator for Canvas
-    const projection = d3
-      .geoOrthographic()
+    const projection = geoOrthographic()
       .scale(1)
       .translate([0, 0])
       .clipAngle(90);
 
-    const path = d3.geoPath().projection(projection).context(ctx);
+    const path = geoPath().projection(projection).context(ctx);
 
     interface DotData {
       lng: number;
@@ -44,7 +43,7 @@ export default function RotatingEarth({
     }
 
     const allDots: DotData[] = [];
-    let landFeatures: any;
+    let landFeatures: { features: GeoPermissibleObjects[] } | undefined;
 
     function render() {
       if (!containerSize || !radius) return;
@@ -72,7 +71,7 @@ export default function RotatingEarth({
 
       if (landFeatures) {
         // Draw graticule
-        const graticule = d3.geoGraticule();
+        const graticule = geoGraticule();
         ctx.beginPath();
         path(graticule());
         ctx.strokeStyle = "rgba(100, 150, 255, 0.2)";
@@ -83,7 +82,7 @@ export default function RotatingEarth({
 
         // Draw land outlines
         ctx.beginPath();
-        landFeatures.features.forEach((feature: any) => {
+        landFeatures?.features.forEach((feature) => {
           path(feature);
         });
         ctx.strokeStyle = "rgba(100, 150, 255, 0.6)";
@@ -141,7 +140,6 @@ export default function RotatingEarth({
     };
     const loadWorldData = async () => {
       try {
-        setIsLoading(true);
 
         const [landRes, dotsRes] = await Promise.all([
           fetch("https://raw.githubusercontent.com/martynafford/natural-earth-geojson/refs/heads/master/110m/physical/ne_110m_land.json"),
@@ -159,10 +157,8 @@ export default function RotatingEarth({
         });
 
         render();
-        setIsLoading(false);
-      } catch (err) {
+      } catch {
         setError("Failed to load land map data");
-        setIsLoading(false);
       }
     };
 
@@ -180,7 +176,7 @@ export default function RotatingEarth({
     };
 
     // Auto-rotation timer
-    const rotationTimer = d3.timer(rotate);
+    const rotationTimer = timer(rotate);
 
     const handleMouseDown = (event: MouseEvent) => {
       autoRotate = false;

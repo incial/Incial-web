@@ -36,7 +36,7 @@ export default function NavMenu({ onClose }: NavMenuProps) {
     if (href.startsWith("/#") || href.startsWith("#")) {
       const hash = href.replace(/^\/?#/, "");
       if (typeof window !== "undefined" && window.location.pathname === "/") {
-        window.location.hash = hash;
+        window.history.pushState(null, "", `#${hash}`);
         window.dispatchEvent(new Event("hashchange"));
       }
     }

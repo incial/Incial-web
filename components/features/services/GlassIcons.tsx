@@ -16,7 +16,7 @@ interface GlassIconProps {
  * - Precision specular highlight lines along top and side bevel ridges
  * - Soft ambient blue glow beneath the icon
  */
-export function GlassInfinityIcon({ className = "", size = 180 }: GlassIconProps) {
+function GlassInfinityIcon({ className = "", size = 180 }: GlassIconProps) {
   const id = "glass-infinity";
   return (
     <div className={`relative flex items-center justify-center ${className}`}>
@@ -219,7 +219,7 @@ export function GlassInfinityIcon({ className = "", size = 180 }: GlassIconProps
  * - Cybernetic refractive blue bevels and internal luminous core
  * - Clean geometric specular edges
  */
-export function GlassTechCubeIcon({ className = "", size = 180 }: GlassIconProps) {
+function GlassTechCubeIcon({ className = "", size = 180 }: GlassIconProps) {
   const id = "glass-tech";
   return (
     <div className={`relative flex items-center justify-center ${className}`}>
@@ -334,7 +334,7 @@ export function GlassTechCubeIcon({ className = "", size = 180 }: GlassIconProps
  * - Interconnected luminous refractive rings / gemstone prism
  * - Creative prismatic refractions and specular highlights
  */
-export function GlassDesignPrismIcon({ className = "", size = 180 }: GlassIconProps) {
+function GlassDesignPrismIcon({ className = "", size = 180 }: GlassIconProps) {
   const id = "glass-prism";
   return (
     <div className={`relative flex items-center justify-center ${className}`}>

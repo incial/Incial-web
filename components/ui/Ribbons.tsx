@@ -3,6 +3,15 @@
 import { useEffect, useRef } from "react";
 import { Renderer, Transform, Vec3, Color, Polyline } from "ogl";
 
+interface RibbonLine {
+  spring: number;
+  friction: number;
+  mouseVelocity: Vec3;
+  mouseOffset: Vec3;
+  points: Vec3[];
+  polyline: Polyline;
+}
+
 interface RibbonsProps {
   colors?: string[];
   baseSpring?: number;
@@ -68,7 +77,7 @@ const Ribbons = ({
     container.appendChild(gl.canvas);
 
     const scene = new Transform();
-    const lines: any[] = [];
+    const lines: RibbonLine[] = [];
 
     const vertex = `
       precision highp float;
@@ -150,21 +159,12 @@ const Ribbons = ({
         0,
       );
 
-      const line: any = {
-        spring,
-        friction,
-        mouseVelocity: new Vec3(),
-        mouseOffset,
-      };
-
-      const count = pointCount;
-      const points = [];
-      for (let i = 0; i < count; i++) {
+      const points: Vec3[] = [];
+      for (let i = 0; i < pointCount; i++) {
         points.push(new Vec3());
       }
-      line.points = points;
 
-      line.polyline = new Polyline(gl, {
+      const polyline = new Polyline(gl, {
         points,
         vertex,
         fragment,
@@ -178,8 +178,15 @@ const Ribbons = ({
           uEnableFade: { value: enableFade ? 1.0 : 0.0 },
         },
       });
-      line.polyline.mesh.setParent(scene);
-      lines.push(line);
+      polyline.mesh.setParent(scene);
+      lines.push({
+        spring,
+        friction,
+        mouseVelocity: new Vec3(),
+        mouseOffset,
+        points,
+        polyline,
+      });
     });
 
     resize();

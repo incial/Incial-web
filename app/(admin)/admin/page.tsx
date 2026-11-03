@@ -158,7 +158,6 @@ export default function AdminDashboard() {
             label,
             icon: Icon,
             desc,
-            color,
             border,
             iconColor,
             iconBg,

@@ -9,6 +9,7 @@ import {
   AdminApiError,
 } from "@/lib/adminApi";
 import type { BlogsData, BlogPost } from "@/lib/dataLoader";
+import { normalizeImageUrl } from "@/lib/imageUtils";
 import { toast } from "sonner";
 import SectionVisibilityToggle from "@/components/admin/SectionVisibilityToggle";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -264,10 +265,10 @@ function BlogPreviewCard({
       >
         {post.image ? (
           <Image
-            src={post.image}
+            src={normalizeImageUrl(post.image)}
             alt={post.title}
             fill
-            className="object-contain object-center"
+            className="object-cover object-center"
           />
         ) : (
           <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
@@ -317,6 +318,7 @@ export default function AdminBlogsPage() {
         };
 
         setData({
+          heroBanner: incoming.heroBanner || "",
           popularPosts: incoming.popularPosts.map(normalizePost),
           newestPosts: incoming.newestPosts.map(normalizePost),
         });
@@ -339,6 +341,7 @@ export default function AdminBlogsPage() {
       });
 
       const payload: BlogsData = {
+        heroBanner: data.heroBanner,
         popularPosts: data.popularPosts.map(sanitizePost),
         newestPosts: data.newestPosts.map(sanitizePost),
       };
@@ -402,7 +405,7 @@ export default function AdminBlogsPage() {
         month: "long",
         day: "2-digit",
       }),
-      image: "https://ik.imagekit.io/0bs3my2iz/incial-web/images/case1.webp",
+      image: "",
       images: [],
       category,
       content: "",
@@ -509,6 +512,16 @@ export default function AdminBlogsPage() {
             Save Changes
           </button>
         </div>
+      </div>
+
+      {/* ── Blogs Section Banner ── */}
+      <div className="mb-4 p-4 rounded-2xl border border-[#1e1e1e] bg-[#050505] shrink-0">
+        <ImageUpload
+          label="Blogs Page Header / Banner"
+          value={data.heroBanner || ""}
+          onChange={(v) => setData({ ...data, heroBanner: v })}
+          folder="images/blogs"
+        />
       </div>
 
       {/* ── Split layout ── */}

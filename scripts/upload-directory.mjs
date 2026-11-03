@@ -116,7 +116,7 @@ async function main() {
 
     try {
       await uploadFile(filePath, ikFolder);
-    } catch (err) {
+    } catch {
       // Continue with the next file even if one fails
     }
   }

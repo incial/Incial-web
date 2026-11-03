@@ -197,7 +197,6 @@ export default function ServicesSection({
   const [stage, setStage] = useState<number>(() =>
     startAtEnd ? SERVICE_DETAILS.length - 1 : -1,
   );
-  const [direction, setDirection] = useState<number>(1);
 
   // Synchronize stage if startAtEnd changes
   useEffect(() => {
@@ -236,11 +235,10 @@ export default function ServicesSection({
   const active = SERVICE_DETAILS[current] || SERVICE_DETAILS[0];
 
   // ── Navigation helpers with Firm Catch Lock ─────────────────────────────
-  const goToStage = (targetStage: number, dir: number) => {
+  const goToStage = (targetStage: number) => {
     if (isTransitioningRef.current) return;
     isTransitioningRef.current = true;
     deltaAccumulatorRef.current = 0;
-    setDirection(dir);
     setStage(targetStage);
     stageRef.current = targetStage;
     lockGlobalScroll(850);
@@ -254,9 +252,9 @@ export default function ServicesSection({
   const handleScrollDown = () => {
     const s = stageRef.current;
     if (s === -1) {
-      goToStage(0, 1); // 1st deliberate scroll: brings Card 0 (Marketing) up to center
+      goToStage(0); // 1st deliberate scroll: brings Card 0 (Marketing) up to center
     } else if (s < SERVICE_DETAILS.length - 1) {
-      goToStage(s + 1, 1); // Next deliberate scroll: next card in sequential order
+      goToStage(s + 1); // Next deliberate scroll: next card in sequential order
     } else {
       // Last card (stage === 2: Experience Design) -> advance to next section
       if (onComplete) {
@@ -272,9 +270,9 @@ export default function ServicesSection({
   const handleScrollUp = () => {
     const s = stageRef.current;
     if (s > 0) {
-      goToStage(s - 1, -1); // Previous card
+      goToStage(s - 1); // Previous card
     } else if (s === 0) {
-      goToStage(-1, -1); // Return down to 3-card bottom deck
+      goToStage(-1); // Return down to 3-card bottom deck
     } else if (s === -1 && onBack) {
       isTransitioningRef.current = true;
       lockGlobalScroll(900);
@@ -367,61 +365,6 @@ export default function ServicesSection({
       window.removeEventListener("touchmove", handleTouchMove);
     };
   }, [onBack, onComplete]);
-
-  // Card motion variants for smooth scroll-driven vertical reveal
-  const cardVariants = {
-    enter: (dir: number) => ({
-      opacity: 0,
-      y: dir >= 0 ? 85 : -70,
-      scale: 0.94,
-    }),
-    center: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-    },
-    exit: (dir: number) => ({
-      opacity: 0,
-      y: dir >= 0 ? -70 : 85,
-      scale: 0.94,
-    }),
-  };
-
-  const leftTextVariants = {
-    enter: (dir: number) => ({
-      opacity: 0,
-      x: -25,
-      y: dir >= 0 ? 20 : -20,
-    }),
-    center: {
-      opacity: 1,
-      x: 0,
-      y: 0,
-    },
-    exit: (dir: number) => ({
-      opacity: 0,
-      x: -15,
-      y: dir >= 0 ? -20 : 20,
-    }),
-  };
-
-  const rightTextVariants = {
-    enter: (dir: number) => ({
-      opacity: 0,
-      x: 25,
-      y: dir >= 0 ? 20 : -20,
-    }),
-    center: {
-      opacity: 1,
-      x: 0,
-      y: 0,
-    },
-    exit: (dir: number) => ({
-      opacity: 0,
-      x: 15,
-      y: dir >= 0 ? -20 : 20,
-    }),
-  };
 
   return (
     <section className="h-full w-full bg-[#07080b] text-white overflow-hidden relative select-none flex flex-col justify-between items-center">
@@ -640,7 +583,7 @@ export default function ServicesSection({
             initialRotate={0}
             animateRotate={-12}
             hoverY={4}
-            onClick={() => goToStage(1, 1)}
+            onClick={() => goToStage(1)}
             className="bottom-[-75px] sm:bottom-[-90px] md:bottom-[-105px] lg:bottom-[-120px] left-1/2 -translate-x-[245px] sm:-translate-x-[305px] md:-translate-x-[355px] lg:-translate-x-[395px]"
           />
         </motion.div>
@@ -653,8 +596,8 @@ export default function ServicesSection({
           }}
           transition={{ duration: 0.65, ease: MOTION_EASING }}
           onClick={() => {
-            if (isPoppedUp) goToStage(-1, -1);
-            else goToStage(0, 1);
+            if (isPoppedUp) goToStage(-1);
+            else goToStage(0);
           }}
           className="cursor-pointer z-30 absolute bottom-[-60px] sm:bottom-[-75px] md:bottom-[-90px] lg:bottom-[-105px] left-1/2 -translate-x-1/2"
           title={isPoppedUp ? "Click to lower card" : "Click to view details"}
@@ -706,7 +649,7 @@ export default function ServicesSection({
             initialRotate={0}
             animateRotate={12}
             hoverY={4}
-            onClick={() => goToStage(2, 1)}
+            onClick={() => goToStage(2)}
             className="bottom-[-75px] sm:bottom-[-90px] md:bottom-[-105px] lg:bottom-[-120px] left-1/2 translate-x-[25px] sm:translate-x-[40px] md:translate-x-[55px] lg:translate-x-[75px]"
           />
         </motion.div>
@@ -728,7 +671,7 @@ export default function ServicesSection({
               return (
                 <button
                   key={item.id}
-                  onClick={() => goToStage(idx, idx > stage ? 1 : -1)}
+                  onClick={() => goToStage(idx)}
                   className="group relative flex items-center justify-center py-1 cursor-pointer focus:outline-none"
                   title={`View ${item.title} (${idx + 1} of ${SERVICE_DETAILS.length})`}
                 >
@@ -756,7 +699,7 @@ export default function ServicesSection({
       {/* ── Bottom Deck Rest Prompt (Only shown at rest) ── */}
       {!isPoppedUp && (
         <button
-          onClick={() => goToStage(0, 1)}
+          onClick={() => goToStage(0)}
           className="relative z-30 flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 transition-colors tracking-wide pb-3 cursor-pointer focus:outline-none"
         >
           <span>Scroll down</span>

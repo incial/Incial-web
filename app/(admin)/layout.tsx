@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import AuthSessionProvider from "@/components/admin/AuthSessionProvider";
 import AdminLayoutClient from "@/components/admin/AdminLayoutClient";
+
+export const metadata: Metadata = {
+  title: "Admin",
+  robots: { index: false, follow: false },
+};
 
 /**
  * Server component entry for the admin layout group.

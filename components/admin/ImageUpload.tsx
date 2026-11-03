@@ -33,11 +33,34 @@ export default function ImageUpload({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const resolveDisplayUrl = (raw: string) => {
+    if (!raw) return "";
+    const trimmed = raw.trim();
+    if (trimmed === "https://ik.imagekit.io/0bs3my2iz/incial-web/images/case1.webp") {
+      return "/images/case1.webp";
+    }
+    if (trimmed === "https://ik.imagekit.io/0bs3my2iz/incial-web/images/case1.jpg") {
+      return "/images/case1.jpg";
+    }
+    return trimmed;
+  };
+
+  const [previewSrc, setPreviewSrc] = useState(resolveDisplayUrl(value));
   const [previewError, setPreviewError] = useState(false);
 
   useEffect(() => {
+    setPreviewSrc(resolveDisplayUrl(value));
     setPreviewError(false);
   }, [value]);
+
+  const handleImageError = () => {
+    if (previewSrc.includes("ik.imagekit.io") && previewSrc.includes("case1.")) {
+      const ext = previewSrc.endsWith(".webp") ? "webp" : "jpg";
+      setPreviewSrc(`/images/case1.${ext}`);
+      return;
+    }
+    setPreviewError(true);
+  };
 
   // Simulated smooth progress bar tick
   const startProgress = () => {
@@ -284,15 +307,15 @@ export default function ImageUpload({
             /* Preview state */
             <div className="relative group p-2">
               <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-[#1e1e1e] bg-black flex items-center justify-center">
-                {!previewError ? (
+                {!previewError && previewSrc ? (
                   <Image
-                    src={value}
+                    src={previewSrc}
                     alt="Preview"
                     fill
                     sizes="(max-width: 768px) 100vw, 300px"
                     quality={60}
                     className="object-contain object-center"
-                    onError={() => setPreviewError(true)}
+                    onError={handleImageError}
                     referrerPolicy="no-referrer"
                   />
                 ) : (
@@ -376,7 +399,7 @@ export default function ImageUpload({
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml"
+        accept="image/jpeg, image/png, image/webp, image/gif, image/avif"
         className="hidden"
       />
 

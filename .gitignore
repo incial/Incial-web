@@ -30,8 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (the example file is committed on purpose)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -40,6 +41,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# tooling / scratch
 .agents
 .orchids
 debug.log
@@ -47,3 +49,6 @@ debug.log
 /lib/generated/prisma
 
 graphify-out
+lint_output.txt
+*.tmp
+.claude/settings.local.json

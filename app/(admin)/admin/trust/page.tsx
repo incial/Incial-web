@@ -71,7 +71,7 @@ export default function AdminTrustPage() {
             Training & Trust Stats
           </h2>
           <p className="text-[#8e8e8e] text-sm mt-1">
-            The numbers shown in the "Why Trust Incial?" section.
+            The numbers shown in the &quot;Why Trust Incial?&quot; section.
           </p>
         </div>
         <div className="flex items-center gap-6">
@@ -118,7 +118,7 @@ export default function AdminTrustPage() {
               Stats
             </p>
             <p className="text-xs text-[#8e8e8e] mb-4 leading-relaxed">
-              Big numbers shown on the website, e.g. "50+ Happy Clients".
+              Big numbers shown on the website, e.g. &quot;50+ Happy Clients&quot;.
             </p>
             <div className="space-y-3">
               {data.stats.map((stat, i) => (

@@ -11,12 +11,15 @@ import {
   ClientSection,
   ContactSection,
 } from "@/components/sections";
-import { useDevice } from "@/hooks";
 import { lockGlobalScroll } from "@/lib/scrollLock";
 
 // All scrollable section phases (preloader greetings is handled separately)
 const ALL_PHASES = ["scrolling", "trust", "client", "contact"] as const;
-type Phase = "greetings" | (typeof ALL_PHASES)[number];
+type ScrollPhase = (typeof ALL_PHASES)[number];
+type Phase = "greetings" | ScrollPhase;
+
+const isScrollPhase = (value: string): value is ScrollPhase =>
+  (ALL_PHASES as readonly string[]).includes(value);
 
 const sectionVariants = {
   enter: (direction: number) => ({
@@ -49,7 +52,6 @@ const CARD_TRANSITION = { duration: 0.8, ease: [0.22, 1, 0.36, 1] } as const;
 const MENU_OFFSET_Y = "6.25rem";
 
 export default function Home() {
-  const { isMobile } = useDevice();
   const [phase, setPhase] = useState<Phase>("greetings");
   const [greetingIndex, setGreetingIndex] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -67,8 +69,8 @@ export default function Home() {
       setActiveHash(hash);
       if (hash === "services") {
         setPhase("scrolling");
-      } else if (ALL_PHASES.includes(hash as any)) {
-        setPhase(hash as Phase);
+      } else if (isScrollPhase(hash)) {
+        setPhase(hash);
       } else {
         setPhase("scrolling");
       }
@@ -88,8 +90,8 @@ export default function Home() {
       setActiveHash(hash);
       if (hash === "services") {
         setPhase("scrolling");
-      } else if (ALL_PHASES.includes(hash as any)) {
-        setPhase(hash as Phase);
+      } else if (isScrollPhase(hash)) {
+        setPhase(hash);
       } else {
         setPhase("scrolling");
       }
@@ -105,8 +107,8 @@ export default function Home() {
       setActiveHash(hash);
       if (hash === "services") {
         setPhase("scrolling");
-      } else if (ALL_PHASES.includes(hash as any)) {
-        setPhase(hash as Phase);
+      } else if (isScrollPhase(hash)) {
+        setPhase(hash);
       }
       lockGlobalScroll(950);
       setDirection(1);

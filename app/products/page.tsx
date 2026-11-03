@@ -6,7 +6,7 @@ import Image from "next/image";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
-import type { ProductsData, Product } from "@/lib/dataLoader";
+import type { ProductsData, Product, SectionConfig } from "@/lib/dataLoader";
 
 // ── Arrow icon ─────────────────────────────────────────────────────────────
 function ArrowRight() {
@@ -150,18 +150,18 @@ export default function ProductsPage() {
       try {
         const res = await fetch("/api/admin/sections");
         const data = await res.json();
-        const prodConfig = data.sections?.find((s: any) => s.id === "products");
+        const prodConfig = data.sections?.find((s: SectionConfig) => s.id === "products");
         if (prodConfig && !prodConfig.enabled) {
           setIsDisabled(true);
         }
         if (data?.sections) {
           const configMap: Record<string, boolean> = {};
-          data.sections.forEach((s: any) => {
+          data.sections.forEach((s: SectionConfig) => {
             configMap[s.id] = s.enabled;
           });
           setSectionsConfig(configMap);
         }
-      } catch (err) {
+      } catch {
         // Ignore
       }
     }

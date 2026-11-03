@@ -25,12 +25,6 @@ const navTargets: Record<string, string> = {
 // Memoized CTA Button component
 const CTAButton = memo(
   ({ label, action, onClick }: { label: string; action: string; onClick: (action: string) => void }) => {
-    const formattedLabel = label.split(' ').map((word, index) => (
-      <span key={index} className="block">
-        {word}
-      </span>
-    ));
-
     return (
       <motion.button
         onClick={() => onClick(action)}

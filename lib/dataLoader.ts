@@ -1,5 +1,8 @@
 import fs from "fs";
 import path from "path";
+import { normalizeImageUrl, pickImage } from "./imageUtils";
+
+export { normalizeImageUrl };
 
 function readData<T>(filename: string): T {
   const filePath = path.join(process.cwd(), "data", filename);
@@ -7,38 +10,41 @@ function readData<T>(filename: string): T {
   return JSON.parse(raw) as T;
 }
 
-export function loadAboutData() {
-  return readData<AboutData>("about.json");
-}
-
-export function loadClientsData() {
-  return readData<ClientsData>("clients.json");
-}
-
-export function loadTrustData() {
-  return readData<TrustData>("trust.json");
-}
-
-export function loadBlogsData() {
-  return readData<BlogsData>("blogs.json");
+export function loadBlogsData(): BlogsData {
+  const data = readData<BlogsData>("blogs.json");
+  const normalizePost = (p: BlogPost): BlogPost => ({
+    ...p,
+    image: normalizeImageUrl(p.image),
+    coverImage: normalizeImageUrl(p.coverImage),
+    heroImage: normalizeImageUrl(p.heroImage),
+    images: (p.images || []).map(normalizeImageUrl),
+  });
+  return {
+    heroBanner: normalizeImageUrl(data.heroBanner),
+    popularPosts: (data.popularPosts || []).map(normalizePost),
+    newestPosts: (data.newestPosts || []).map(normalizePost),
+  };
 }
 
 export function loadBlogBySlug(slug: string): BlogPost | null {
-  const data = readData<BlogsData>("blogs.json");
+  const data = loadBlogsData();
   const all = [...data.popularPosts, ...data.newestPosts];
   return all.find((p) => p.slug === slug) ?? null;
 }
 
-export function loadServicesData() {
-  return readData<ServicesData>("services.json");
-}
-
-export function loadCaseStudiesData() {
-  return readData<CaseStudiesData>("casestudies.json");
-}
-
-export function loadSectionsConfig() {
-  return readData<SectionsConfig>("sections.json");
+export function loadCaseStudiesData(): CaseStudiesData {
+  const data = readData<CaseStudiesData>("casestudies.json");
+  return {
+    heroBanner: normalizeImageUrl(data.heroBanner),
+    cases: (data.cases || []).map((c) => ({
+      ...c,
+      // Thumbnail and hero fall back to each other so a leftover placeholder
+      // in one field never hides the real image set in the other.
+      coverImage: pickImage(c.coverImage, c.heroImage),
+      heroImage: pickImage(c.heroImage, c.coverImage),
+      images: (c.images || []).map(normalizeImageUrl).filter(Boolean),
+    })),
+  };
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -116,12 +122,15 @@ export interface BlogPost {
   mins: number;
   date: string;
   image: string;
+  coverImage?: string;
+  heroImage?: string;
   images?: string[];
   category: string;
   content?: string;
 }
 
 export interface BlogsData {
+  heroBanner?: string;
   popularPosts: BlogPost[];
   newestPosts: BlogPost[];
 }
@@ -148,6 +157,9 @@ export interface CaseStudy {
   category: string;
   heroQuote: string;
   heroImage: string;
+  coverImage?: string;
+  /** Extra gallery pictures shown on the case study page. */
+  images?: string[];
   introduction: string;
   sections: {
     title: string;
@@ -155,9 +167,17 @@ export interface CaseStudy {
   }[];
   location?: string;
   featured?: boolean;
+  tags?: string[];
+  summary?: string;
+  challenge?: string;
+  solution?: string;
+  result?: string;
+  year?: string;
+  client?: string;
 }
 
 export interface CaseStudiesData {
+  heroBanner?: string;
   cases: CaseStudy[];
 }
 

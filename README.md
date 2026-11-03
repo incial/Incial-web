@@ -1,37 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Incial Web
 
-## Getting Started
+Marketing website and admin panel for [Incial](https://incial.com), a creative digital agency.
+Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Prisma + Neon, NextAuth and ImageKit.
 
-First, run the development server:
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env     # fill in the values
+pnpm dev                 # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Command | Purpose |
+| --- | --- |
+| `pnpm dev` | development server |
+| `pnpm build` / `pnpm start` | production build / server |
+| `pnpm lint` | ESLint |
+| `pnpm typecheck` | TypeScript check |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What's inside
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Public site**: animated home sequence, about, services, products, case studies, blogs, careers,
+  learn-together; dedicated mobile layout.
+- **Admin panel** at `/admin` (Google sign-in, allow-listed emails): edit content, upload images, toggle sections.
+- **API**: content (`/api/admin/[section]`), uploads, contact form, brochure download.
 
-## Learn More
+## Documentation
 
-To learn more about Next.js, take a look at the following resources:
+All docs live in [`docs/`](docs/README.md):
+[architecture](docs/architecture.md) ·
+[admin panel](docs/admin-panel.md) ·
+[development](docs/development.md) ·
+[deployment](docs/deployment.md) ·
+[SEO](docs/seo.md) ·
+[performance](docs/performance.md) ·
+[maintenance](docs/maintenance.md)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# Incial-web
+> **Heads-up:** content is stored in `data/*.json` on the server, so production and local copies diverge.
+> Read [deployment.md](docs/deployment.md#content-persistence--read-this-before-every-deploy) before deploying.

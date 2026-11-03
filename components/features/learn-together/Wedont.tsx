@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, type Transition } from 'framer-motion';
-import { ArrowUp, ArrowDown, Search, Wrench, Sparkles } from 'lucide-react';
+import { ArrowUp, ArrowDown, Wrench, Sparkles } from 'lucide-react';
 
 interface SlideProps {
   onNext?: () => void;

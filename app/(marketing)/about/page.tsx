@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { AboutSection } from "@/components/sections";
 import { Header } from "@/components/layout";
 import { useState, useEffect } from "react";
+import type { SectionConfig } from "@/lib/dataLoader";
 
 export default function AboutPage() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -14,11 +15,11 @@ export default function AboutPage() {
       try {
         const res = await fetch("/api/admin/sections");
         const data = await res.json();
-        const aboutConfig = data.sections?.find((s: any) => s.id === "about");
+        const aboutConfig = data.sections?.find((s: SectionConfig) => s.id === "about");
         if (aboutConfig && !aboutConfig.enabled) {
           setIsDisabled(true);
         }
-      } catch (err) {
+      } catch {
         // Ignore
       }
     }

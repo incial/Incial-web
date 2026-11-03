@@ -3,6 +3,9 @@ import BlogPostClient from "@/components/features/blogs/BlogPostClient";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
@@ -10,19 +13,29 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = loadBlogBySlug(slug);
-  if (!post) return { title: "Blog | Incial" };
+  if (!post) return { title: "Blog", robots: { index: false } };
+  const description = `Read "${post.title}" by ${post.author} — ${post.mins} min read.`;
+  const url = `/blogs/${post.slug}`;
   return {
-    title: `${post.title} | Incial Blog`,
-    description: `Read "${post.title}" by ${post.author} — ${post.mins} min read.`,
+    title: post.title,
+    description,
+    alternates: { canonical: url },
     openGraph: {
+      type: "article",
+      url,
       title: post.title,
-      description: `By ${post.author} · ${post.date}`,
-      images: [{ url: post.image }],
+      description,
+      authors: [post.author],
+      images: post.image ? [{ url: post.image, alt: post.title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description,
+      images: post.image ? [post.image] : undefined,
     },
   };
 }
-
-export const dynamic = "force-dynamic";
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;

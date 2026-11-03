@@ -1,7 +1,23 @@
 'use server';
 
-import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { auth } from '@/auth';
+import prisma from '@/lib/prisma';
+
+const UNAUTHORIZED = { success: false, error: 'Unauthorized' } as const;
+
+/**
+ * Server actions are public POST endpoints, so every mutation must verify the
+ * admin session itself — the /admin middleware does not cover direct calls.
+ */
+async function isAdmin(): Promise<boolean> {
+  return Boolean(await auth());
+}
+
+function revalidateServices() {
+  revalidatePath('/admin/services');
+  revalidatePath('/services');
+}
 
 export async function getServices() {
   try {
@@ -15,32 +31,17 @@ export async function getServices() {
   }
 }
 
-export async function getServiceById(id: string) {
-  try {
-    const service = await prisma.service.findUnique({
-      where: { id },
-    });
-    return { success: true, data: service };
-  } catch (error) {
-    console.error(`Failed to fetch service with id ${id}:`, error);
-    return { success: false, error: 'Failed to fetch service' };
-  }
-}
-
 export async function createService(data: {
   title: string;
   description: string;
   isFree: boolean;
   price?: number | null;
 }) {
+  if (!(await isAdmin())) return UNAUTHORIZED;
+
   try {
-    const service = await prisma.service.create({
-      data,
-    });
-    
-    revalidatePath('/admin/services');
-    revalidatePath('/services');
-    
+    const service = await prisma.service.create({ data });
+    revalidateServices();
     return { success: true, data: service };
   } catch (error) {
     console.error('Failed to create service:', error);
@@ -57,15 +58,11 @@ export async function updateService(
     price?: number | null;
   }
 ) {
+  if (!(await isAdmin())) return UNAUTHORIZED;
+
   try {
-    const service = await prisma.service.update({
-      where: { id },
-      data,
-    });
-    
-    revalidatePath('/admin/services');
-    revalidatePath('/services');
-    
+    const service = await prisma.service.update({ where: { id }, data });
+    revalidateServices();
     return { success: true, data: service };
   } catch (error) {
     console.error(`Failed to update service with id ${id}:`, error);
@@ -74,33 +71,14 @@ export async function updateService(
 }
 
 export async function deleteService(id: string) {
+  if (!(await isAdmin())) return UNAUTHORIZED;
+
   try {
-    await prisma.service.delete({
-      where: { id },
-    });
-    
-    revalidatePath('/admin/services');
-    revalidatePath('/services');
-    
+    await prisma.service.delete({ where: { id } });
+    revalidateServices();
     return { success: true };
   } catch (error) {
     console.error(`Failed to delete service with id ${id}:`, error);
     return { success: false, error: 'Failed to delete service' };
-  }
-}
-
-export async function checkIfServiceIsFree(id: string) {
-  try {
-    const service = await prisma.service.findUnique({
-      where: { id },
-      select: { isFree: true }
-    });
-    
-    if (!service) return { success: false, error: 'Service not found' };
-    
-    return { success: true, isFree: service.isFree };
-  } catch (error) {
-    console.error(`Failed to check if service ${id} is free:`, error);
-    return { success: false, error: 'Failed to check service status' };
   }
 }

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { isGlobalScrollLocked, lockGlobalScroll } from "@/lib/scrollLock";
+import type { SectionConfig } from "@/lib/dataLoader";
 
 interface Stat {
   id: string;
@@ -57,7 +58,7 @@ export default function TrustSection({
       .then((d) => {
         if (d?.sections) {
           const configMap: Record<string, boolean> = {};
-          d.sections.forEach((s: any) => {
+          d.sections.forEach((s: SectionConfig) => {
             configMap[s.id] = s.enabled;
           });
           setSectionsConfig(configMap);
