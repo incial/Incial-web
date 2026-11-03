@@ -191,6 +191,7 @@ export const MobileLayout = ({ children, backgroundLayer, scrollLocked = false, 
       {/* Scroll Container - fills full screen; fixed header floats above at z-50 */}
       <div 
         ref={scrollContainerRef}
+        data-mobile-scroll
         className="relative z-10 h-screen w-full overflow-y-scroll snap-y snap-mandatory"
         style={{
           overflowY: scrollLocked ? 'hidden' : 'scroll',

@@ -6,6 +6,7 @@ export { MobileSlide } from './MobileSlide';
 export { MobileArtboard } from './MobileArtboard';
 export { LandingSlide } from './LandingSlide';
 export { IntroSlide } from './IntroSlide';
+export { ServicesStageSlide } from './ServicesStageSlide';
 export { MobileServiceSlide } from './MobileServiceSlide';
 export { StatsSlide } from './StatsSlide';
 export { ClientsSlide } from './ClientsSlide';

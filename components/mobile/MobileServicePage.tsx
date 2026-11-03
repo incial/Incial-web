@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MobileLayout } from './MobileLayout';
 import { MobilePreloader } from './MobilePreloader';
 import { LandingSlide } from './LandingSlide';
-import { IntroSlide } from './IntroSlide';
+import { ServicesStageSlide } from './ServicesStageSlide';
 import { StatsSlide } from './StatsSlide';
 import { ClientsSlide } from './ClientsSlide';
 import { ContactSlide } from './ContactSlide';
@@ -142,8 +142,8 @@ export const MobileServicePage = ({ skipPreloader = false, activeHash }: MobileS
             {...slideProps("landing")}
           />
 
-          {/* Services Overview / Intro Slide — detail panels open inline on card tap */}
-          <IntroSlide onNavigate={scrollToSlide} {...slideProps("services")} />
+          {/* Services: dust logo -> isometric stack, pinned while the user scrolls through it */}
+          <ServicesStageSlide {...slideProps("services")} />
 
           {/* Stats Slide */}
           <StatsSlide {...slideProps("stats")} />
