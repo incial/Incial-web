@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
+import SkeletonImage from "@/components/ui/SkeletonImage";
+import SkeletonBlock from "@/components/ui/SkeletonBlock";
 import type { ClientsData } from "@/lib/dataLoader";
 import { fetchJsonIfAvailable } from "@/lib/adminApi";
 import { isGlobalScrollLocked, lockGlobalScroll } from "@/lib/scrollLock";
@@ -11,6 +12,11 @@ interface ClientSectionProps {
   onBack?: () => void;
   onComplete?: () => void;
 }
+
+/** Tiles shown while the client list is still loading. */
+const SKELETON_TILES = 16;
+const TILE_CLASS =
+  "bg-white rounded-[5px] flex items-center justify-center p-2 aspect-[3/2] relative overflow-hidden";
 
 export default function ClientSection({
   onBack,
@@ -129,6 +135,12 @@ export default function ClientSection({
           {/* Client Logo Grid */}
           {sectionsConfig["client-logos"] !== false && (
             <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-2.5 mb-10 md:mb-14 w-full">
+              {!data &&
+                Array.from({ length: SKELETON_TILES }, (_, index) => (
+                  <div key={index} aria-hidden className={TILE_CLASS}>
+                    <SkeletonBlock />
+                  </div>
+                ))}
               {(data?.clients || []).map((client, index) => (
                 <motion.div
                   key={client.id}
@@ -139,9 +151,9 @@ export default function ClientSection({
                     delay: index * 0.025,
                     ease: "easeOut",
                   }}
-                  className="bg-white rounded-[5px] flex items-center justify-center p-2 aspect-[3/2] relative overflow-hidden group transition-transform duration-300 hover:scale-105 cursor-pointer"
+                  className={`${TILE_CLASS} group transition-transform duration-300 hover:scale-105 cursor-pointer`}
                 >
-                  <Image
+                  <SkeletonImage
                     src={client.src}
                     alt={client.name}
                     fill

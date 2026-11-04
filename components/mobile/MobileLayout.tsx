@@ -195,6 +195,7 @@ export const MobileLayout = ({ children, backgroundLayer, scrollLocked = false, 
         className="relative z-10 h-screen w-full overflow-y-scroll snap-y snap-mandatory"
         style={{
           overflowY: scrollLocked ? 'hidden' : 'scroll',
+          overflowX: 'hidden',
           touchAction: scrollLocked ? 'none' : 'pan-y',
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, memo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { MobileSlide } from './MobileSlide';
@@ -15,6 +15,11 @@ interface LandingSlideProps {
   onIntroComplete?: () => void;
   onStageChange?: (stage: string) => void;
 }
+
+/** The logo takes about this long to draw and fade in; the buttons wait for it. */
+const CONTROLS_AFTER_LOGO_MS = 2600;
+/** The buttons slide in from below the screen, and slide back down while the logo turns to dust. */
+const CONTROLS_SLIDE_PX = 280;
 
 const navTargets: Record<string, string> = {
   about: '/about',
@@ -50,7 +55,8 @@ export const LandingSlide = memo(function LandingSlide({
   onStageChange,
 }: LandingSlideProps) {
   const router = useRouter();
-  const [showControls, setShowControls] = useState(!playLogoAnimation);
+  // The buttons wait for the logo: they only appear once the intro has finished and the logo is in.
+  const [showControls, setShowControls] = useState(false);
 
   // Memoize navigation targets
   const memoizedNavTargets = useMemo(() => navTargets, []);
@@ -69,10 +75,19 @@ export const LandingSlide = memo(function LandingSlide({
   }, [onNavigate, memoizedNavTargets, router]);
 
   // Optimized sequence complete handler
+  const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSequenceComplete = useCallback(() => {
-    setShowControls(true);
     onIntroComplete?.();
+    if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
+    controlsTimerRef.current = setTimeout(() => setShowControls(true), CONTROLS_AFTER_LOGO_MS);
   }, [onIntroComplete]);
+
+  useEffect(
+    () => () => {
+      if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
+    },
+    [],
+  );
 
   // Memoize sequence key to prevent unnecessary re-renders
   const sequenceKey = useMemo(
@@ -95,15 +110,21 @@ export const LandingSlide = memo(function LandingSlide({
         </div>
 
         {/* Bottom Section - absolute positioned to overlay without shifting layout */}
+        <div
+          className="pointer-events-none absolute inset-0 z-20"
+          style={{
+            translate: `0 calc(var(--landing-shift, 0) * ${CONTROLS_SLIDE_PX}px)`,
+          }}
+        >
         <AnimatePresence>
           {showControls && (
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[90%] max-w-[320px] mb-[50px] flex flex-col items-center z-20"
-              style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden' }}
+              initial={{ y: CONTROLS_SLIDE_PX }}
+              animate={{ y: 0 }}
+              exit={{ y: CONTROLS_SLIDE_PX }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="pointer-events-auto absolute bottom-0 left-1/2 -translate-x-1/2 w-[90%] max-w-[320px] mb-[50px] flex flex-col items-center z-20"
+              style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
             >
               {/* Divider */}
               <div className="h-[1px] w-full bg-white/40" />
@@ -119,6 +140,7 @@ export const LandingSlide = memo(function LandingSlide({
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
     </MobileSlide>
   );

@@ -3,6 +3,7 @@
 import { motion, Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import LogoInk from "./LogoInk";
 import React from "react";
 
 interface LogoScreenProps {
@@ -102,6 +103,7 @@ export default function LogoScreen({
 
           {/* Full Finished Logo */}
           <motion.div
+            data-logo-source
             className="absolute inset-0 flex items-center justify-center"
             initial={skipAnimation ? { opacity: 1 } : { opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -228,6 +230,9 @@ export default function LogoScreen({
             priority
           />
         </motion.div>
+
+        {/* ink that follows the cursor across the logo */}
+        <LogoInk />
       </motion.div>
 
       {/* Right Button */}

@@ -51,9 +51,20 @@ export const ServicesStageSlide = memo(function ServicesStageSlide({
   }, [id, onInView, ready]);
 
   return (
-    <div ref={wrapperRef} id={id} className="relative w-full snap-start">
+    <div
+      ref={wrapperRef}
+      className="relative w-full snap-start"
+      style={{ marginTop: 'calc(-1 * var(--slide-height, 100dvh))' }}
+    >
+      {/* scroll target for #services: just inside the section, past the logo hand-off */}
+      <div id={id} aria-hidden className="pointer-events-none absolute left-0 w-full" style={{ top: '60dvh', height: 1 }} />
       {ready && (
-        <ServicesScroller categories={SERVICE_CATEGORIES} scrollContainerRef={scrollerRef} />
+        <ServicesScroller
+          categories={SERVICE_CATEGORIES}
+          scrollContainerRef={scrollerRef}
+          logoSource="[data-logo-source]"
+          bridge
+        />
       )}
     </div>
   );

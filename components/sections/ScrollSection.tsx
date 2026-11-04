@@ -62,6 +62,8 @@ export default function ScrollSection({
   const [desktopDirection, setDesktopDirection] = useState(1);
   const [returnFromServices, setReturnFromServices] = useState(false);
   const [servicesStartAtEnd, setServicesStartAtEnd] = useState(startAtEnd);
+  // true when the services section was opened from the navbar link (/#services)
+  const [servicesFromLink, setServicesFromLink] = useState(activeHash === "services");
 
   useEffect(() => {
     setServicesStartAtEnd(startAtEnd);
@@ -78,10 +80,13 @@ export default function ScrollSection({
   ) => {
     setDesktopDirection(nextDirection);
     setDesktopSection(nextSection);
+    // scrolling in from the logo screen plays the full intro again
+    if (nextSection !== "services") setServicesFromLink(false);
   };
 
   useEffect(() => {
     if (activeHash === "services") {
+      setServicesFromLink(true);
       requestAnimationFrame(() => {
         setDesktopSection("services");
         setWordIndex(rotatingWords.length - 1);
@@ -269,6 +274,7 @@ export default function ScrollSection({
                   >
                     <HomeServicesDeck
                       startAtEnd={servicesStartAtEnd}
+                      skipIntro={servicesFromLink}
                       onComplete={onScrollComplete}
                       onBack={() => {
                         setReturnFromServices(true);

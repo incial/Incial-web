@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react';
 import { motion } from 'framer-motion';
 import { Header } from '@/components/layout';
+import FlowSection from './FlowSection';
+import { useSmoothScroll } from './useSmoothScroll';
 import LearnLandingSlide from './LearnLandingSlide';
 import SkillsTogetherSlide from './SkillsTogetherSlide';
-import Itstatedwith from "./itstartedwith";
-import { useCallback, useEffect, useRef } from 'react';
+import Itstatedwith from './itstartedwith';
 import Whatwexlpore from './Whatwexlpore';
 import Explore1 from './Explore1';
 import Notjustech from './Notjustech';
@@ -15,94 +16,90 @@ import Wedont from './Wedont';
 import Ourapproach from './OurApproach';
 import ReadyToStartBuilding from './ReadyToStartBuilding';
 
+interface Nav {
+  onNext: () => void;
+  onPrev: () => void;
+}
 
+interface FlowStep {
+  minHeight: string;
+  Slide: ComponentType<Nav>;
+}
+
+/** The flow, top to bottom. Explore is a long scrolling section; the rest are one screen each. */
+const STEPS: FlowStep[] = [
+  { minHeight: '100vh', Slide: LearnLandingSlide },
+  { minHeight: '100vh', Slide: SkillsTogetherSlide },
+  { minHeight: '100vh', Slide: Itstatedwith },
+  { minHeight: '100vh', Slide: Whatwexlpore },
+  { minHeight: '260vh', Slide: Explore1 },
+  { minHeight: '100vh', Slide: Notjustech },
+  { minHeight: '100vh', Slide: Itsaboutbuild },
+  { minHeight: '100vh', Slide: Wedont },
+  { minHeight: '100vh', Slide: Ourapproach },
+  { minHeight: '100vh', Slide: ReadyToStartBuilding },
+];
+
+const LAST = STEPS.length - 1;
 
 export default function LearnTogetherPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const lenisRef = useSmoothScroll();
+  const sectionsRef = useRef<Array<HTMLElement | null>>([]);
 
-  const [slide, setSlide] = useState(0);
+  const registerSection = useCallback((index: number, element: HTMLElement | null) => {
+    sectionsRef.current[index] = element;
+  }, []);
 
-  const goNext = useCallback(() => setSlide((s) => Math.min(9, s + 1)), []);
-  const goPrev = useCallback(() => setSlide((s) => Math.max(0, s - 1)), []);
+  const scrollToY = useCallback(
+    (y: number) => {
+      const lenis = lenisRef.current;
+      if (lenis) lenis.scrollTo(y, { duration: 1.4 });
+      else window.scrollTo({ top: y, behavior: 'smooth' });
+    },
+    [lenisRef],
+  );
 
-  // Cooldown to avoid overly-sensitive scroll triggering
-  const cooldownRef = useRef(false);
-  const touchStartY = useRef<number | null>(null);
-  const wheelDeltaRef = useRef(0);
-  const wheelRafRef = useRef<number | null>(null);
-  const wheelIdleTimeoutRef = useRef<number | null>(null);
+  /** Moves to a section; going back into a long one lands at its end so the flow reads on. */
+  const goTo = useCallback(
+    (index: number, direction: 1 | -1) => {
+      const target = sectionsRef.current[Math.max(0, Math.min(LAST, index))];
+      if (!target) return;
+      const top = target.getBoundingClientRect().top + window.scrollY;
+      const isTall = target.offsetHeight > window.innerHeight * 1.5;
+      scrollToY(direction < 0 && isTall ? top + target.offsetHeight - window.innerHeight : top);
+    },
+    [scrollToY],
+  );
 
+  const currentIndex = useCallback(() => {
+    const middle = window.innerHeight / 2;
+    return sectionsRef.current.findIndex((el) => {
+      if (!el) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.top <= middle && rect.bottom > middle;
+    });
+  }, []);
+
+  // PageUp / PageDown (and arrows on one-screen slides) step through the flow
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown' || e.key === 'PageDown') goNext();
-      if (e.key === 'ArrowUp' || e.key === 'PageUp') goPrev();
+    const onKey = (event: KeyboardEvent) => {
+      const down = event.key === 'PageDown' || event.key === 'ArrowDown';
+      const up = event.key === 'PageUp' || event.key === 'ArrowUp';
+      if (!down && !up) return;
+
+      const index = currentIndex();
+      if (index < 0) return;
+      const isArrow = event.key.startsWith('Arrow');
+      const isTall = (sectionsRef.current[index]?.offsetHeight ?? 0) > window.innerHeight * 1.5;
+      if (isArrow && isTall) return; // let long sections scroll naturally
+
+      event.preventDefault();
+      goTo(index + (down ? 1 : -1), down ? 1 : -1);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goNext, goPrev]);
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const normalizedDelta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
-    wheelDeltaRef.current += normalizedDelta;
-
-    if (wheelIdleTimeoutRef.current !== null) {
-      window.clearTimeout(wheelIdleTimeoutRef.current);
-    }
-    wheelIdleTimeoutRef.current = window.setTimeout(() => {
-      wheelDeltaRef.current = 0;
-      wheelIdleTimeoutRef.current = null;
-    }, 220);
-
-    if (cooldownRef.current || wheelRafRef.current !== null) return;
-
-    wheelRafRef.current = window.requestAnimationFrame(() => {
-      wheelRafRef.current = null;
-      if (cooldownRef.current) return;
-
-      const delta = wheelDeltaRef.current;
-      const isTouchpad = Math.abs(delta) < 80;
-      const threshold = isTouchpad ? 120 : 60;
-      const cooldownMs = isTouchpad ? 900 : 700;
-
-      if (delta > threshold) {
-        cooldownRef.current = true;
-        wheelDeltaRef.current = 0;
-        goNext();
-        setTimeout(() => (cooldownRef.current = false), cooldownMs);
-      } else if (delta < -threshold) {
-        cooldownRef.current = true;
-        wheelDeltaRef.current = 0;
-        goPrev();
-        setTimeout(() => (cooldownRef.current = false), cooldownMs);
-      } else {
-        wheelDeltaRef.current *= 0.85;
-      }
-    });
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0]?.clientY ?? null;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (cooldownRef.current) return;
-    const start = touchStartY.current;
-    const end = e.changedTouches[0]?.clientY ?? null;
-    if (start == null || end == null) return;
-    const delta = start - end;
-    const threshold = 40;
-    if (delta > threshold) {
-      cooldownRef.current = true;
-      goNext();
-      setTimeout(() => (cooldownRef.current = false), 600);
-    } else if (delta < -threshold) {
-      cooldownRef.current = true;
-      goPrev();
-      setTimeout(() => (cooldownRef.current = false), 600);
-    }
-    touchStartY.current = null;
-  };
+  }, [currentIndex, goTo]);
 
   return (
     <div className="relative bg-white min-h-screen">
@@ -116,29 +113,22 @@ export default function LearnTogetherPage() {
           borderTopRightRadius: menuOpen ? 24 : 0,
         }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="relative origin-top overflow-hidden bg-black text-white min-h-screen overscroll-none"
+        className="relative origin-top overflow-x-clip bg-black text-white min-h-screen"
         style={{ zIndex: 30 }}
-        onWheel={handleWheel}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        tabIndex={0}
       >
-        {slide === 0 && <LearnLandingSlide />}
-        {slide === 1 && <SkillsTogetherSlide />}
-        {slide === 2 && <Itstatedwith onNext={goNext} onPrev={goPrev} />}
-        {slide === 3 && <Whatwexlpore onNext={goNext} onPrev={goPrev} />}
-        {slide === 4 && <Explore1 />}
-        {slide === 5 && <Notjustech onNext={goNext} onPrev={goPrev} />}
-        {slide === 6 && <Itsaboutbuild onNext={goNext} onPrev={goPrev} />}
-        {slide === 7 && <Wedont onNext={goNext} onPrev={goPrev} />}
-          {slide === 8 && <Ourapproach onNext={goNext} onPrev={goPrev} />}
-          {slide === 9 && <ReadyToStartBuilding onNext={goNext} onPrev={goPrev} />}
-
-
-
-        {/* Placeholder for third slide */}
-
-
+        {STEPS.map((step, index) => (
+          <FlowSection
+            key={index}
+            index={index}
+            minHeight={step.minHeight}
+            onElement={registerSection}
+          >
+            <step.Slide
+              onNext={() => goTo(index + 1, 1)}
+              onPrev={() => goTo(index - 1, -1)}
+            />
+          </FlowSection>
+        ))}
       </motion.div>
     </div>
   );

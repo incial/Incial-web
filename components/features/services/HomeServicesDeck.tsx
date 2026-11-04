@@ -3,10 +3,12 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { isGlobalScrollLocked, lockGlobalScroll } from "@/lib/scrollLock";
 import { SERVICE_CATEGORIES } from "@/lib/serviceCatalog";
-import ServicesScroller from "./ServicesScroller";
+import ServicesScroller, { STACK_START_PROGRESS } from "./ServicesScroller";
 
 interface HomeServicesDeckProps {
   startAtEnd?: boolean;
+  /** Open at the stack view with the logo-dust intro skipped (the navbar link). */
+  skipIntro?: boolean;
   onComplete?: () => void;
   onBack?: () => void;
 }
@@ -25,16 +27,22 @@ const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffec
  */
 export default function HomeServicesDeck({
   startAtEnd = false,
+  skipIntro = false,
   onComplete,
   onBack,
 }: HomeServicesDeckProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Arrive at the end before the first paint when coming back from the next section.
+  const startProgress = skipIntro && !startAtEnd ? STACK_START_PROGRESS : 0;
+
+  // Arrive where we should before the first paint: the end (back from the next section) or the
+  // stack view (navbar link).
   useIsomorphicLayoutEffect(() => {
     const el = scrollRef.current;
-    if (el && startAtEnd) el.scrollTop = el.scrollHeight;
-  }, [startAtEnd]);
+    if (!el) return;
+    if (startAtEnd) el.scrollTop = el.scrollHeight;
+    else if (startProgress > 0) el.scrollTop = startProgress * (el.scrollHeight - el.clientHeight);
+  }, [startAtEnd, startProgress]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -127,6 +135,7 @@ export default function HomeServicesDeck({
         scrollContainerRef={scrollRef}
         logoSource="[data-logo-source]"
         startAtEnd={startAtEnd}
+        startProgress={startProgress}
       />
     </div>
   );

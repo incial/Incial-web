@@ -56,10 +56,10 @@ export const MobileServicePage = ({ skipPreloader = false, activeHash }: MobileS
   }, []);
 
   // Smooth slide navigation helper
-  const scrollToSlide = useCallback((id: string) => {
+  const scrollToSlide = useCallback((id: string, behavior: ScrollBehavior = "smooth") => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+      element.scrollIntoView({ behavior });
     }
   }, []);
 
@@ -71,7 +71,8 @@ export const MobileServicePage = ({ skipPreloader = false, activeHash }: MobileS
       });
       const timer = setTimeout(() => {
         const targetId = activeHash === "services" ? "services" : "contact";
-        scrollToSlide(targetId);
+        // the link lands straight on the section instead of scrolling through its intro
+        scrollToSlide(targetId, "instant");
       }, 100);
       return () => clearTimeout(timer);
     }

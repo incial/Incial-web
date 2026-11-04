@@ -39,6 +39,11 @@ interface DustCanvasProps {
   logoSrc?: string;
   /** Skip the dissolve intro (used when arriving back at the end of the section). */
   instant?: boolean;
+  /**
+   * Phones: the logo lives in the slide above. 0 = that slide is showing, 1 = this section is
+   * pinned. The logo dissolves into dust and glides into the stage as this value rises.
+   */
+  entry?: MotionValue<number>;
   className?: string;
 }
 
@@ -55,6 +60,8 @@ const SAMPLE_WIDTH = 420;
 const ALPHA_CUTOFF = 110;
 const DISSOLVE_DELAY_S = 0.15;
 const DISSOLVE_S = 0.7;
+const SAMPLE_RETRY_MS = 400;
+const LANDING_SHIFT_SHARE = 0.18;
 const WHITE = "#ffffff";
 const SOFT = "#c9ccd6";
 const BLUE = "#7db1ff";
@@ -300,6 +307,7 @@ export default function DustCanvas({
   logoSource,
   logoSrc = "/logo/Logoo-white.svg",
   instant = false,
+  entry,
   className,
 }: DustCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -325,6 +333,9 @@ export default function DustCanvas({
     let sample: LogoSample | null = null;
     let waitingForLogo = Boolean(logoSource);
     let startedAt = 0;
+    const bridged = Boolean(entry && logoSource);
+    let usedFallback = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
     const puff = () => {
       const rand = mulberry32(5);
@@ -346,18 +357,23 @@ export default function DustCanvas({
     window.addEventListener("resize", resize);
 
     if (logoSource) {
-      sampleLogo(logoSource, logoSrc, count)
-        .then((result) => {
-          if (disposed) return;
-          sample = result;
-          waitingForLogo = false;
-          if (!instant) puff();
-        })
-        .catch(() => {
-          if (disposed) return;
-          waitingForLogo = false;
-          if (!instant) puff();
-        });
+      // The logo may not exist yet (phones show the intro words first), so keep looking.
+      const handleResult = (result: LogoSample | null) => {
+        if (disposed || usedFallback) return;
+        if (!result && bridged) {
+          retryTimer = setTimeout(attempt, SAMPLE_RETRY_MS);
+          return;
+        }
+        sample = result;
+        waitingForLogo = false;
+        if (!instant && !bridged) puff();
+      };
+      const attempt = () => {
+        sampleLogo(logoSource, logoSrc, count)
+          .then(handleResult)
+          .catch(() => handleResult(null));
+      };
+      attempt();
     } else if (!instant) {
       puff();
     }
@@ -381,13 +397,41 @@ export default function DustCanvas({
     const draw = (time: number) => {
       frame = requestAnimationFrame(draw);
       const anchor = anchorRef.current;
-      if (waitingForLogo || !anchor) return;
+      const entryValue = entry ? entry.get() : 1;
+      if (waitingForLogo) {
+        // no logo to dissolve by the time the user reaches us: carry on without one
+        if (bridged && entryValue > 0.001) {
+          usedFallback = true;
+          waitingForLogo = false;
+        } else {
+          return;
+        }
+      }
+      if (!anchor) return;
       if (startedAt === 0) startedAt = time;
 
+      const bridgeActive = bridged && Boolean(sample);
       const elapsed = (time - startedAt) / 1000;
-      const fade = sample && !instant ? smoothstep((elapsed - DISSOLVE_DELAY_S) / DISSOLVE_S) : 1;
+      let fade: number;
+      if (bridgeActive) fade = smoothstep((entryValue - 0.02) / 0.28);
+      else fade = sample && !instant ? smoothstep((elapsed - DISSOLVE_DELAY_S) / DISSOLVE_S) : 1;
 
       const m = morph.get();
+
+      // the landing buttons slide down and away while the logo turns to dust
+      if (bridgeActive && sample) {
+        sample.element
+          .closest<HTMLElement>("[data-mobile-scroll]")
+          ?.style.setProperty("--landing-shift", String(smoothstep(entryValue / LANDING_SHIFT_SHARE)));
+      }
+
+      // still on the landing slide: the real logo is showing, nothing to draw
+      if (bridgeActive && sample && entryValue <= 0.001 && m <= 0.001) {
+        sample.element.style.visibility = "";
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+      if (bridgeActive && sample) sample.element.style.visibility = "hidden";
       const r = revealed.get();
       const a = active.get();
       const layout = stackLayout(r);
@@ -395,6 +439,14 @@ export default function DustCanvas({
       const rect = canvas.getBoundingClientRect();
       const box = anchor.getBoundingClientRect();
       if (rect.width === 0 || box.width === 0) return;
+      // the section has scrolled away above the screen
+      if (bridged && box.bottom < 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+      const anchorCenterX = box.left + box.width / 2;
+      const anchorCenterY = box.top + box.height / 2;
+      const toStage = bridgeActive ? smoothstep(entryValue) : 0;
       const pxPerCss = canvas.width / rect.width;
       const cssPerUnit = box.width / spec.viewW;
       const unitScale = cssPerUnit * pxPerCss; // canvas px per stage unit
@@ -416,7 +468,8 @@ export default function DustCanvas({
       let logoBox: DOMRect | null = null;
       if (sample) {
         const live = sample.element.isConnected ? sample.element.getBoundingClientRect() : null;
-        if (live && live.width > 0) sample.lastBox = live;
+        // while bridging, the dust stays where the logo was when scrolling began
+        if (live && live.width > 0 && (!bridgeActive || entryValue <= 0.001)) sample.lastBox = live;
         logoBox = sample.lastBox;
       }
 
@@ -469,8 +522,17 @@ export default function DustCanvas({
         let fx: number;
         let fy: number;
         if (sample && logoBox) {
-          fx = (logoBox.left + sample.points[i * 2] * logoBox.width - box.left) / cssPerUnit;
-          fy = (logoBox.top + sample.points[i * 2 + 1] * logoBox.height - box.top) / cssPerUnit;
+          const ptx = sample.points[i * 2];
+          const pty = sample.points[i * 2 + 1];
+          let sx = logoBox.left + ptx * logoBox.width;
+          let sy = logoBox.top + pty * logoBox.height;
+          if (toStage > 0) {
+            // glide from the landing logo to the same logo shape centred in the stage
+            sx += (anchorCenterX + (ptx - 0.5) * logoBox.width - sx) * toStage;
+            sy += (anchorCenterY + (pty - 0.5) * logoBox.height - sy) * toStage;
+          }
+          fx = (sx - box.left) / cssPerUnit;
+          fy = (sy - box.top) / cssPerUnit;
         } else {
           fx = spec.centerX + p.flat[i * 2] * flatScale;
           fy = spec.centerY + p.flat[i * 2 + 1] * flatScale;
@@ -514,6 +576,11 @@ export default function DustCanvas({
 
     return () => {
       disposed = true;
+      clearTimeout(retryTimer);
+      if (sample) {
+        sample.element.style.visibility = "";
+        sample.element.closest<HTMLElement>("[data-mobile-scroll]")?.style.removeProperty("--landing-shift");
+      }
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", handlePointer);
@@ -521,7 +588,7 @@ export default function DustCanvas({
       window.removeEventListener("pointercancel", handleRelease);
       document.documentElement.removeEventListener("pointerleave", handleLeave);
     };
-  }, [spec, anchorRef, morph, revealed, active, plateCount, logoSource, logoSrc, instant]);
+  }, [spec, anchorRef, morph, revealed, active, plateCount, logoSource, logoSrc, instant, entry]);
 
   return <canvas ref={canvasRef} className={className} aria-hidden />;
 }

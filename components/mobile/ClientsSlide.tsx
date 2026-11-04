@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, memo } from 'react';
-import Image from 'next/image';
+import SkeletonImage from '@/components/ui/SkeletonImage';
+import SkeletonBlock from '@/components/ui/SkeletonBlock';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MobileSlide } from './MobileSlide';
 import { fetchJsonIfAvailable } from '@/lib/adminApi';
@@ -53,6 +54,16 @@ const ClientsSlideComponent = ({ id, onInView }: ClientsSlideProps) => {
 
           <div className="relative mx-auto w-full max-w-[320px]">
             <div className="grid grid-cols-2 gap-2.5">
+              {!data &&
+                Array.from({ length: INITIAL_COUNT }, (_, index) => (
+                  <div
+                    key={index}
+                    aria-hidden
+                    className="relative h-[68px] overflow-hidden rounded-[4px] bg-white"
+                  >
+                    <SkeletonBlock />
+                  </div>
+                ))}
               <AnimatePresence>
                 {visibleClients.map((client, index) => (
                   <motion.div
@@ -73,9 +84,9 @@ const ClientsSlideComponent = ({ id, onInView }: ClientsSlideProps) => {
                       delay: index < INITIAL_COUNT ? 0 : (index - INITIAL_COUNT) * 0.04,
                       ease: [0.22, 1, 0.36, 1],
                     }}
-                    className="flex h-[68px] items-center justify-center overflow-hidden rounded-[4px] bg-white px-2"
+                    className="relative flex h-[68px] items-center justify-center overflow-hidden rounded-[4px] bg-white px-2"
                   >
-                    <Image
+                    <SkeletonImage
                       src={client.src}
                       alt={client.name}
                       width={160}

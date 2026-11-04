@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import {
   motion,
+  useMotionValueEvent,
   useScroll,
   useSpring,
   useTransform,
@@ -16,19 +17,29 @@ import { clamp01, smoothstep } from "./isoGeometry";
 
 interface ServicesScrollerProps {
   categories: ReadonlyArray<ServiceCategory>;
-  label?: string;
   /** Scroll inside this element instead of the window (used by the homepage deck). */
   scrollContainerRef?: RefObject<HTMLElement | null>;
   /** Selector of an on-screen logo that dissolves into the dust at the start. */
   logoSource?: string;
   /** Open at the end of the section (coming back from the next one) instead of replaying it. */
   startAtEnd?: boolean;
+  /** Open part-way through (0..1) with the intro skipped, e.g. from the navbar link. */
+  startProgress?: number;
+  /**
+   * Phones: this section is laid over the landing slide, so the real logo dissolves into dust
+   * in place as soon as the user starts scrolling, and the landing buttons fade away.
+   */
+  bridge?: boolean;
 }
 
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 const SCROLL_PER_STEP_VH = 45;
 const INTRO_SHARE = 0.1;
+/** Scroll progress where the intro has just finished: the stack is open on its first plate. */
+export const STACK_START_PROGRESS = INTRO_SHARE;
+/** A scroll jump bigger than this (of the whole section) snaps the animation instead of replaying. */
+const JUMP_THRESHOLD = 0.08;
 const OUTRO_SHARE = 0.1;
 const ITEM_HEIGHT_REM = 3.6;
 const HEADING_HEIGHT_REM = 11;
@@ -153,11 +164,13 @@ function ItemRow({ row, focus }: { row: FlowRow; focus: MotionValue<number> }) {
 
 export default function ServicesScroller({
   categories,
-  label = "Services / 2026",
   scrollContainerRef,
   logoSource,
   startAtEnd = false,
+  startProgress = 0,
+  bridge = false,
 }: ServicesScrollerProps) {
+  const initialProgress = startAtEnd ? 1 : startProgress;
   const containerRef = useRef<HTMLDivElement>(null);
   const { stacked, spec } = useStageLayout();
 
@@ -183,8 +196,13 @@ export default function ServicesScroller({
   // Park the spring at the end when arriving from the next section, so the section does not
   // play its whole animation to get there (the scroll position itself is set by the owner).
   useIsomorphicLayoutEffect(() => {
-    if (startAtEnd) smooth.jump(1);
-  }, [startAtEnd, smooth]);
+    if (initialProgress > 0) smooth.jump(initialProgress);
+  }, [initialProgress, smooth]);
+
+  // a jump in position (link, programmatic scroll) lands immediately instead of replaying
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    if (Math.abs(v - smooth.get()) > JUMP_THRESHOLD) smooth.jump(v);
+  });
 
   // timeline: intro (centred dust logo moves into place, becomes isometric) | sections |
   // outro (stack folds back, logo returns to the centre)
@@ -241,11 +259,6 @@ export default function ServicesScroller({
   const listOpacity = useTransform([morph, collapse], ([m, c]: number[]) =>
     clamp01((m - 0.6) / 0.4) * (1 - 0.85 * c),
   );
-  const counter = useTransform(
-    position,
-    (v) =>
-      `${String(Math.round(v) + 1).padStart(2, "0")} / ${String(categories.length).padStart(2, "0")}`,
-  );
 
   const scrollSteps = (total - 1) / (1 - INTRO_SHARE - OUTRO_SHARE);
 
@@ -255,28 +268,21 @@ export default function ServicesScroller({
   const textClass = stacked
     ? "absolute inset-x-[6vw] bottom-[3dvh] top-[60dvh]"
     : "absolute inset-y-0 left-[clamp(20rem,57vw,52rem)] right-[clamp(1rem,4vw,5rem)] max-w-[40rem]";
-  const counterClass = stacked
-    ? "absolute right-[6vw] top-[57dvh]"
-    : "absolute bottom-[8%] left-[clamp(1rem,3vw,3rem)]";
 
   return (
     <section
       ref={containerRef}
       aria-label="Our services"
       style={{ height: `${scrollSteps * SCROLL_PER_STEP_VH + 100}vh` }}
-      className="relative bg-black text-white"
+      className={`relative text-white ${bridge ? "bg-transparent" : "bg-black"}`}
     >
-      <div className="sticky top-0 h-screen w-full overflow-hidden supports-[height:100dvh]:h-dvh">
+      <div
+        className={`sticky top-0 h-screen w-full overflow-hidden supports-[height:100dvh]:h-dvh ${bridge ? "pointer-events-none" : ""}`}
+      >
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_28%_50%,rgba(255,255,255,0.05),transparent_60%)]"
         />
-
-        {!stacked && (
-          <span className="absolute left-[clamp(1rem,3vw,3rem)] top-[14%] z-10 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-white/70">
-            {label}
-          </span>
-        )}
 
         {/* the dust: covers the whole screen so the logo can dissolve without clipping */}
         <DustCanvas
@@ -287,7 +293,8 @@ export default function ServicesScroller({
           active={active}
           plateCount={total}
           logoSource={logoSource}
-          instant={startAtEnd}
+          instant={initialProgress > 0}
+          entry={bridge ? intro : undefined}
           className="pointer-events-none absolute inset-0 h-full w-full"
         />
 
@@ -311,12 +318,6 @@ export default function ServicesScroller({
             />
           </motion.div>
         </div>
-
-        <motion.span
-          className={`${counterClass} font-mono text-[0.65rem] tracking-[0.2em] text-white/60`}
-        >
-          {counter}
-        </motion.span>
 
         {/* one continuous flow: headings and sub-services glide past the focus line */}
         <div
