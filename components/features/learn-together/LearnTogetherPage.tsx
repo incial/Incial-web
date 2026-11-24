@@ -1,5 +1,6 @@
 'use client';
 
+import MenuFrame from "@/components/layout/MenuFrame";
 import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react';
 import { motion } from 'framer-motion';
 import { Header } from '@/components/layout';
@@ -105,12 +106,11 @@ export default function LearnTogetherPage() {
     <div className="relative bg-white min-h-screen">
       <Header menuOpen={menuOpen} onToggleMenu={() => setMenuOpen(!menuOpen)} />
 
+      <MenuFrame open={menuOpen} />
+
       <motion.div
         animate={{
           y: menuOpen ? 100 : 0,
-          scale: menuOpen ? 0.95 : 1,
-          borderTopLeftRadius: menuOpen ? 24 : 0,
-          borderTopRightRadius: menuOpen ? 24 : 0,
         }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="relative origin-top overflow-x-clip bg-black text-white min-h-screen"

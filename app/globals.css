@@ -138,3 +138,94 @@ body .admin-panel textarea {
 .initial-load-done .greetings-preloader {
   display: none !important;
 }
+
+/* Client logo rows: each track holds two copies of its logos and slides by half its width. */
+@keyframes client-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.client-marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: client-marquee var(--marquee-duration, 60s) linear infinite;
+}
+
+.client-marquee-track[data-direction="right"] {
+  animation-direction: reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .client-marquee-track {
+    animation: none;
+  }
+}
+
+/* Phone hero: two rings turning in opposite directions, with marks that counter-turn to stay upright. */
+@keyframes logo-orbit-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.logo-orbit {
+  transform-box: view-box;
+  transform-origin: 50px 50px;
+  animation: logo-orbit-turn 40s linear infinite;
+}
+
+.logo-orbit-counter {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: logo-orbit-turn 40s linear infinite reverse;
+}
+
+.logo-orbit-reverse {
+  animation-direction: reverse;
+}
+
+.logo-orbit-counter.logo-orbit-reverse {
+  animation-direction: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-orbit,
+  .logo-orbit-counter {
+    animation: none;
+  }
+}
+
+/* Glass hero: the keys drift up and down, and a bright spark runs along each wire. */
+@keyframes glass-hero-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes glass-hero-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+.glass-hero-wire {
+  animation: glass-hero-flow 3.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-hero-wire {
+    animation: none;
+  }
+}

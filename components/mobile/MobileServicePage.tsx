@@ -6,10 +6,10 @@ import { MobileLayout } from './MobileLayout';
 import { MobilePreloader } from './MobilePreloader';
 import { LandingSlide } from './LandingSlide';
 import { ServicesStageSlide } from './ServicesStageSlide';
-import { StatsSlide } from './StatsSlide';
 import { ClientsSlide } from './ClientsSlide';
 import { ContactSlide } from './ContactSlide';
 import RotatingEarth from '@/components/features/home/RotatingEarth';
+import ShaderBackground from '@/components/ui/ShaderBackground';
 
 interface MobileServicePageProps {
   skipPreloader?: boolean;
@@ -100,6 +100,10 @@ export const MobileServicePage = ({ skipPreloader = false, activeHash }: MobileS
 
     return (
       <div className="absolute inset-0 w-full h-full pointer-events-none" style={{ contain: 'layout style paint' }}>
+        {/* The shader lives in this background layer, below the globe: it used to sit in the hero
+            slide (above this layer), so the globe rose underneath it. Fading to black at the bottom
+            blends it into the black slides below. */}
+        <ShaderBackground className="absolute inset-0 h-full w-full" fadeBottom={0.4} />
         <AnimatePresence>
           {!isPreloading && introStage !== 'logo' && introStage !== 'pre' && (
             <motion.div
@@ -117,7 +121,7 @@ export const MobileServicePage = ({ skipPreloader = false, activeHash }: MobileS
               }}
               className="absolute left-1/2 top-1/2"
               style={{
-                width: "80%",
+                width: "62%",
                 aspectRatio: "1/1",
                 willChange: "transform, opacity",
               }}
@@ -145,9 +149,6 @@ export const MobileServicePage = ({ skipPreloader = false, activeHash }: MobileS
 
           {/* Services: dust logo -> isometric stack, pinned while the user scrolls through it */}
           <ServicesStageSlide {...slideProps("services")} />
-
-          {/* Stats Slide */}
-          <StatsSlide {...slideProps("stats")} />
 
           {/* Clients Slide */}
           <ClientsSlide {...slideProps("clients")} />

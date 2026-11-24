@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Header } from "@/components/layout";
+import { Header, MenuFrame } from "@/components/layout";
 import Footer from "@/components/layout/Footer";
 import { MobileServicePage } from "@/components/mobile";
 import { useDevice } from "@/hooks";
@@ -60,13 +60,11 @@ export default function ServicesPage() {
         onToggleMenu={() => setMenuOpen(!menuOpen)}
         hidden={headerHidden}
       />
+      <MenuFrame open={menuOpen} />
 
       <motion.div
         animate={{
           y: menuOpen ? MENU_OFFSET_Y : 0,
-          scale: menuOpen ? 0.95 : 1,
-          borderTopLeftRadius: menuOpen ? 24 : 0,
-          borderTopRightRadius: menuOpen ? 24 : 0,
         }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="relative origin-top overflow-x-clip bg-black text-white min-h-screen selection:bg-white/20"

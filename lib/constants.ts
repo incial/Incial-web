@@ -13,7 +13,6 @@ export const navLinks = [
   { label: "Products", href: "/products" },
   { label: "Learn Together", href: "/learn-together" },
   { label: "Case Study", href: "/case-studies", sectionId: "casestudies" },
-  { label: "Services", href: "/#services" },
   { label: "Careers", href: "/careers", sectionId: "careers" },
   { label: "Blogs", href: "/blogs", sectionId: "blogs" },
   { label: "Contact Us", href: "/#contact", sectionId: "contact" },

@@ -8,7 +8,6 @@ export { LandingSlide } from './LandingSlide';
 export { IntroSlide } from './IntroSlide';
 export { ServicesStageSlide } from './ServicesStageSlide';
 export { MobileServiceSlide } from './MobileServiceSlide';
-export { StatsSlide } from './StatsSlide';
 export { ClientsSlide } from './ClientsSlide';
 export { ContactSlide } from './ContactSlide';
 export { IncialLogo } from './IncialLogo';

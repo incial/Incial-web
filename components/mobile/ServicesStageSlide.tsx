@@ -2,12 +2,16 @@
 
 import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import ServicesScroller from '@/components/features/services/ServicesScroller';
+import MobileTrustTransition, { MOBILE_SERVICES_HOLD_VH } from './MobileTrustTransition';
 import { SERVICE_CATEGORIES } from '@/lib/serviceCatalog';
 
 interface ServicesStageSlideProps {
   id?: string;
   onInView?: (id: string) => void;
 }
+
+/** The landing buttons fade over this much of the hand-off; only then does the logo turn to dust. */
+const LANDING_BUTTONS_FADE_SHARE = 0.26;
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
@@ -59,12 +63,18 @@ export const ServicesStageSlide = memo(function ServicesStageSlide({
       {/* scroll target for #services: just inside the section, past the logo hand-off */}
       <div id={id} aria-hidden className="pointer-events-none absolute left-0 w-full" style={{ top: '60dvh', height: 1 }} />
       {ready && (
-        <ServicesScroller
-          categories={SERVICE_CATEGORIES}
-          scrollContainerRef={scrollerRef}
-          logoSource="[data-logo-source]"
-          bridge
-        />
+        <>
+          <ServicesScroller
+            categories={SERVICE_CATEGORIES}
+            scrollContainerRef={scrollerRef}
+            logoSource="[data-logo-source]"
+            bridge
+            holdVh={MOBILE_SERVICES_HOLD_VH}
+            landingHold={LANDING_BUTTONS_FADE_SHARE}
+          />
+          {/* the Trust section is pinned over the end of this one, so it never scrolls in separately */}
+          <MobileTrustTransition scrollerRef={scrollerRef} />
+        </>
       )}
     </div>
   );

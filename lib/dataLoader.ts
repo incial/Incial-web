@@ -85,10 +85,18 @@ export interface AboutData {
   impactImage: string;
 }
 
+/** Where a client is based; drives the connection lines on the world map. */
+export interface ClientLocation {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
 export interface Client {
   id: string;
   name: string;
   src: string;
+  location?: ClientLocation;
 }
 
 export interface Testimonial {

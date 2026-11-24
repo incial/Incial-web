@@ -3,7 +3,6 @@
 import { motion, Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import LogoInk from "./LogoInk";
 import React from "react";
 
 interface LogoScreenProps {
@@ -16,6 +15,14 @@ interface LogoScreenProps {
 
 /** Top offset of the compact logo; the services deck lays itself out below it. */
 export const COMPACT_LOGO_TOP = "clamp(4.25rem, 10vh, 6.5rem)";
+
+/**
+ * Size of the hero logo's square box. The dust the logo dissolves into, and the solid logo the
+ * services stack turns back into, are drawn at exactly this size so the three always match.
+ * (Tailwind needs these as whole literal strings.)
+ */
+export const LOGO_BOX_SIZE = "h-72 w-72 md:h-[29rem] md:w-[29rem] lg:h-[36rem] lg:w-[36rem]";
+export const LOGO_BOX_WIDTH = "w-72 md:w-[29rem] lg:w-[36rem]";
 
 export default function LogoScreen({
   skipAnimation,
@@ -176,7 +183,7 @@ export default function LogoScreen({
         className={`relative flex items-center justify-center ${
           compact
             ? "h-[clamp(4.5rem,11vh,6.5rem)] w-[clamp(4.5rem,11vh,6.5rem)]"
-            : "h-80 w-80 md:h-[32rem] md:w-[32rem] lg:h-[40rem] lg:w-[40rem]"
+            : LOGO_BOX_SIZE
         }`}
       >
         {/* Sharp Stroke Layer */}
@@ -230,9 +237,6 @@ export default function LogoScreen({
             priority
           />
         </motion.div>
-
-        {/* ink that follows the cursor across the logo */}
-        <LogoInk />
       </motion.div>
 
       {/* Right Button */}

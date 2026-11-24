@@ -44,6 +44,11 @@ interface DustCanvasProps {
    * pinned. The logo dissolves into dust and glides into the stage as this value rises.
    */
   entry?: MotionValue<number>;
+  /**
+   * Phones: how much of the bridge (0..1) passes while the real logo is still shown untouched,
+   * so whatever sits beside the logo can fade first and only then does the logo turn to dust.
+   */
+  holdShare?: number;
   className?: string;
 }
 
@@ -308,6 +313,7 @@ export default function DustCanvas({
   logoSrc = "/logo/Logoo-white.svg",
   instant = false,
   entry,
+  holdShare = 0,
   className,
 }: DustCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -413,7 +419,7 @@ export default function DustCanvas({
       const bridgeActive = bridged && Boolean(sample);
       const elapsed = (time - startedAt) / 1000;
       let fade: number;
-      if (bridgeActive) fade = smoothstep((entryValue - 0.02) / 0.28);
+      if (bridgeActive) fade = smoothstep((entryValue - holdShare - 0.02) / 0.28);
       else fade = sample && !instant ? smoothstep((elapsed - DISSOLVE_DELAY_S) / DISSOLVE_S) : 1;
 
       const m = morph.get();
@@ -422,11 +428,11 @@ export default function DustCanvas({
       if (bridgeActive && sample) {
         sample.element
           .closest<HTMLElement>("[data-mobile-scroll]")
-          ?.style.setProperty("--landing-shift", String(smoothstep(entryValue / LANDING_SHIFT_SHARE)));
+          ?.style.setProperty("--landing-shift", String(smoothstep(entryValue / (holdShare > 0 ? holdShare * 0.9 : LANDING_SHIFT_SHARE))));
       }
 
       // still on the landing slide: the real logo is showing, nothing to draw
-      if (bridgeActive && sample && entryValue <= 0.001 && m <= 0.001) {
+      if (bridgeActive && sample && entryValue <= holdShare + 0.001 && m <= 0.001) {
         sample.element.style.visibility = "";
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         return;
@@ -446,7 +452,7 @@ export default function DustCanvas({
       }
       const anchorCenterX = box.left + box.width / 2;
       const anchorCenterY = box.top + box.height / 2;
-      const toStage = bridgeActive ? smoothstep(entryValue) : 0;
+      const toStage = bridgeActive ? smoothstep((entryValue - holdShare) / (1 - holdShare)) : 0;
       const pxPerCss = canvas.width / rect.width;
       const cssPerUnit = box.width / spec.viewW;
       const unitScale = cssPerUnit * pxPerCss; // canvas px per stage unit
@@ -469,7 +475,7 @@ export default function DustCanvas({
       if (sample) {
         const live = sample.element.isConnected ? sample.element.getBoundingClientRect() : null;
         // while bridging, the dust stays where the logo was when scrolling began
-        if (live && live.width > 0 && (!bridgeActive || entryValue <= 0.001)) sample.lastBox = live;
+        if (live && live.width > 0 && (!bridgeActive || entryValue <= holdShare + 0.001)) sample.lastBox = live;
         logoBox = sample.lastBox;
       }
 
@@ -588,7 +594,7 @@ export default function DustCanvas({
       window.removeEventListener("pointercancel", handleRelease);
       document.documentElement.removeEventListener("pointerleave", handleLeave);
     };
-  }, [spec, anchorRef, morph, revealed, active, plateCount, logoSource, logoSrc, instant, entry]);
+  }, [spec, anchorRef, morph, revealed, active, plateCount, logoSource, logoSrc, instant, entry, holdShare]);
 
   return <canvas ref={canvasRef} className={className} aria-hidden />;
 }

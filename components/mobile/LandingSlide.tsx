@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, memo, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { ArrowRight } from 'lucide-react';
 import { MobileSlide } from './MobileSlide';
 import { LandingIntroSequence } from './LandingIntroSequence';
 
@@ -20,6 +21,12 @@ interface LandingSlideProps {
 const CONTROLS_AFTER_LOGO_MS = 2600;
 /** The buttons slide in from below the screen, and slide back down while the logo turns to dust. */
 const CONTROLS_SLIDE_PX = 280;
+/** How far the buttons drift down while they fade out on scroll. */
+const CONTROLS_DRIFT_PX = 150;
+/** The phone logo sits this far above the slide's centre (see LogoScreen's mobile layout). */
+const LOGO_LIFT_PX = 38;
+/** Space between the logo's artwork and the buttons. */
+const GAP_BELOW_LOGO_PX = 24;
 
 const navTargets: Record<string, string> = {
   about: '/about',
@@ -28,16 +35,35 @@ const navTargets: Record<string, string> = {
 };
 
 // Memoized CTA Button component
+// The first button is solid white with black text; the second is outlined: a white stroke and white text.
+const BUTTON_STYLES = {
+  solid: 'border-white bg-white text-black hover:bg-white/90 active:bg-white/80',
+  outline: 'border-white bg-transparent text-white hover:bg-white/10 active:bg-white/15',
+} as const;
+
 const CTAButton = memo(
-  ({ label, action, onClick }: { label: string; action: string; onClick: (action: string) => void }) => {
+  ({
+    label,
+    action,
+    variant,
+    icon,
+    onClick,
+  }: {
+    label: string;
+    action: string;
+    variant: keyof typeof BUTTON_STYLES;
+    icon: ReactNode;
+    onClick: (action: string) => void;
+  }) => {
     return (
       <motion.button
         onClick={() => onClick(action)}
         whileTap={{ scale: 0.98 }}
-        className="rounded-full border border-white/80 flex items-center justify-center px-7 py-3.5 text-[12px] font-medium text-white whitespace-nowrap transition-colors hover:bg-white hover:text-black active:bg-white active:text-black text-center leading-tight"
+        className={`flex-none min-w-[11rem] rounded-full border flex items-center justify-center gap-2 px-5 py-3.5 text-[12px] font-semibold whitespace-nowrap transition-colors text-center leading-tight ${BUTTON_STYLES[variant]}`}
         style={{ transform: 'translateZ(0)' }}
       >
         {label}
+        {icon}
       </motion.button>
     );
   }
@@ -113,7 +139,10 @@ export const LandingSlide = memo(function LandingSlide({
         <div
           className="pointer-events-none absolute inset-0 z-20"
           style={{
-            translate: `0 calc(var(--landing-shift, 0) * ${CONTROLS_SLIDE_PX}px)`,
+            // as you start scrolling the buttons drift down toward the bottom while they fade out
+            // (the logo stays whole until they are gone)
+            opacity: 'calc(1 - var(--landing-shift, 0))',
+            translate: `0 calc(var(--landing-shift, 0) * ${CONTROLS_DRIFT_PX}px)`,
           }}
         >
         <AnimatePresence>
@@ -123,19 +152,31 @@ export const LandingSlide = memo(function LandingSlide({
               animate={{ y: 0 }}
               exit={{ y: CONTROLS_SLIDE_PX }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="pointer-events-auto absolute bottom-0 left-1/2 -translate-x-1/2 w-[90%] max-w-[320px] mb-[50px] flex flex-col items-center z-20"
-              style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
+              className="pointer-events-auto absolute left-1/2 -translate-x-1/2 w-[90%] max-w-[320px] flex z-20"
+              style={{
+                // just under the circular path: the logo is centred (and nudged up) in the slide, and the
+                // path ends about half the logo box below its centre
+                top: `calc(50% - ${LOGO_LIFT_PX}px + min(66vw, 280px) * 0.572 + ${GAP_BELOW_LOGO_PX}px)`,
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
+              }}
             >
-              {/* Divider */}
-              <div className="h-[1px] w-full bg-white/40" />
-
-              {/* CTA Buttons */}
-              <div className="flex w-full items-center justify-center pt-4 gap-3">
-                <CTAButton label="About Us" action="about" onClick={handleCTA} />
-                <CTAButton label="Our Works" action="works" onClick={handleCTA} />
-              </div>
-              <div className="flex w-full items-center justify-center pt-3">
-                <CTAButton label="Our Products" action="products" onClick={handleCTA} />
+              {/* the row takes the free width (flex: 1); each button keeps its own size (flex: 0) */}
+              <div className="flex flex-1 flex-col items-center justify-center gap-3">
+                <CTAButton
+                  label="Our Products"
+                  action="products"
+                  variant="solid"
+                  icon={<ArrowRight size={15} strokeWidth={2.4} aria-hidden />}
+                  onClick={handleCTA}
+                />
+                <CTAButton
+                  label="Our Works"
+                  action="works"
+                  variant="outline"
+                  icon={<ArrowRight size={15} strokeWidth={2.4} aria-hidden />}
+                  onClick={handleCTA}
+                />
               </div>
             </motion.div>
           )}

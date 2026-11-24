@@ -30,6 +30,15 @@ interface ServicesScrollerProps {
    * in place as soon as the user starts scrolling, and the landing buttons fade away.
    */
   bridge?: boolean;
+  /** Show the finished stack from the first pixel, with no logo intro. The outro still plays. */
+  skipIntro?: boolean;
+  /**
+   * Extra scroll (in viewport heights) after the outro during which the finished logo stays
+   * pinned and still, so the next section can take over while this one is still in place.
+   */
+  holdVh?: number;
+  /** Phones: keep the landing logo untouched for this share of the hand-off while its buttons fade (see DustCanvas). */
+  landingHold?: number;
 }
 
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -41,8 +50,8 @@ export const STACK_START_PROGRESS = INTRO_SHARE;
 /** A scroll jump bigger than this (of the whole section) snaps the animation instead of replaying. */
 const JUMP_THRESHOLD = 0.08;
 const OUTRO_SHARE = 0.1;
-const ITEM_HEIGHT_REM = 3.6;
-const HEADING_HEIGHT_REM = 11;
+const ITEM_HEIGHT_REM = 3.2;
+const HEADING_HEIGHT_REM = 9.5;
 const FADE_NEAR_REM = 4;
 const FADE_FAR_REM = 9;
 
@@ -128,7 +137,7 @@ function HeadingRow({
         <span>{String(row.categoryIndex + 1).padStart(2, "0")}</span>
         <span className="h-px w-10 bg-white/25" />
       </p>
-      <h2 className="font-[Poppins,sans-serif] text-[clamp(1.8rem,1rem+2.2vw,3.4rem)] font-bold leading-[1.05] text-white">
+      <h2 className="font-[Poppins,sans-serif] text-[clamp(1.5rem,0.9rem+1.8vw,2.7rem)] font-bold leading-[1.05] text-white">
         {row.label}
       </h2>
     </motion.div>
@@ -155,7 +164,7 @@ function ItemRow({ row, focus }: { row: FlowRow; focus: MotionValue<number> }) {
         style={{ scaleX: markerScale }}
         className="h-px w-8 origin-left bg-blue-400"
       />
-      <span className="font-[Poppins,sans-serif] text-[clamp(1.05rem,0.85rem+0.7vw,1.6rem)] font-medium text-white">
+      <span className="font-[Poppins,sans-serif] text-[clamp(0.95rem,0.78rem+0.55vw,1.3rem)] font-medium text-white">
         {row.label}
       </span>
     </motion.div>
@@ -169,6 +178,9 @@ export default function ServicesScroller({
   startAtEnd = false,
   startProgress = 0,
   bridge = false,
+  skipIntro = false,
+  holdVh = 0,
+  landingHold = 0,
 }: ServicesScrollerProps) {
   const initialProgress = startAtEnd ? 1 : startProgress;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -177,6 +189,7 @@ export default function ServicesScroller({
   const { rows, itemCenters } = useMemo(() => buildFlow(categories), [categories]);
   const total = itemCenters.length;
   const lastIndex = Math.max(total - 1, 1);
+  const scrollSteps = (total - 1) / (1 - INTRO_SHARE - OUTRO_SHARE);
   const flatToCategory = useMemo(
     () => categories.flatMap((c, i) => c.services.map(() => i)),
     [categories],
@@ -206,14 +219,21 @@ export default function ServicesScroller({
 
   // timeline: intro (centred dust logo moves into place, becomes isometric) | sections |
   // outro (stack folds back, logo returns to the centre)
-  const intro = useTransform(smooth, (p) => clamp01(p / INTRO_SHARE));
-  const outro = useTransform(smooth, (p) => clamp01((p - (1 - OUTRO_SHARE)) / OUTRO_SHARE));
+  // with skipIntro the timeline starts where the intro ends: the stack is already built
+  // with holdVh the timeline reaches its end early and then rests there for the hold
+  const holdFactor = 1 + holdVh / (scrollSteps * SCROLL_PER_STEP_VH);
+  const timeline = useTransform(smooth, (raw) => {
+    const p = Math.min(1, raw * holdFactor);
+    return skipIntro ? INTRO_SHARE + p * (1 - INTRO_SHARE) : p;
+  });
+  const intro = useTransform(timeline, (p) => clamp01(p / INTRO_SHARE));
+  const outro = useTransform(timeline, (p) => clamp01((p - (1 - OUTRO_SHARE)) / OUTRO_SHARE));
   const collapse = useTransform(outro, (o) => smoothstep(o / 0.55));
   const morph = useTransform([intro, outro], ([i, o]: number[]) =>
     smoothstep(i) * (1 - smoothstep((o - 0.45) / 0.55)),
   );
   const active = useTransform(
-    smooth,
+    timeline,
     (p) => clamp01((p - INTRO_SHARE) / (1 - INTRO_SHARE - OUTRO_SHARE)) * lastIndex,
   );
   const revealed = useTransform([active, morph, collapse], ([a, m, c]: number[]) =>
@@ -260,11 +280,9 @@ export default function ServicesScroller({
     clamp01((m - 0.6) / 0.4) * (1 - 0.85 * c),
   );
 
-  const scrollSteps = (total - 1) / (1 - INTRO_SHARE - OUTRO_SHARE);
-
   const stageClass = stacked
-    ? "absolute left-1/2 top-[11dvh] w-[min(100vw,50dvh)] -translate-x-1/2"
-    : "absolute left-[clamp(0rem,2vw,3rem)] top-1/2 w-[min(88vw,136vh)] -translate-y-1/2";
+    ? "absolute left-1/2 top-[11dvh] w-[min(88vw,44dvh)] -translate-x-1/2"
+    : "absolute left-[clamp(0rem,2vw,3rem)] top-1/2 w-[min(74vw,114vh)] -translate-y-1/2";
   const textClass = stacked
     ? "absolute inset-x-[6vw] bottom-[3dvh] top-[60dvh]"
     : "absolute inset-y-0 left-[clamp(20rem,57vw,52rem)] right-[clamp(1rem,4vw,5rem)] max-w-[40rem]";
@@ -273,7 +291,7 @@ export default function ServicesScroller({
     <section
       ref={containerRef}
       aria-label="Our services"
-      style={{ height: `${scrollSteps * SCROLL_PER_STEP_VH + 100}vh` }}
+      style={{ height: `${scrollSteps * SCROLL_PER_STEP_VH + 100 + holdVh}vh` }}
       className={`relative text-white ${bridge ? "bg-transparent" : "bg-black"}`}
     >
       <div
@@ -293,8 +311,9 @@ export default function ServicesScroller({
           active={active}
           plateCount={total}
           logoSource={logoSource}
-          instant={initialProgress > 0}
+          instant={initialProgress > 0 || skipIntro}
           entry={bridge ? intro : undefined}
+          holdShare={landingHold}
           className="pointer-events-none absolute inset-0 h-full w-full"
         />
 

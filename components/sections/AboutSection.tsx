@@ -7,9 +7,9 @@ import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import Image from "next/image";
 
 // ── Local Asset URLs ──────────
-const imgHeroBanner = "/images/about/Team-Photo.png";
-const imgBrand = "/images/about/imgBrand.png";
-const imgImpact = "/images/about/imgImpact.png";
+const imgHeroBanner = "/images/about/Team-Photo.webp";
+const imgBrand = "/images/about/imgBrand.webp";
+const imgImpact = "/images/about/imgImpact.webp";
 const imgAwardsIcon = "/images/about/imgAwardsIcon.svg";
 
 // ── Fade-up animation variant ─────────────────────────────────────────────

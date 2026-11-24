@@ -1,262 +1,76 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { greetings } from "@/lib/constants";
-import { Header } from "@/components/layout";
-import {
-  GreetingsOverlay,
-  ScrollSection,
-  TrustSection,
-  ClientSection,
-  ContactSection,
-} from "@/components/sections";
-import { lockGlobalScroll } from "@/lib/scrollLock";
+import GreetingsOverlay from "@/components/sections/GreetingsOverlay";
+import { useDevice } from "@/hooks";
 
-// All scrollable section phases (preloader greetings is handled separately)
-const ALL_PHASES = ["scrolling", "trust", "client", "contact"] as const;
-type ScrollPhase = (typeof ALL_PHASES)[number];
-type Phase = "greetings" | ScrollPhase;
+// Each layout is loaded only on the device that uses it.
+// While a layout loads the screen stays black, never the page's white background.
+const BlackScreen = () => <div className="fixed inset-0 bg-black" />;
 
-const isScrollPhase = (value: string): value is ScrollPhase =>
-  (ALL_PHASES as readonly string[]).includes(value);
+const DesktopHome = dynamic(() => import("@/components/features/home/DesktopHome"), {
+  loading: BlackScreen,
+});
+const MobileServicePage = dynamic(
+  () => import("@/components/mobile").then((mod) => mod.MobileServicePage),
+  { loading: BlackScreen },
+);
 
-const sectionVariants = {
-  enter: (direction: number) => ({
-    y: direction > 0 ? "100vh" : 0,
-    scale: direction > 0 ? 1 : 0.94,
-    opacity: direction > 0 ? 1 : 0.42,
-    borderTopLeftRadius: direction > 0 ? 40 : 0,
-    borderTopRightRadius: direction > 0 ? 40 : 0,
-    zIndex: direction > 0 ? 20 : 5,
-  }),
-  center: {
-    y: 0,
-    scale: 1,
-    opacity: 1,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-    zIndex: 20,
-  },
-  exit: (direction: number) => ({
-    y: direction > 0 ? 0 : "100vh",
-    scale: direction > 0 ? 0.94 : 1,
-    opacity: direction > 0 ? 0.42 : 1,
-    borderTopLeftRadius: direction > 0 ? 0 : 40,
-    borderTopRightRadius: direction > 0 ? 0 : 40,
-    zIndex: direction > 0 ? 5 : 30,
-  }),
-};
-
-const CARD_TRANSITION = { duration: 0.8, ease: [0.22, 1, 0.36, 1] } as const;
-const MENU_OFFSET_Y = "6.25rem";
+const GREETING_STEP_MS = 500;
+const SESSION_KEY = "initial-load-done";
 
 export default function Home() {
-  const [phase, setPhase] = useState<Phase>("greetings");
+  const { isMobile, isLoading: isDeviceLoading } = useDevice();
+  const [isReady, setIsReady] = useState(false);
   const [greetingIndex, setGreetingIndex] = useState(0);
-  const [direction, setDirection] = useState(1);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [activeHash, setActiveHash] = useState("");
-  const [scrollSectionStartAtEnd, setScrollSectionStartAtEnd] = useState(false);
-  const [hasCompletedInitialCrawl, setHasCompletedInitialCrawl] = useState(false);
 
-  /* ── Greeting Preloader Sequence ───────────────── */
+  /* ── Greeting preloader: once per session, then the page itself ── */
   useEffect(() => {
-    if (phase !== "greetings") return;
+    if (isReady) return;
 
-    if (sessionStorage.getItem("initial-load-done")) {
-      const hash = window.location.hash.replace("#", "");
-      setActiveHash(hash);
-      if (hash === "services") {
-        setPhase("scrolling");
-      } else if (isScrollPhase(hash)) {
-        setPhase(hash);
-      } else {
-        setPhase("scrolling");
-      }
-      setHasCompletedInitialCrawl(true);
+    if (sessionStorage.getItem(SESSION_KEY)) {
+      setIsReady(true);
       return;
     }
 
-    if (greetingIndex < greetings.length - 1) {
-      const timer = setTimeout(() => setGreetingIndex((prev) => prev + 1), 500);
-      return () => clearTimeout(timer);
-    }
-
+    const isLastGreeting = greetingIndex >= greetings.length - 1;
     const timer = setTimeout(() => {
-      setDirection(1);
-      sessionStorage.setItem("initial-load-done", "true");
-      const hash = window.location.hash.replace("#", "");
-      setActiveHash(hash);
-      if (hash === "services") {
-        setPhase("scrolling");
-      } else if (isScrollPhase(hash)) {
-        setPhase(hash);
+      if (isLastGreeting) {
+        sessionStorage.setItem(SESSION_KEY, "true");
+        setIsReady(true);
       } else {
-        setPhase("scrolling");
+        setGreetingIndex((index) => index + 1);
       }
-    }, 500);
+    }, GREETING_STEP_MS);
 
     return () => clearTimeout(timer);
-  }, [greetingIndex, phase]);
+  }, [greetingIndex, isReady]);
 
-  /* ── Hash Navigation ────────────────────────────── */
-  useEffect(() => {
-    const handleHash = () => {
-      const hash = window.location.hash.replace("#", "");
-      setActiveHash(hash);
-      if (hash === "services") {
-        setPhase("scrolling");
-      } else if (isScrollPhase(hash)) {
-        setPhase(hash);
-      }
-      lockGlobalScroll(950);
-      setDirection(1);
-      setMenuOpen(false);
-    };
+  if (isDeviceLoading) {
+    return isReady ? (
+      <div className="fixed inset-0 bg-black" />
+    ) : (
+      <GreetingsOverlay greetingIndex={greetingIndex} />
+    );
+  }
 
-    handleHash();
-    window.addEventListener("hashchange", handleHash);
-    return () => window.removeEventListener("hashchange", handleHash);
-  }, []);
-
-  const handleToggleMenu = useCallback(() => {
-    setMenuOpen((prev) => !prev);
-  }, []);
-
+  // Desktop mounts behind the greetings (their overlay is drawn last, so it covers the page) and
+  // its intro starts when they end: the page's heavy parts load while only plain text animates.
+  // The phone layout starts its own intro when it mounts, so it waits for the greetings.
   return (
     <>
-      {phase === "greetings" && (
-        <GreetingsOverlay greetingIndex={greetingIndex} />
+      {isMobile ? (
+        isReady && (
+          <div className="fixed inset-0 bg-black">
+            <MobileServicePage skipPreloader activeHash={window.location.hash.replace("#", "")} />
+          </div>
+        )
+      ) : (
+        <DesktopHome isActive={isReady} />
       )}
-
-      <div
-        className={`fixed inset-0 overflow-hidden ${
-          phase === "greetings" ? "bg-black" : "bg-white"
-        }`}
-        style={{
-          opacity: phase === "greetings" ? 0 : 1,
-          transition: "opacity 0.6s ease-in-out",
-          pointerEvents: phase === "greetings" ? "none" : "auto",
-        }}
-      >
-        <Header menuOpen={menuOpen} onToggleMenu={handleToggleMenu} hideMobile />
-
-        <motion.div
-          initial={{ borderRadius: 0 }}
-          animate={{
-            y: menuOpen ? MENU_OFFSET_Y : 0,
-            scale: menuOpen ? 0.95 : 1,
-            borderRadius: menuOpen ? 24 : 0,
-          }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          onClick={() => {
-            if (menuOpen) setMenuOpen(false);
-          }}
-          className={`relative origin-top overflow-hidden bg-black text-white h-screen w-full ${
-            menuOpen ? "cursor-pointer shadow-[0_25px_60px_rgba(0,0,0,0.35)]" : ""
-          }`}
-        >
-          <AnimatePresence mode="sync" custom={direction}>
-            {phase === "scrolling" && (
-              <motion.div
-                key="scroll"
-                custom={direction}
-                variants={sectionVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={CARD_TRANSITION}
-                className="absolute inset-0 w-full h-screen overflow-hidden"
-              >
-                <ScrollSection
-                  activeHash={activeHash}
-                  startAtEnd={scrollSectionStartAtEnd}
-                  skipAnimation={hasCompletedInitialCrawl}
-                  onScrollComplete={() => {
-                    setHasCompletedInitialCrawl(true);
-                    setScrollSectionStartAtEnd(false);
-                    setDirection(1);
-                    setPhase("trust");
-                  }}
-                  onBack={() => {
-                    setScrollSectionStartAtEnd(false);
-                  }}
-                />
-              </motion.div>
-            )}
-
-            {phase === "trust" && (
-              <motion.div
-                key="trust"
-                custom={direction}
-                variants={sectionVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={CARD_TRANSITION}
-                className="absolute inset-0 w-full h-screen overflow-hidden"
-              >
-                <TrustSection
-                  onBack={() => {
-                    setDirection(-1);
-                    setScrollSectionStartAtEnd(true);
-                    setPhase("scrolling");
-                  }}
-                  onComplete={() => {
-                    setDirection(1);
-                    setPhase("client");
-                  }}
-                />
-              </motion.div>
-            )}
-
-            {phase === "client" && (
-              <motion.div
-                key="client"
-                custom={direction}
-                variants={sectionVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={CARD_TRANSITION}
-                className="absolute inset-0 w-full h-screen overflow-hidden"
-              >
-                <ClientSection
-                  onBack={() => {
-                    setDirection(-1);
-                    setPhase("trust");
-                  }}
-                  onComplete={() => {
-                    setDirection(1);
-                    setPhase("contact");
-                  }}
-                />
-              </motion.div>
-            )}
-
-            {phase === "contact" && (
-              <motion.div
-                key="contact"
-                custom={direction}
-                variants={sectionVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={CARD_TRANSITION}
-                className="absolute inset-0 w-full h-screen overflow-hidden"
-              >
-                <ContactSection
-                  onBack={() => {
-                    setDirection(-1);
-                    setPhase("client");
-                  }}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      </div>
+      {!isReady && <GreetingsOverlay greetingIndex={greetingIndex} />}
     </>
   );
 }

@@ -35,6 +35,7 @@ export default function RotatingEarth({
       .clipAngle(90);
 
     const path = geoPath().projection(projection).context(ctx);
+    const graticuleLines = geoGraticule()();
 
     interface DotData {
       lng: number;
@@ -71,9 +72,8 @@ export default function RotatingEarth({
 
       if (landFeatures) {
         // Draw graticule
-        const graticule = geoGraticule();
         ctx.beginPath();
-        path(graticule());
+        path(graticuleLines);
         ctx.strokeStyle = "rgba(100, 150, 255, 0.2)";
         ctx.lineWidth = 1 * scaleFactor;
         ctx.globalAlpha = 0.5;
@@ -90,28 +90,20 @@ export default function RotatingEarth({
         ctx.stroke();
       }
 
-      // Draw halftone dots
-      allDots.forEach((dot) => {
+      // Draw halftone dots: one path and one fill for all of them (thousands of separate
+      // fills per frame were what made the globe stutter)
+      const dotRadius = 1.2 * scaleFactor;
+      ctx.fillStyle = "rgba(150, 200, 255, 0.8)";
+      ctx.beginPath();
+      for (const dot of allDots) {
         const projected = projection([dot.lng, dot.lat]);
-        if (
-          projected &&
-          projected[0] >= 0 &&
-          projected[0] <= containerSize &&
-          projected[1] >= 0 &&
-          projected[1] <= containerSize
-        ) {
-          ctx.beginPath();
-          ctx.arc(
-            projected[0],
-            projected[1],
-            1.2 * scaleFactor,
-            0,
-            2 * Math.PI,
-          );
-          ctx.fillStyle = "rgba(150, 200, 255, 0.8)";
-          ctx.fill();
-        }
-      });
+        if (!projected) continue; // far side of the globe
+        const [x, y] = projected;
+        if (x < 0 || x > containerSize || y < 0 || y > containerSize) continue;
+        ctx.moveTo(x + dotRadius, y);
+        ctx.arc(x, y, dotRadius, 0, 2 * Math.PI);
+      }
+      ctx.fill();
     }
 
     const fitCanvasToContainer = () => {
@@ -128,7 +120,7 @@ export default function RotatingEarth({
       containerSize = nextSize;
       radius = nextSize / 2.1;
 
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       canvas.width = nextSize * dpr;
       canvas.height = nextSize * dpr;
       canvas.style.width = `${nextSize}px`;
@@ -139,27 +131,35 @@ export default function RotatingEarth({
       render();
     };
     const loadWorldData = async () => {
+      // The halftone dots ship with the site and are all the globe needs. The land outline comes
+      // from a third-party site and is only a nicety: if it cannot be fetched the globe is still
+      // drawn (it used to be replaced by an error message).
+      const loadOutline = async () => {
+        try {
+          const res = await fetch(
+            "https://raw.githubusercontent.com/martynafford/natural-earth-geojson/refs/heads/master/110m/physical/ne_110m_land.json",
+          );
+          if (res.ok) landFeatures = await res.json();
+        } catch {
+          // no outline: dots only
+        }
+      };
+
       try {
-
-        const [landRes, dotsRes] = await Promise.all([
-          fetch("https://raw.githubusercontent.com/martynafford/natural-earth-geojson/refs/heads/master/110m/physical/ne_110m_land.json"),
-          fetch("/data/land-dots.json")
-        ]);
-
-        if (!landRes.ok) throw new Error("Failed to load land outline data");
+        const dotsRes = await fetch("/data/land-dots.json");
         if (!dotsRes.ok) throw new Error("Failed to load precomputed land dots");
-
-        landFeatures = await landRes.json();
         const dotsData: [number, number][] = await dotsRes.json();
-
         dotsData.forEach(([lng, lat]) => {
           allDots.push({ lng, lat, visible: true });
         });
-
         render();
       } catch {
         setError("Failed to load land map data");
+        return;
       }
+
+      await loadOutline();
+      render();
     };
 
     // Set up rotation and interaction
@@ -167,12 +167,24 @@ export default function RotatingEarth({
     let autoRotate = true;
     const rotationSpeed = 0.5;
 
-    const rotate = () => {
-      if (autoRotate) {
-        rotation[0] += rotationSpeed;
-        projection.rotate(rotation);
-        render();
-      }
+    // Skip drawing while the globe is off-screen or the tab is hidden.
+    let isOnScreen = true;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      isOnScreen = entry.isIntersecting;
+    });
+    visibilityObserver.observe(canvas);
+
+    // The spin is per elapsed time, not per frame, so it stays the same speed (and stays smooth)
+    // on 60Hz and faster screens, and does not jump after a slow frame.
+    let lastRenderAt = 0;
+    const rotate = (elapsed: number) => {
+      if (!autoRotate || !isOnScreen || reducedMotion || document.hidden) return;
+      const sinceLast = elapsed - lastRenderAt;
+      lastRenderAt = elapsed;
+      rotation[0] += rotationSpeed * Math.min(sinceLast, 50) / (1000 / 60);
+      projection.rotate(rotation);
+      render();
     };
 
     // Auto-rotation timer
@@ -245,6 +257,7 @@ export default function RotatingEarth({
     // Cleanup
     return () => {
       resizeObserver.disconnect();
+      visibilityObserver.disconnect();
       window.removeEventListener("resize", fitCanvasToContainer);
       rotationTimer.stop();
       canvas.removeEventListener("mousedown", handleMouseDown);
@@ -267,13 +280,19 @@ export default function RotatingEarth({
 
   return (
     <div ref={wrapperRef} className={`relative ${className}`}>
+      {/* the glow is a static shadow behind the canvas: a CSS filter on the canvas itself would be
+          re-rendered on every frame of the rotation */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-[2.4%] rounded-full"
+        style={{
+          boxShadow:
+            "0 0 40px rgba(100, 150, 255, 0.4), 0 0 80px rgba(100, 150, 255, 0.2)",
+        }}
+      />
       <canvas
         ref={canvasRef}
-        className="block h-full w-full bg-transparent rounded-full cursor-grab active:cursor-grabbing"
-        style={{
-          filter:
-            "drop-shadow(0 0 40px rgba(100, 150, 255, 0.4)) drop-shadow(0 0 80px rgba(100, 150, 255, 0.2))",
-        }}
+        className="relative block h-full w-full bg-transparent rounded-full cursor-grab active:cursor-grabbing"
       />
     </div>
   );

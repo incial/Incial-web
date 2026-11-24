@@ -1,5 +1,6 @@
 "use client";
 
+import MenuFrame from "@/components/layout/MenuFrame";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -424,12 +425,11 @@ export default function BlogPostClient({
     <div className="relative min-h-screen bg-white">
       <Header menuOpen={menuOpen} onToggleMenu={() => setMenuOpen(!menuOpen)} />
 
+      <MenuFrame open={menuOpen} />
+
       <motion.div
         animate={{
           y: menuOpen ? 100 : 0,
-          scale: menuOpen ? 0.95 : 1,
-          borderTopLeftRadius: menuOpen ? 24 : 0,
-          borderTopRightRadius: menuOpen ? 24 : 0,
         }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="relative origin-top overflow-hidden bg-black text-white min-h-screen"

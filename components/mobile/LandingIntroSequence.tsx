@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import LogoScreen from '@/components/features/home/LogoScreen';
+import FlowingSlot from '@/components/features/home/FlowingSlot';
 
 interface LandingIntroSequenceProps {
   playAnimation?: boolean;
@@ -19,36 +20,6 @@ const businessHoldMs = 800;
 const beyondHoldMs = 2200;
 type SequenceStage = 'brand' | 'business' | 'beyond' | 'logo';
 const sequenceStages: SequenceStage[] = ['brand', 'business', 'beyond'];
-
-const AnimatedWord = memo(function AnimatedWord({
-  word,
-  isActive,
-}: {
-  word: string;
-  isActive: boolean;
-}) {
-  return (
-    <motion.span
-      aria-hidden={!isActive}
-      className="col-start-1 row-start-1 flex items-center justify-start whitespace-nowrap"
-      initial={false}
-      animate={{ opacity: isActive ? 1 : 0, y: isActive ? 0 : 10 }}
-      transition={{
-        duration: 0.5,
-        ease: [0.25, 0.1, 0.25, 1.0],
-      }}
-      style={{
-        transform: 'translate3d(0, 0, 0)',
-        backfaceVisibility: 'hidden',
-        willChange: 'opacity, transform',
-      }}
-    >
-      {word}
-    </motion.span>
-  );
-});
-
-AnimatedWord.displayName = 'AnimatedWord';
 
 export const LandingIntroSequence = memo(function LandingIntroSequence({
   playAnimation = false,
@@ -173,67 +144,25 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
             }}
           >
             <div
-              className="flex flex-row items-center justify-center gap-x-2.5 font-light text-white whitespace-nowrap overflow-hidden"
+              className="flex flex-row items-center justify-center gap-x-2.5 font-light text-white whitespace-nowrap"
               style={{
                 fontSize: 'clamp(1.75rem, 6.5vw, 3.5rem)',
                 backfaceVisibility: 'hidden',
                 transform: 'translate3d(0, 0, 0)',
               }}
             >
-              <AnimatePresence mode="wait">
-                {stage !== 'beyond' ? (
-                  <motion.span
-                    key="prefix-we-build"
-                    initial={{ opacity: 1, x: 0 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: '-100%' }}
-                    transition={{
-                      duration: 0.5,
-                      ease: [0.25, 0.1, 0.25, 1.0],
-                    }}
-                    className="inline-block"
-                    style={{
-                      backfaceVisibility: 'hidden',
-                      transform: 'translate3d(0, 0, 0)',
-                    }}
-                  >
+              <FlowingSlot
+                activeIndex={stage === 'beyond' ? 1 : 0}
+                items={[
+                  <span key="we">
                     We <span className="italic">Build</span>
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="prefix-and"
-                    initial={{ opacity: 0, x: '100%' }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: '-100%' }}
-                    transition={{
-                      duration: 0.5,
-                      ease: [0.25, 0.1, 0.25, 1.0],
-                    }}
-                    className="inline-block italic"
-                    style={{
-                      backfaceVisibility: 'hidden',
-                      transform: 'translate3d(0, 0, 0)',
-                    }}
-                  >
+                  </span>,
+                  <span key="and" className="italic">
                     And
-                  </motion.span>
-                )}
-              </AnimatePresence>
-
-              <span
-                className="relative inline-grid min-w-[6.5ch] items-center justify-start text-left"
-                style={{
-                  contain: 'layout paint style',
-                }}
-              >
-                {landingWords.map((word, index) => (
-                  <AnimatedWord
-                    key={word}
-                    word={word}
-                    isActive={index === activeWordIndex}
-                  />
-                ))}
-              </span>
+                  </span>,
+                ]}
+              />
+              <FlowingSlot activeIndex={activeWordIndex} items={landingWords} />
             </div>
           </motion.div>
         ) : (
@@ -241,6 +170,7 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
             key="mobile-landing-logo"
             skipAnimation={!playAnimation}
             sizeMode="mobile"
+            ring
           />
         )}
       </AnimatePresence>

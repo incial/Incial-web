@@ -21,7 +21,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { apiGetSection, apiSaveSection } from "@/lib/adminApi";
-import type { ClientsData, Client, Testimonial } from "@/lib/dataLoader";
+import type { ClientsData, Client, ClientLocation, Testimonial } from "@/lib/dataLoader";
+import { LOCATION_PRESETS } from "@/lib/clientLocations";
 import { toast } from "sonner";
 import SectionVisibilityToggle from "@/components/admin/SectionVisibilityToggle";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -60,6 +61,85 @@ function SortableClientItem({ client }: { client: Client }) {
         <span className="text-[8px] text-gray-400 text-center px-1 leading-tight pointer-events-none">
           {client.name || "Logo"}
         </span>
+      )}
+    </div>
+  );
+}
+
+const CUSTOM_LOCATION = "__custom__";
+
+/** Picks where a client is based (a preset city, or custom coordinates) for the home page map. */
+function ClientLocationField({
+  location,
+  onChange,
+}: {
+  location: ClientLocation | undefined;
+  onChange: (location: ClientLocation | undefined) => void;
+}) {
+  const presetMatch = LOCATION_PRESETS.find((preset) => preset.label === location?.label);
+  const [isCustom, setIsCustom] = useState(Boolean(location && !presetMatch));
+  const selectValue = isCustom ? CUSTOM_LOCATION : (presetMatch?.label ?? "");
+
+  function handleSelect(value: string) {
+    if (value === CUSTOM_LOCATION) {
+      setIsCustom(true);
+      return;
+    }
+    setIsCustom(false);
+    onChange(LOCATION_PRESETS.find((preset) => preset.label === value));
+  }
+
+  function handleCustom(field: keyof ClientLocation, raw: string) {
+    const base: ClientLocation = location ?? { label: "", lat: 0, lng: 0 };
+    onChange({ ...base, [field]: field === "label" ? raw : Number(raw) });
+  }
+
+  return (
+    <div className="space-y-2">
+      <label className={labelCls}>Location (world map)</label>
+      <select
+        value={selectValue}
+        onChange={(e) => handleSelect(e.target.value)}
+        className={`${inputCls} bg-black`}
+      >
+        <option value="">No location</option>
+        {LOCATION_PRESETS.map((preset) => (
+          <option key={preset.label} value={preset.label}>
+            {preset.label}
+          </option>
+        ))}
+        <option value={CUSTOM_LOCATION}>Custom coordinates…</option>
+      </select>
+      {isCustom && (
+        <div className="grid grid-cols-3 gap-2">
+          <input
+            type="text"
+            value={location?.label ?? ""}
+            onChange={(e) => handleCustom("label", e.target.value)}
+            placeholder="City"
+            className={inputCls}
+          />
+          <input
+            type="number"
+            step="0.01"
+            min={-90}
+            max={90}
+            value={location?.lat ?? ""}
+            onChange={(e) => handleCustom("lat", e.target.value)}
+            placeholder="Latitude"
+            className={inputCls}
+          />
+          <input
+            type="number"
+            step="0.01"
+            min={-180}
+            max={180}
+            value={location?.lng ?? ""}
+            onChange={(e) => handleCustom("lng", e.target.value)}
+            placeholder="Longitude"
+            className={inputCls}
+          />
+        </div>
       )}
     </div>
   );
@@ -116,6 +196,15 @@ export default function AdminClientsPage() {
     if (!data) return;
     const clients = [...data.clients];
     clients[idx] = { ...clients[idx], [field]: value };
+    setData({ ...data, clients });
+  }
+
+  function updateClientLocation(idx: number, location: ClientLocation | undefined) {
+    if (!data) return;
+    const clients = [...data.clients];
+    const next: Client = { ...clients[idx], location };
+    if (!location) delete next.location;
+    clients[idx] = next;
     setData({ ...data, clients });
   }
 
@@ -230,34 +319,40 @@ export default function AdminClientsPage() {
               {data.clients.map((client, i) => (
                 <div
                   key={client.id}
-                  className="flex items-center gap-3 border border-[#1e1e1e] rounded-xl p-3"
+                  className="border border-[#1e1e1e] rounded-xl p-3 space-y-3"
                 >
-                  <div className="w-12 h-9 bg-white rounded-md relative overflow-hidden shrink-0">
-                    {client.src && (
-                      <Image
-                        src={client.src}
-                        alt={client.name}
-                        fill
-                        sizes="50px"
-                        quality={60}
-                        className="object-contain p-1"
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-9 bg-white rounded-md relative overflow-hidden shrink-0">
+                      {client.src && (
+                        <Image
+                          src={client.src}
+                          alt={client.name}
+                          fill
+                          sizes="50px"
+                          quality={60}
+                          className="object-contain p-1"
+                        />
+                      )}
+                    </div>
+                    <div className="flex-1 w-full min-w-[200px]">
+                      <ImageUpload
+                        label="Logo Upload"
+                        value={client.src}
+                        onChange={(v) => updateClient(i, "src", v)}
+                        folder="clients"
                       />
-                    )}
+                    </div>
+                    <button
+                      onClick={() => removeClient(i)}
+                      className="text-red-500/70 hover:text-red-500 shrink-0"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                  <div className="flex-1 w-full min-w-[200px]">
-                    <ImageUpload
-                      label="Logo Upload"
-                      value={client.src}
-                      onChange={(v) => updateClient(i, "src", v)}
-                      folder="clients"
-                    />
-                  </div>
-                  <button
-                    onClick={() => removeClient(i)}
-                    className="text-red-500/70 hover:text-red-500 shrink-0"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <ClientLocationField
+                    location={client.location}
+                    onChange={(location) => updateClientLocation(i, location)}
+                  />
                 </div>
               ))}
             </div>

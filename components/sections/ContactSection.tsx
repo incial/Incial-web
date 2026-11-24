@@ -1,73 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useRef, useState } from "react";
+import { motion, useTransform } from "framer-motion";
 import Footer from "@/components/layout/Footer";
-import { isGlobalScrollLocked, lockGlobalScroll } from "@/lib/scrollLock";
+import { useViewProgress } from "@/lib/useViewProgress";
 
-
-interface ContactSectionProps {
-  onBack?: () => void;
-}
-
-export default function ContactSection({ onBack }: ContactSectionProps) {
-  useEffect(() => {
-    const isCoarsePointer =
-      typeof window !== "undefined" &&
-      window.matchMedia("(pointer: coarse)").matches;
-    const scrollThreshold = isCoarsePointer ? 24 : 40;
-    const scrollLockMs = isCoarsePointer ? 700 : 1200;
-    let isScrolling = false;
-
-    const lockScroll = () => {
-      isScrolling = true;
-      setTimeout(() => {
-        isScrolling = false;
-      }, scrollLockMs);
-    };
-
-    const handleScroll = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) < scrollThreshold) return;
-      if (isScrolling || isGlobalScrollLocked()) return;
-      // Only navigate back when scrolling UP at the very top of the page
-      if (e.deltaY < 0 && window.scrollY === 0 && onBack) {
-        e.preventDefault();
-        lockGlobalScroll(950);
-        lockScroll();
-        onBack();
-      }
-    };
-
-    // Touch support (Swipe Down at top)
-    let touchStartY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY;
-    };
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isScrolling || isGlobalScrollLocked()) return;
-      const touchEndY = e.touches[0].clientY;
-      const deltaY = touchStartY - touchEndY;
-
-      // Swipe Down (negative deltaY) and at top
-      if (deltaY < -scrollThreshold && window.scrollY === 0 && onBack) {
-        e.preventDefault();
-        lockGlobalScroll(950);
-        lockScroll();
-        onBack();
-      }
-    };
-
-    window.addEventListener("wheel", handleScroll, { passive: false });
-    window.addEventListener("touchstart", handleTouchStart, { passive: false });
-    window.addEventListener("touchmove", handleTouchMove, { passive: false });
-
-    return () => {
-      window.removeEventListener("wheel", handleScroll);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-    };
-  }, [onBack]);
-
+/** Contact form and footer; the last section of the home page's single scroll. */
+export default function ContactSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const rise = useViewProgress(sectionRef);
+  // the heading and the form travel different distances as the section rises: a parallax arrival
+  const headingY = useTransform(rise, (p) => (1 - p) * 110);
+  const headingOpacity = useTransform(rise, [0.15, 0.7], [0, 1]);
+  const formY = useTransform(rise, (p) => (1 - p) * 240);
+  const formOpacity = useTransform(rise, [0.25, 0.85], [0, 1]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -129,15 +75,13 @@ export default function ContactSection({ onBack }: ContactSectionProps) {
 
   return (
     <section
+      ref={sectionRef}
       id="contact"
-      className="min-h-screen w-full bg-black text-white flex flex-col justify-between pt-16 pb-6 px-4 md:pt-24 md:pb-8 md:px-0 relative overflow-hidden rounded-t-[32px] sm:rounded-t-[40px] md:rounded-t-[44px] border-t border-white/20 shadow-[0_-25px_60px_rgba(0,0,0,0.95),inset_0_1px_0_rgba(255,255,255,0.2)]"
+      className="min-h-screen w-full bg-black text-white flex flex-col justify-between pt-16 pb-6 px-4 md:pt-24 md:pb-8 md:px-0 relative overflow-hidden"
     >
       <div className="layout-content grow flex flex-col justify-center items-center max-w-2xl w-full mx-auto z-10">
         <motion.div
-          initial={{ opacity: 0, y: "1.25rem" }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
+          style={{ y: headingY, opacity: headingOpacity }}
           className="text-center mb-8 md:mb-12 px-2 md:px-0"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-3 md:mb-4 leading-tight">
@@ -149,10 +93,7 @@ export default function ContactSection({ onBack }: ContactSectionProps) {
         </motion.div>
 
         <motion.form
-          initial={{ opacity: 0, y: "1.875rem" }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          style={{ y: formY, opacity: formOpacity }}
           onSubmit={handleSubmit}
           className="w-full space-y-4 md:space-y-6"
         >
