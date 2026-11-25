@@ -89,7 +89,7 @@ export default function CaseStudyDetail({ study, previous, next }: CaseStudyDeta
   return (
     <div className="md:mx-[var(--menu-inset,0px)] md:flex md:h-[calc(100dvh-var(--menu-shift,0px))] md:overflow-hidden md:transition-[height,margin] md:duration-500 md:ease-[cubic-bezier(0.22,1,0.36,1)]">
       <aside
-        className="flex shrink-0 flex-col bg-black px-6 pb-8 pt-28 md:h-full md:w-[32vw] md:min-w-[22rem] md:overflow-hidden md:px-9 md:pb-6 md:pt-24">
+        className="flex shrink-0 flex-col bg-black px-6 pb-8 pt-28 md:h-full md:w-[clamp(24rem,40vw,42rem)] md:overflow-hidden md:px-10 md:pb-6 md:pt-24">
         <Rise delay={START}>
           <Link href="/case-studies" className={`block border-b ${LINE} pb-5 text-sm uppercase tracking-tight text-white transition-opacity hover:opacity-60`}>
             <span aria-hidden>← </span>
@@ -101,13 +101,13 @@ export default function CaseStudyDetail({ study, previous, next }: CaseStudyDeta
           <SlideText text={study.title} delay={START + 0.15} />
         </h1>
         {study.heroQuote && (
-          <Rise delay={START + 0.55} className="mt-4 max-w-[22rem]">
-            <p className="text-[15px] leading-snug text-white/55">{study.heroQuote}</p>
+          <Rise delay={START + 0.55} className="mt-4 max-w-[40rem]">
+            <p className="text-[15px] leading-relaxed text-white/60">{study.heroQuote}</p>
           </Rise>
         )}
 
         {facts.length > 0 && (
-          <ul className="mt-8 space-y-1 text-[13px] text-white">
+          <ul className="mt-8 grid grid-cols-1 gap-x-6 gap-y-1 text-[13px] text-white sm:grid-cols-2">
             {facts.map((fact, index) => (
               <li key={fact}>
                 <Rise delay={START + 0.75 + index * 0.07}>· {fact}</Rise>
@@ -117,8 +117,8 @@ export default function CaseStudyDetail({ study, previous, next }: CaseStudyDeta
         )}
 
         {current && (
-          <Rise delay={START + 1.1} className="mt-10 md:mt-auto md:flex md:min-h-0 md:flex-col md:pt-6">
-            <div role="tablist" aria-label="About the project" className="flex flex-wrap gap-x-7 gap-y-2">
+          <Rise delay={START + 1.1} className="mt-12 md:flex md:min-h-0 md:flex-1 md:flex-col">
+            <div role="tablist" aria-label="About the project" className="flex flex-wrap gap-x-6 gap-y-2">
               {tabs.map((tab, index) => (
                 <button
                   key={tab.label + index}
@@ -126,7 +126,7 @@ export default function CaseStudyDetail({ study, previous, next }: CaseStudyDeta
                   type="button"
                   aria-selected={index === active}
                   onClick={() => setActive(index)}
-                  className={`max-w-[11rem] truncate border-b pb-1 text-[13px] uppercase tracking-tight transition-colors ${
+                  className={`max-w-[18rem] truncate border-b pb-1 text-[13px] uppercase tracking-tight transition-colors ${
                     index === active ? "border-white text-white" : "border-transparent text-white/45 hover:text-white/80"
                   }`}
                 >
@@ -134,7 +134,7 @@ export default function CaseStudyDetail({ study, previous, next }: CaseStudyDeta
                 </button>
               ))}
             </div>
-            <div role="tabpanel" className="mt-5 space-y-2 overflow-y-auto md:min-h-0 md:flex-1 pr-2 text-[15px] leading-snug text-white/90">
+            <div role="tabpanel" className="mt-7 max-w-[46rem] space-y-3 overflow-y-auto pr-2 text-[15px] leading-relaxed text-white/90 md:min-h-0 md:flex-1 md:text-base">
               {current.content.split("\n").filter(Boolean).map((line, index) => (
                 <p key={index}>{line}</p>
               ))}
@@ -143,7 +143,7 @@ export default function CaseStudyDetail({ study, previous, next }: CaseStudyDeta
         )}
 
         <Rise delay={START + 1.3}>
-          <nav aria-label="Other projects" className={`mt-8 flex shrink-0 justify-between border-t ${LINE} pt-5 text-sm uppercase tracking-tight ${current ? "" : "md:mt-auto"}`}>
+          <nav aria-label="Other projects" className={`mt-8 flex shrink-0 justify-between border-t ${LINE} pt-5 text-sm uppercase tracking-tight md:mt-auto`}>
             {previous ? (
               <Link href={`/case-studies/${previous.slug}`} className="transition-opacity hover:opacity-60" aria-label={`Previous project: ${previous.title}`}>
                 Previous

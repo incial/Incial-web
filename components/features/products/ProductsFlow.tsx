@@ -11,9 +11,8 @@ import {
   type MotionValue,
 } from "framer-motion";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
-import ScrollHint from "@/components/ui/ScrollHint";
 import { ProductCard, ProductCaption, firstParagraph } from "./ProductParts";
-import ShaderBackground from "@/components/ui/ShaderBackground";
+import ShaderHero from "@/components/ui/ShaderHero";
 import StretchHeading from "./StretchHeading";
 import type { Product } from "@/lib/dataLoader";
 
@@ -99,37 +98,17 @@ return (
   );
 }
 
-/** The black opening, its lower edge curved. Scrolling carries it away, and its words fade as it goes. */
+/** The black opening: the shared page hero, starting as a short curved band like the other pages. */
 function Hero() {
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const opacity = useTransform(scrollYProgress, (p) => 1 - ramp(p, 0.15, 0.7));
-  // the lower corners are square at the top of the page and only round off as it scrolls
-  const curve = useTransform(scrollYProgress, (p) => `${14 * ramp(p, 0, 0.25)}dvh`);
-
   return (
-    <motion.section
-      ref={ref}
-      style={{ ["--hero-curve" as string]: curve }}
-      className="relative z-10 flex h-dvh overflow-hidden [border-bottom-left-radius:50%_var(--hero-curve)] [border-bottom-right-radius:50%_var(--hero-curve)] min-h-[28rem] flex-col items-center justify-center bg-black px-6 pb-[14dvh] text-center text-white"
-    >
-      {/* the same near-black shader surface as the homepage hero */}
-      <ShaderBackground className="absolute inset-0 z-0 h-full w-full" />
-
-      <motion.div style={{ opacity }} className="relative z-10 flex flex-col items-center">
-        <div className="mb-8 flex justify-center">
-          <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Products" }]} variant="pill" size="lg" />
-        </div>
-        <h1 className="mb-4 text-5xl italic md:text-8xl">
-          <StretchHeading emphasis="Products" baseWeight={700} emphasisGrow={1.15} />
-        </h1>
-        <p className="text-[14px] italic text-gray-400">Built to work. Built to scale. Built for real businesses.</p>
-      </motion.div>
-
-      <motion.div style={{ opacity }} className="absolute inset-x-0 bottom-[clamp(1.5rem,5dvh,3rem)] z-10 flex justify-center">
-        <ScrollHint delay={0.8} targetId="product-flow" />
-      </motion.div>
-    </motion.section>
+    <ShaderHero
+      breadcrumbs={[{ label: "Home", href: "/" }, { label: "Products" }]}
+      title={<StretchHeading emphasis="Products" baseWeight={700} emphasisGrow={1.15} />}
+      titleClassName="text-5xl italic md:text-8xl"
+      tagline="Built to work. Built to scale. Built for real businesses."
+      scrollTargetId="product-flow"
+      compact
+    />
   );
 }
 
