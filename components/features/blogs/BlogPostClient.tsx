@@ -350,14 +350,16 @@ export default function BlogPostClient({ post, relatedPosts }: BlogPostClientPro
           </div>
         </section>
 
-        {/* just below the cover, two columns: the details stay still on the left, the article runs down the right */}
-        <div className="mx-auto grid max-w-[1431px] lg:grid-cols-[20rem_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]">
-          <aside className="border-b border-black/15 px-5 py-6 sm:px-8 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-6rem)] lg:self-start lg:overflow-y-auto lg:border-b-0 lg:border-r lg:py-14 lg:pl-12 lg:pr-10">
-            <Details post={post} />
-          </aside>
-          <article className="px-5 py-14 sm:px-8 md:py-20 lg:px-16 xl:px-20">
-            <Article blocks={blocks} gallery={gallery} title={post.title} />
-          </article>
+        {/* just below the cover, two columns: the details stay fixed on the left, the article scrolls on the right */}
+        <div className="border-t border-black/15">
+          <div className="mx-auto grid max-w-[1431px] lg:grid-cols-[20rem_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]">
+            <aside className="border-b border-black/15 px-5 py-6 sm:px-8 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-6rem)] lg:self-start lg:overflow-y-auto lg:border-b-0 lg:py-14 lg:pl-12 lg:pr-10">
+              <Details post={post} />
+            </aside>
+            <article className="px-5 py-14 sm:px-8 md:py-20 lg:border-l lg:border-black/15 lg:px-16 xl:px-20">
+              <Article blocks={blocks} gallery={gallery} title={post.title} />
+            </article>
+          </div>
         </div>
 
         {relatedPosts.length > 0 && (

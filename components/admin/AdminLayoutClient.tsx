@@ -60,6 +60,19 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
     if (status === "unauthenticated") router.replace("/admin/login");
   }, [status, pathname, router]);
 
+  // Sync admin theme onto <html> so portaled HeroUI overlays (Select.Popover, Modal, Drawer)
+  // inherit the active light/dark variables instead of falling back to light :root defaults.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    root.classList.add("admin-panel");
+    root.classList.toggle("dark", theme === "dark");
+    return () => {
+      delete root.dataset.theme;
+      root.classList.remove("admin-panel", "dark");
+    };
+  }, [theme]);
+
   const togglePreview = useCallback(() => {
     setPreviewOpen((open) => {
       remember(KEYS.open, open ? "0" : "1");
