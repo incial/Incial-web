@@ -105,6 +105,8 @@ const RENDER_SCALE = 0.5;
 /** How quickly the cursor light catches up with the cursor (per second). */
 const FOLLOW_RATE = 2.2;
 const FADE_RATE = 1.6;
+/** How long the shader rests after the last scroll event. */
+const SCROLL_PAUSE_MS = 160;
 
 function compile(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
   const shader = gl.createShader(type);
@@ -159,6 +161,8 @@ export default function ShaderBackground({ className = "", fadeBottom = 0 }: Sha
     let frame = 0;
     let lastTime = performance.now();
     let isVisible = true;
+    // the surface is drawn slowly and softly, so pausing it while the page scrolls goes unnoticed
+    let scrollingUntil = 0;
     const startedAt = performance.now();
 
     // cursor position eased toward the real one, so the light drifts after it instead of snapping
@@ -216,9 +220,14 @@ export default function ShaderBackground({ className = "", fadeBottom = 0 }: Sha
     const tick = (now: number) => {
       frame = 0;
       if (!isVisible || document.hidden) return;
-      draw(now);
+      if (now >= scrollingUntil) draw(now);
       frame = requestAnimationFrame(tick);
     };
+
+    const handleScroll = () => {
+      scrollingUntil = performance.now() + SCROLL_PAUSE_MS;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     const start = () => {
       if (reducedMotion) {
@@ -253,6 +262,7 @@ export default function ShaderBackground({ className = "", fadeBottom = 0 }: Sha
       intersection.disconnect();
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("scroll", handleScroll);
       document.documentElement.removeEventListener("pointerleave", handlePointerLeave);
       // The context is deliberately not released here: React's dev double-mount would otherwise
       // leave this same canvas with a lost context (a blank white hero). It is freed with the canvas.

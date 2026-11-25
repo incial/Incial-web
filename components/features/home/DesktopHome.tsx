@@ -174,7 +174,9 @@ export default function DesktopHome({ isActive = true }: DesktopHomeProps) {
     let instance: Lenis | null = null;
     import("lenis").then(({ default: LenisCtor }) => {
       if (disposed) return;
-      instance = new LenisCtor({ duration: 1.1, smoothWheel: true, autoRaf: true });
+      // lerp: each frame closes a share of the gap to the target, so the page follows the wheel and
+      // stops soon after it does (a fixed-duration glide keeps drifting on its own)
+      instance = new LenisCtor({ lerp: 0.2, wheelMultiplier: 1, smoothWheel: true, autoRaf: true });
       lenisRef.current = instance;
       if (stageRef.current === "words") instance.stop();
     });
