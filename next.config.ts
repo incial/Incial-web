@@ -29,6 +29,9 @@ const shortAssetCache = [
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
+  // Load the database driver from node_modules instead of bundling it: webpack's copy of `ws`
+  // breaks its frame masking ("b.mask is not a function"), so every database call failed.
+  serverExternalPackages: ["ws", "@neondatabase/serverless", "@prisma/adapter-neon"],
   reactStrictMode: true,
   images: {
     unoptimized: true, // ImageKit CDN already handles optimization; bypass Next.js image processing
