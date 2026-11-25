@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     const newKey = `${folder}/${check.isVideo ? "vid" : "img"}-${Date.now()}-${randomBytes(4).toString("hex")}.${check.ext}`;
     await putFile(config, newKey, Buffer.from(await file.arrayBuffer()), file.type);
     const newUrl = publicUrlFor(config, newKey);
-    const changed = replaceInContent(oldKey, newUrl, config);
+    const changed = await replaceInContent(oldKey, newUrl, config);
     await deleteFile(config, oldKey);
     if (changed > 0) revalidatePath("/", "layout");
     const res = NextResponse.json({ url: newUrl, key: newKey, pagesUpdated: changed });
@@ -78,7 +78,7 @@ export async function DELETE(req: NextRequest) {
   if (!config) return notConfigured();
   const key = req.nextUrl.searchParams.get("key");
   if (!isSafeKey(key)) return NextResponse.json({ error: "Invalid file." }, { status: 400 });
-  const usedIn = scanUsage(config).get(key) ?? [];
+  const usedIn = (await scanUsage(config)).get(key) ?? [];
   if (usedIn.length > 0) {
     return NextResponse.json({ error: "This file is still used on the website.", usedIn }, { status: 409 });
   }

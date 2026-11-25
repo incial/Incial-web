@@ -1,7 +1,8 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, MousePointer2 } from "lucide-react";
+import { MousePointer2 } from "lucide-react";
+import { DoubleDownArrow } from "@/components/ui/ScrollHint";
 import { isGlobalScrollLocked, lockGlobalScroll } from "@/lib/scrollLock";
 
 import AvatarDeckCard from "@/components/features/services/AvatarDeckCard";
@@ -388,12 +389,7 @@ export default function ServicesSection({
           <h1 className="text-3xl sm:text-4xl md:text-[3.25rem] lg:text-[3.85rem] xl:text-[4.25rem] font-semibold text-white tracking-tight leading-[1.14] flex flex-col items-center">
             <span>Services That Make</span>
             <span className="mt-0.5 sm:mt-1">
-              <span
-                className="font-serif italic font-normal text-[#56A6FF]"
-                style={{
-                  fontFamily: "Georgia, Cambria, 'Times New Roman', serif",
-                }}
-              >
+              <span className="italic font-normal text-[#56A6FF]">
                 Magic
               </span>{" "}
               Happen
@@ -703,7 +699,7 @@ export default function ServicesSection({
           className="relative z-30 flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 transition-colors tracking-wide pb-3 cursor-pointer focus:outline-none"
         >
           <span>Scroll down</span>
-          <ChevronDown size={14} className="text-[#5ba4e6] animate-bounce" />
+          <DoubleDownArrow className="size-4 text-[#5ba4e6]" />
         </button>
       )}
     </section>

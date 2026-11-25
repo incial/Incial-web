@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateAdminAuth } from "@/lib/adminAuth";
-import fs from "fs";
-import path from "path";
 import { revalidatePath } from "next/cache";
+import { CONTENT_KEYS, readContent, writeContent, type ContentKey } from "@/lib/contentStore";
 
 export const dynamic = "force-dynamic";
 
-const ALLOWED_SECTIONS = [
-  "about", "clients", "trust", "blogs", "services",
-  "casestudies", "products", "sections",
-];
+const ALLOWED_SECTIONS: readonly string[] = CONTENT_KEYS;
 
 type BlogCategory = "popular" | "newest";
 
@@ -35,10 +31,6 @@ interface BlogsData {
   heroBanner?: string;
   popularPosts: BlogPost[];
   newestPosts: BlogPost[];
-}
-
-function getDataFilePath(section: string): string {
-  return path.join(process.cwd(), "data", `${section}.json`);
 }
 
 function slugify(value: string): string {
@@ -277,9 +269,12 @@ export async function GET(
   const fresh = req.nextUrl.searchParams.get("fresh") === "1";
 
   try {
-    const filePath = getDataFilePath(section);
-    const stat = await fs.promises.stat(filePath);
-    const etag = `"${stat.size}-${Math.trunc(stat.mtimeMs)}"`;
+    const record = await readContent<unknown>(section as ContentKey);
+    if (!record) {
+      return NextResponse.json({ error: "Section has no content yet" }, { status: 404 });
+    }
+    const body = JSON.stringify(record.data);
+    const etag = `"${body.length}-${record.updatedAt ? record.updatedAt.getTime() : 0}"`;
     const cacheHeader = fresh
       ? "no-store, no-cache, must-revalidate, proxy-revalidate"
       : "public, max-age=60, stale-while-revalidate=300";
@@ -294,9 +289,9 @@ export async function GET(
       });
     }
 
-    const raw = await fs.promises.readFile(filePath, "utf-8");
-    return NextResponse.json(JSON.parse(raw), {
+    return new NextResponse(body, {
       headers: {
+        "Content-Type": "application/json",
         ETag: etag,
         "Cache-Control": cacheHeader,
       },
@@ -388,12 +383,8 @@ export async function PUT(
       }
     }
 
-    const filePath = getDataFilePath(section);
-
-    // Write to a temp file then rename so a crash can't leave truncated JSON.
-    const tmpPath = `${filePath}.${process.pid}.tmp`;
-    await fs.promises.writeFile(tmpPath, JSON.stringify(payload, null, 2), "utf-8");
-    await fs.promises.rename(tmpPath, filePath);
+    // the shared content store: the database (or data/<section>.json when there is none)
+    await writeContent(section as ContentKey, payload);
 
     // Revalidate paths for real-time frontend reflection
     if (section === "blogs") {
@@ -420,7 +411,9 @@ export async function PUT(
       sameSite: "lax",
     });
     return res;
-  } catch {
-    return NextResponse.json({ error: "Failed to write data" }, { status: 500 });
+  } catch (error) {
+    // logged with its cause (for example the database being unreachable); the admin sees a plain message
+    console.error(`Saving "${section}" failed:`, error);
+    return NextResponse.json({ error: "Failed to save. Nothing was changed; please try again." }, { status: 500 });
   }
 }

@@ -20,7 +20,36 @@ function scrollDown(targetId: string) {
   window.scrollBy({ top: window.innerHeight, behavior: "smooth" });
 }
 
-/** A small mouse outline with a dot that drifts down, and the words "Scroll down". */
+/** Stacked double downward chevrons with a cascading downward pulse. */
+export function DoubleDownArrow({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="none"
+      className={`shrink-0 drop-shadow-[0_0_6px_rgba(255,255,255,0.45)] ${className}`}
+    >
+      <path
+        d="M6 6.5L12 12.5L18 6.5"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="scroll-arrow-top"
+      />
+      <path
+        d="M6 12.5L12 18.5L18 12.5"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="scroll-arrow-bottom"
+      />
+    </svg>
+  );
+}
+
+/** A double downward arrow with a cascading pulse, and the words "Scroll down". */
 export default function ScrollHint({ delay = 0, className = "", targetId = "services" }: ScrollHintProps) {
   return (
     <motion.button
@@ -30,16 +59,10 @@ export default function ScrollHint({ delay = 0, className = "", targetId = "serv
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className={`group flex items-center gap-3 text-[14px] font-normal tracking-tight text-white/85 transition-colors hover:text-white focus-visible:text-white focus:outline-none ${className}`}
+      className={`group flex cursor-pointer items-center gap-2.5 text-[14px] font-normal tracking-tight text-white/85 transition-colors hover:text-white focus-visible:text-white focus:outline-none ${className}`}
     >
-      {/* the whole hint bobs downward, and a ring pulses out of the mouse, so it catches the eye */}
-      <span className="scroll-hint-bob flex items-center gap-3">
-        <span
-          aria-hidden
-          className="scroll-hint-pulse relative flex h-[34px] w-[22px] justify-center rounded-full border-[1.5px] border-current pt-[7px]"
-        >
-          <span className="scroll-hint-dot block h-[6px] w-[3px] rounded-full bg-current" />
-        </span>
+      <span className="scroll-hint-bob flex items-center gap-2.5">
+        <DoubleDownArrow className="h-[22px] w-[22px]" />
         <span className="text-[15px]">Scroll down</span>
       </span>
     </motion.button>

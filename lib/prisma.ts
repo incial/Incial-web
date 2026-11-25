@@ -19,7 +19,9 @@ const prismaClientSingleton = () => {
   }
 
   // Initialize PrismaNeon adapter with the config directly
-  const adapter = new PrismaNeon({ connectionString });
+  // give up on an unreachable database after 8s (Neon wakes from sleep in a second or two), so
+  // callers with a fallback (lib/contentStore.ts) are not held for the driver's long default
+  const adapter = new PrismaNeon({ connectionString, connectionTimeoutMillis: 8000 });
 
   // Pass it as the single required `adapter` option
   return new PrismaClient({ adapter });

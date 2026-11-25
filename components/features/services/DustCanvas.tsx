@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type RefObject } from "react";
 import { cancelFrame, frame as frameLoop, type FrameData, type MotionValue } from "framer-motion";
+import { fetchCachedImageUrl } from "@/lib/publicCache";
 import {
   LOGO_SCALE,
   PLATE_SIDE,
@@ -238,13 +239,27 @@ function buildParticles(count: number, plateCount: number, stackX: number): Part
   return set;
 }
 
+const cachedLogoImages = new Map<string, Promise<HTMLImageElement>>();
+
 function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
-  });
+  const existing = cachedLogoImages.get(src);
+  if (existing) return existing;
+
+  const promise = fetchCachedImageUrl(src).then(
+    (resolvedSrc) =>
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = (err) => {
+          cachedLogoImages.delete(src);
+          reject(err);
+        };
+        image.src = resolvedSrc;
+      }),
+  );
+
+  cachedLogoImages.set(src, promise);
+  return promise;
 }
 
 /** Reads the real logo image and scatters particles over its pixels. */

@@ -153,10 +153,7 @@ export default function ServiceIntroDeck({ onAction }: ServiceIntroDeckProps) {
           <h1 className="text-[26px] min-[380px]:text-[30px] min-[420px]:text-[34px] sm:text-4xl md:text-[3.25rem] lg:text-[3.85rem] xl:text-[4.25rem] font-semibold text-white tracking-tight leading-[1.14] flex flex-col items-center">
             <span>Services That Make</span>
             <span className="mt-0.5 sm:mt-1">
-              <span
-                className="font-serif italic font-normal text-[#56A6FF]"
-                style={{ fontFamily: "Georgia, Cambria, 'Times New Roman', serif" }}
-              >
+              <span className="italic font-normal text-[#56A6FF]">
                 Magic
               </span>{" "}
               Happen

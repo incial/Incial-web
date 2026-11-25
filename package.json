@@ -8,6 +8,7 @@
     "start": "node --max-old-space-size=512 ./node_modules/next/dist/bin/next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "data:pull": "node scripts/pull-production-data.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {

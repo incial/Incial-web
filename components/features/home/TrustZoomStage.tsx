@@ -11,7 +11,7 @@ import {
 import ClientWorldMap from "@/components/features/home/ClientWorldMap";
 import { LOGO_BOX_WIDTH } from "@/components/features/home/LogoScreen";
 import { isValidLocation } from "@/lib/clientLocations";
-import { fetchJsonIfAvailable } from "@/lib/adminApi";
+import { fetchCachedJson } from "@/lib/publicCache";
 import { useClientsData } from "@/lib/useClientsData";
 import { useSectionsConfig } from "@/lib/useSectionsConfig";
 
@@ -335,7 +335,7 @@ export default function TrustZoomStage({
   const clients = useClientsData();
 
   useEffect(() => {
-    fetchJsonIfAvailable<TrustApiData>("/api/admin/trust")
+    fetchCachedJson<TrustApiData>("/api/admin/trust")
       .then((payload) => {
         if (payload?.stats?.length) setStats(payload.stats);
         if (payload?.title) setTitle(payload.title);

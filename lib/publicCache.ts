@@ -8,6 +8,9 @@
  *   invalidate the browser's cached copy immediately.
  * - Static datasets (/data/land-dots.json, external GeoJSON) are persisted across full
  *   page loads in the browser Cache API with an in-memory fallback.
+ * - Same-origin images (/media/*, /logo/*, /images/*, /clients/*) are cached in the
+ *   browser Cache API and deduplicated in memory so duplicate cards and page reloads
+ *   never re-fetch unchanged assets.
  */
 
 export const CMS_VERSION_COOKIE = "incial_cms_v";
@@ -16,6 +19,11 @@ const DEFAULT_CMS_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const STATIC_CACHE_NAME = "incial-static-v1";
 const STATIC_TS_PREFIX = "incial_static_ts:";
 const DEFAULT_STATIC_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const MEDIA_CACHE_NAME = "incial-media-v1";
+const IMMUTABLE_MEDIA_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const MUTABLE_MEDIA_TTL_MS = 60 * 60 * 1000; // 1 hour
+const MEDIA_CACHED_AT_HEADER = "X-Incial-Cached-At";
+const MEDIA_VERSION_HEADER = "X-Incial-Cms-V";
 
 interface StoredCmsEntry<T> {
   v: string;
@@ -27,6 +35,9 @@ const memoryCms = new Map<string, StoredCmsEntry<unknown>>();
 const inflightCms = new Map<string, Promise<unknown>>();
 const memoryStatic = new Map<string, unknown>();
 const inflightStatic = new Map<string, Promise<unknown>>();
+const memoryImageUrls = new Map<string, string>();
+const inflightImages = new Map<string, Promise<string>>();
+const preloadedImages = new Set<string>();
 
 export function getCmsVersion(): string {
   if (typeof document === "undefined") return "0";
@@ -44,6 +55,11 @@ export function getCmsVersion(): string {
 export function invalidateCmsCache(): void {
   memoryCms.clear();
   inflightCms.clear();
+  for (const url of Array.from(memoryImageUrls.keys())) {
+    if (!isImmutableLocalMedia(url)) {
+      memoryImageUrls.delete(url);
+    }
+  }
   if (typeof document !== "undefined") {
     document.cookie = `${CMS_VERSION_COOKIE}=${Date.now()}; Path=/; Max-Age=86400; SameSite=Lax`;
   }
@@ -218,4 +234,115 @@ export function fetchCachedStaticJson<T>(
 
   inflightStatic.set(url, promise);
   return promise;
+}
+
+export function isCacheableLocalMedia(src?: string | null): boolean {
+  if (!src) return false;
+  const trimmed = src.trim();
+  return trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.startsWith("/api/");
+}
+
+function isImmutableLocalMedia(src: string): boolean {
+  return src.startsWith("/media/") || src.startsWith("/logo/");
+}
+
+export function canUseBrowserImageCache(): boolean {
+  return typeof window !== "undefined" && "caches" in window && typeof URL?.createObjectURL === "function";
+}
+
+/** Synchronous lookup for an already-resolved image URL (or direct passthrough if uncacheable). */
+export function getCachedImageUrlSync(src: string): string | null {
+  if (!src) return src;
+  if (!isCacheableLocalMedia(src) || !canUseBrowserImageCache()) return src;
+  return memoryImageUrls.get(src) ?? null;
+}
+
+/**
+ * Resolves a same-origin image URL through an in-memory object-URL map and the browser Cache API,
+ * deduplicating concurrent requests so repeated renders or reloads do not re-fetch unchanged images.
+ */
+export function fetchCachedImageUrl(src: string): Promise<string> {
+  if (!src || typeof window === "undefined" || !isCacheableLocalMedia(src) || !canUseBrowserImageCache()) {
+    return Promise.resolve(src);
+  }
+
+  const mem = memoryImageUrls.get(src);
+  if (mem) return Promise.resolve(mem);
+
+  const existing = inflightImages.get(src);
+  if (existing) return existing;
+
+  const immutable = isImmutableLocalMedia(src);
+  const version = getCmsVersion();
+  const ttlMs = immutable ? IMMUTABLE_MEDIA_TTL_MS : MUTABLE_MEDIA_TTL_MS;
+
+  const promise = (async (): Promise<string> => {
+    try {
+      const cache = await window.caches.open(MEDIA_CACHE_NAME);
+      const hit = await cache.match(src);
+      if (hit && hit.ok) {
+        const cachedAt = Number(hit.headers.get(MEDIA_CACHED_AT_HEADER));
+        const cachedVersion = hit.headers.get(MEDIA_VERSION_HEADER) ?? "0";
+        const versionOk = immutable || cachedVersion === version;
+        const fresh = Number.isFinite(cachedAt) && Date.now() - cachedAt < ttlMs;
+        if (versionOk && fresh) {
+          const blob = await hit.blob();
+          if (blob.size > 0) {
+            const objectUrl = URL.createObjectURL(blob);
+            memoryImageUrls.set(src, objectUrl);
+            return objectUrl;
+          }
+        }
+      }
+
+      const res = await fetch(src, { cache: immutable ? "force-cache" : "default" });
+      if (!res.ok) return src;
+
+      const blob = await res.blob();
+      if (blob.size === 0) return src;
+
+      const contentType = res.headers.get("content-type") || blob.type || "application/octet-stream";
+      await cache
+        .put(
+          src,
+          new Response(blob, {
+            status: 200,
+            headers: {
+              "Content-Type": contentType,
+              [MEDIA_CACHED_AT_HEADER]: String(Date.now()),
+              [MEDIA_VERSION_HEADER]: version,
+            },
+          }),
+        )
+        .catch(() => {
+          // ignore cache write errors (e.g. quota exceeded)
+        });
+
+      const objectUrl = URL.createObjectURL(blob);
+      memoryImageUrls.set(src, objectUrl);
+      return objectUrl;
+    } catch {
+      return src;
+    }
+  })().finally(() => {
+    inflightImages.delete(src);
+  });
+
+  inflightImages.set(src, promise);
+  return promise;
+}
+
+/** Preloads an image once per session, routing same-origin images through the Cache API. */
+export function preloadCachedImage(src?: string | null): void {
+  if (!src || typeof window === "undefined") return;
+  if (preloadedImages.has(src)) return;
+  preloadedImages.add(src);
+
+  if (isCacheableLocalMedia(src) && canUseBrowserImageCache()) {
+    void fetchCachedImageUrl(src);
+    return;
+  }
+
+  const image = new window.Image();
+  image.src = src;
 }

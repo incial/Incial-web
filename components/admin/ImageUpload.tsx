@@ -162,7 +162,7 @@ export default function ImageUpload({
     <div className="space-y-1.5">
       {/* Header Row */}
       <div className="flex items-center justify-between">
-        <label className="text-[10px] font-semibold text-muted uppercase tracking-wider font-[Inter,sans-serif] flex-1 truncate pr-2">
+        <label className="text-[10px] font-semibold text-muted uppercase tracking-wider flex-1 truncate pr-2">
           {label}
         </label>
         <button

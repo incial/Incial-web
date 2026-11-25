@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/blogs" },
 };
 
-export default function BlogsPage() {
-  const blogsData = loadBlogsData();
+export default async function BlogsPage() {
+  const blogsData = await loadBlogsData();
   // Banner comes only from the admin panel; no implicit fallback to a post image.
   const heroBanner = blogsData.heroBanner || undefined;
 

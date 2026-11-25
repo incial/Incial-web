@@ -52,3 +52,6 @@ graphify-out
 lint_output.txt
 *.tmp
 .claude/settings.local.json
+
+# local copies kept by scripts/pull-production-data.mjs
+data/.backups/

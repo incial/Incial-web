@@ -5,10 +5,23 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
+/*
+ * One font everywhere, as on the website. HeroUI and this file's own Tailwind import define
+ * --font-sans as the system font on :root, and `font-sans` (on <body>) reads it, so anything
+ * outside .admin-panel (popovers, dialogs and menus rendered into <body>) fell back to the
+ * system font. --font-poppins is defined on <body>, so the font is set there.
+ */
+body,
+.admin-panel {
+  --font-sans: var(--font-poppins), "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-sans);
+  --default-font-family: var(--font-sans);
+  --default-mono-font-family: var(--font-sans);
+  font-family: var(--font-sans);
+}
+
 .admin-panel {
   --radius: 0.75rem;
-  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
-  font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
