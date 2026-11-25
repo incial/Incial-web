@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "./admin.css";
 import AuthSessionProvider from "@/components/admin/AuthSessionProvider";
 import AdminLayoutClient from "@/components/admin/AdminLayoutClient";
 

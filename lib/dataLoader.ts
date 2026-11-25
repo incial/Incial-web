@@ -206,6 +206,12 @@ export interface Product {
   image: string;
   description: string | string[];
   tryUrl: string;
+  category?: string;
+  tags?: string[];
+  /** What the banner shows: the image (default) or the video. */
+  mediaType?: "image" | "video";
+  /** Video for the banner; `image` is then its poster. */
+  video?: string;
   featured?: boolean;
   available?: boolean;
 }

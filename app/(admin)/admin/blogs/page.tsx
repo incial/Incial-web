@@ -1,366 +1,120 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import { Loader2, Save, Plus, Trash2, Star } from "lucide-react";
-import {
-  apiGetSection,
-  apiSaveSection,
-  AdminApiError,
-} from "@/lib/adminApi";
-import type { BlogsData, BlogPost } from "@/lib/dataLoader";
-import { normalizeImageUrl } from "@/lib/imageUtils";
+import { Button, Tabs } from "@heroui/react";
+import { Plus, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import SectionVisibilityToggle from "@/components/admin/SectionVisibilityToggle";
+import { AdminApiError, apiGetSection, apiSaveSection } from "@/lib/adminApi";
+import type { BlogPost, BlogsData } from "@/lib/dataLoader";
 import ImageUpload from "@/components/admin/ImageUpload";
-const inputCls =
-  "w-full bg-transparent border border-[#1e1e1e] rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#555] focus:outline-none focus:border-white/50 transition-all font-[Inter,sans-serif]";
-const labelCls =
-  "text-[10px] font-semibold text-[#8e8e8e] uppercase tracking-wider font-[Inter,sans-serif]";
+import ItemList from "@/components/admin/ItemList";
+import SectionVisibilityToggle from "@/components/admin/SectionVisibilityToggle";
+import { ConfirmModal, EmptyState, LoadingState, PageHeader, Panel, SaveButton, TextAreaInput, TextInput } from "@/components/admin/ui";
 
-function PostCard({
-  post,
-  index,
-  category,
-  errors,
-  onChange,
-  onGalleryImageChange,
-  onGalleryImageAdd,
-  onGalleryImageRemove,
-  onRemove,
-}: {
-  post: BlogPost;
-  index: number;
-  category: string;
-  errors: Record<string, string[]>;
-  onChange: (field: keyof BlogPost, value: string) => void;
-  onGalleryImageChange: (imageIndex: number, url: string) => void;
-  onGalleryImageAdd: () => void;
-  onGalleryImageRemove: (imageIndex: number) => void;
-  onRemove: () => void;
-}) {
-  const pathPrefix = `${category}Posts[${index}]`;
-  const baseErrors = errors[pathPrefix] || [];
+type Category = "popular" | "newest";
 
-  function fieldErrors(field: keyof BlogPost): string[] {
-    return errors[`${pathPrefix}.${field}`] || [];
-  }
-
-  function fieldClass(field: keyof BlogPost): string {
-    return fieldErrors(field).length > 0
-      ? `${inputCls} border-red-500/80 focus:border-red-400`
-      : inputCls;
-  }
-
-  const gallery = post.images || [];
-
-  function galleryErrors(imageIndex: number): string[] {
-    return errors[`${pathPrefix}.images[${imageIndex}]`] || [];
-  }
-
-  const galleryBaseErrors = errors[`${pathPrefix}.images`] || [];
-
-  return (
-    <div className="border border-[#1e1e1e] rounded-xl p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {category === "popular" && (
-            <Star size={12} className="text-white fill-white" />
-          )}
-          <span className={labelCls}>
-            {category === "popular" ? "Popular" : "Newest"} · Post {index + 1}
-          </span>
-        </div>
-        <button
-          onClick={onRemove}
-          className="text-red-500/70 hover:text-red-500"
-        >
-          <Trash2 size={13} />
-        </button>
-      </div>
-      <div className="space-y-1.5">
-        <label className={labelCls}>Title</label>
-        <input
-          type="text"
-          value={post.title}
-          onChange={(e) => onChange("title", e.target.value)}
-          className={fieldClass("title")}
-          placeholder="Blog post title..."
-        />
-        {fieldErrors("title").map((msg, i) => (
-          <p key={`title-${i}`} className="text-[11px] text-red-400">
-            {msg}
-          </p>
-        ))}
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        <div className="space-y-1.5">
-          <label className={labelCls}>Author</label>
-          <input
-            type="text"
-            value={post.author}
-            onChange={(e) => onChange("author", e.target.value)}
-            className={fieldClass("author")}
-          />
-          {fieldErrors("author").map((msg, i) => (
-            <p key={`author-${i}`} className="text-[11px] text-red-400">
-              {msg}
-            </p>
-          ))}
-        </div>
-        <div className="space-y-1.5">
-          <label className={labelCls}>Mins</label>
-          <input
-            type="number"
-            value={post.mins}
-            onChange={(e) => onChange("mins", e.target.value)}
-            className={fieldClass("mins")}
-          />
-          {fieldErrors("mins").map((msg, i) => (
-            <p key={`mins-${i}`} className="text-[11px] text-red-400">
-              {msg}
-            </p>
-          ))}
-        </div>
-        <div className="space-y-1.5">
-          <label className={labelCls}>Date</label>
-          <input
-            type="text"
-            value={post.date}
-            onChange={(e) => onChange("date", e.target.value)}
-            className={fieldClass("date")}
-            placeholder="Dec 01, 2025"
-          />
-          {fieldErrors("date").map((msg, i) => (
-            <p key={`date-${i}`} className="text-[11px] text-red-400">
-              {msg}
-            </p>
-          ))}
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1.5">
-          <label className={labelCls}>Slug</label>
-          <input
-            type="text"
-            value={post.slug}
-            onChange={(e) => onChange("slug", e.target.value)}
-            className={fieldClass("slug")}
-            placeholder="my-post"
-          />
-          {fieldErrors("slug").map((msg, i) => (
-            <p key={`slug-${i}`} className="text-[11px] text-red-400">
-              {msg}
-            </p>
-          ))}
-        </div>
-        <div className="space-y-1.5">
-          <ImageUpload
-            label="Image"
-            value={post.image}
-            onChange={(v) => onChange("image", v)}
-            folder="images/blogs"
-          />
-          {fieldErrors("image").map((msg, i) => (
-            <p key={`image-${i}`} className="text-[11px] text-red-400">
-              {msg}
-            </p>
-          ))}
-        </div>
-      </div>
-      <div className="space-y-1.5">
-        <label className={labelCls}>Content</label>
-        <textarea
-          value={post.content || ""}
-          onChange={(e) => onChange("content", e.target.value)}
-          className={`${fieldClass("content")} min-h-[100px] resize-y`}
-          placeholder="Main content of the blog post. Supports paragraphs separated by empty lines."
-        />
-      </div>
-
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <label className={labelCls}>Gallery Images</label>
-          <button
-            type="button"
-            onClick={onGalleryImageAdd}
-            className="inline-flex items-center gap-1 text-[11px] text-white/80 hover:text-white"
-          >
-            <Plus size={12} /> Add Image
-          </button>
-        </div>
-
-        {post.slug === "popular-2" && (
-          <p className="text-[11px] text-[#8e8e8e]">
-            Cover Image controls the hero visual. Gallery Image 1 controls the second visual position.
-          </p>
-        )}
-
-        {gallery.length === 0 ? (
-          <p className="text-[11px] text-[#6a6a6a]">
-            No extra gallery images. Add one to diversify layouts in blog detail pages.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {gallery.map((imageUrl, imageIndex) => (
-              <div
-                key={`gallery-${post.id}-${imageIndex}`}
-                className="rounded-xl border border-[#1e1e1e] p-2"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className={labelCls}>Image {imageIndex + 1}</span>
-                  <button
-                    type="button"
-                    onClick={() => onGalleryImageRemove(imageIndex)}
-                    className="text-red-500/70 hover:text-red-500"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-                <ImageUpload
-                  label={`Gallery ${imageIndex + 1}`}
-                  value={imageUrl}
-                  onChange={(v) => onGalleryImageChange(imageIndex, v)}
-                  folder="images/blogs"
-                />
-                {galleryErrors(imageIndex).map((msg, i) => (
-                  <p key={`gallery-${imageIndex}-${i}`} className="text-[11px] text-red-400 mt-1">
-                    {msg}
-                  </p>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {galleryBaseErrors.map((msg, i) => (
-          <p key={`gallery-base-${i}`} className="text-[11px] text-red-400">
-            {msg}
-          </p>
-        ))}
-      </div>
-
-      {baseErrors.map((msg, i) => (
-        <p key={`base-${i}`} className="text-[11px] text-red-400">
-          {msg}
-        </p>
-      ))}
-    </div>
-  );
+/** Older posts can lack a stored gallery; this keeps what the website shows editable. */
+function normalizePost(post: BlogPost): BlogPost {
+  const images = Array.isArray(post.images) ? post.images.filter((image) => typeof image === "string" && image.trim().length > 0) : [];
+  return { ...post, images: images.length === 0 && post.slug === "popular-2" ? [""] : images };
 }
 
-function BlogPreviewCard({
-  post,
-  featured = false,
-}: {
-  post: BlogPost;
-  featured?: boolean;
-}) {
-  return (
-    <div
-      className={`border border-[#1e1e1e] rounded-xl overflow-hidden bg-[#0a0a0a] ${featured ? "col-span-2" : ""}`}
-    >
-      <div
-        className={`relative bg-[#1a1a1a] ${featured ? "h-40" : "h-28"} overflow-hidden`}
-      >
-        {post.image ? (
-          <Image
-            src={normalizeImageUrl(post.image)}
-            alt={post.title}
-            fill
-            className="object-cover object-center"
-          />
-        ) : (
-          <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
-            <span className="text-[#555] text-xs">No image</span>
-          </div>
-        )}
-      </div>
-      <div className="p-3">
-        <p className="text-white text-sm font-semibold font-[Poppins,sans-serif] line-clamp-2 mb-1">
-          {post.title || "Blog post title"}
-        </p>
-        <p className="text-[#8e8e8e] text-xs font-[Inter,sans-serif]">
-          {post.author || "Author"} · {post.mins} min · {post.date}
-        </p>
-      </div>
-    </div>
-  );
+function sanitizePost(post: BlogPost): BlogPost {
+  return {
+    ...post,
+    image: typeof post.image === "string" ? post.image.trim() : "",
+    images: Array.isArray(post.images) ? post.images.map((image) => (typeof image === "string" ? image.trim() : "")).filter(Boolean) : [],
+  };
 }
 
 export default function AdminBlogsPage() {
   const [data, setData] = useState<BlogsData | null>(null);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<"popular" | "newest">("popular");
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string[]>
-  >({});
+  const [category, setCategory] = useState<Category>("popular");
+  const [selected, setSelected] = useState(0);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     apiGetSection<BlogsData>("blogs")
-      .then((incoming) => {
-        const normalizePost = (post: BlogPost): BlogPost => {
-          const images = Array.isArray(post.images)
-            ? post.images.filter((img) => typeof img === "string" && img.trim().length > 0)
-            : [];
-
-          // Backward compatibility: legacy posts like popular-2 can render multiple
-          // visuals on the website but may not yet have a persisted gallery array.
-          const normalizedImages =
-            images.length === 0 && post.slug === "popular-2"
-              ? [""]
-              : images;
-
-          return {
-            ...post,
-            images: normalizedImages,
-          };
-        };
-
+      .then((incoming) =>
         setData({
           heroBanner: incoming.heroBanner || "",
           popularPosts: incoming.popularPosts.map(normalizePost),
           newestPosts: incoming.newestPosts.map(normalizePost),
-        });
-      })
-      .catch(() => {});
+        }),
+      )
+      .catch(() => setData({ heroBanner: "", popularPosts: [], newestPosts: [] }));
   }, []);
 
-  async function handleSave() {
+  if (!data) return <LoadingState label="Loading posts…" />;
+
+  const listKey = category === "popular" ? "popularPosts" : "newestPosts";
+  const posts = data[listKey];
+  const post: BlogPost | undefined = posts[selected];
+  const pathPrefix = `${category}Posts[${selected}]`;
+
+  /** The problems the server reported for one field of the selected post. */
+  const problems = (field: string): string[] => errors[`${pathPrefix}.${field}`] || [];
+
+  function updatePost(patch: Partial<BlogPost>) {
+    setErrors({});
+    setData((current) => {
+      if (!current) return current;
+      const list = [...current[listKey]];
+      list[selected] = { ...list[selected], ...patch };
+      return { ...current, [listKey]: list };
+    });
+  }
+
+  function setGallery(next: string[]) {
+    updatePost({ images: next });
+  }
+
+  function addPost() {
+    setErrors({});
+    const created: BlogPost = {
+      id: Date.now(),
+      slug: `${category}-${Date.now()}`,
+      title: "",
+      author: "",
+      mins: 5,
+      date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" }),
+      image: "",
+      images: [],
+      category,
+      content: "",
+    };
+    setData({ ...data!, [listKey]: [...posts, created] });
+    setSelected(posts.length);
+  }
+
+  function removePost() {
+    setErrors({});
+    const next = posts.filter((_, index) => index !== selected);
+    setData({ ...data!, [listKey]: next });
+    setSelected(Math.min(selected, Math.max(0, next.length - 1)));
+  }
+
+  async function save() {
     if (!data) return;
     setSaving(true);
     try {
-      const sanitizePost = (post: BlogPost): BlogPost => ({
-        ...post,
-        image: typeof post.image === "string" ? post.image.trim() : "",
-        images: Array.isArray(post.images)
-          ? post.images
-              .map((img) => (typeof img === "string" ? img.trim() : ""))
-              .filter((img) => img.length > 0)
-          : [],
-      });
-
-      const payload: BlogsData = {
+      await apiSaveSection("blogs", {
         heroBanner: data.heroBanner,
         popularPosts: data.popularPosts.map(sanitizePost),
         newestPosts: data.newestPosts.map(sanitizePost),
-      };
-
-      await apiSaveSection("blogs", payload);
-      setValidationErrors({});
-      toast.success("Blog posts saved!");
+      });
+      setErrors({});
+      toast.success("Blog posts saved.");
     } catch (error) {
       if (error instanceof AdminApiError && error.status === 400) {
-        const details = Array.isArray(error.details) ? error.details : [];
-        const grouped = details.reduce<Record<string, string[]>>((acc, err) => {
-          if (!acc[err.path]) {
-            acc[err.path] = [];
-          }
-          acc[err.path].push(err.message);
-          return acc;
-        }, {});
-        setValidationErrors(grouped);
-        toast.error("Please fix validation errors before saving.");
+        const grouped: Record<string, string[]> = {};
+        for (const detail of error.details ?? []) {
+          (grouped[detail.path] ??= []).push(detail.message);
+        }
+        setErrors(grouped);
+        toast.error("Please fix the highlighted fields before saving.");
       } else {
         toast.error("Failed to save.");
       }
@@ -369,310 +123,158 @@ export default function AdminBlogsPage() {
     }
   }
 
-  function updatePopular(idx: number, field: keyof BlogPost, value: string) {
-    if (!data) return;
-    setValidationErrors({});
-    const posts = [...data.popularPosts];
-    posts[idx] = {
-      ...posts[idx],
-      [field]: field === "mins" || field === "id" ? Number(value) : value,
-    } as BlogPost;
-    setData({ ...data, popularPosts: posts });
-  }
-
-  function updateNewest(idx: number, field: keyof BlogPost, value: string) {
-    if (!data) return;
-    setValidationErrors({});
-    const posts = [...data.newestPosts];
-    posts[idx] = {
-      ...posts[idx],
-      [field]: field === "mins" || field === "id" ? Number(value) : value,
-    } as BlogPost;
-    setData({ ...data, newestPosts: posts });
-  }
-
-  function addPost(category: "popular" | "newest") {
-    if (!data) return;
-    setValidationErrors({});
-    const newPost: BlogPost = {
-      id: Date.now(),
-      slug: `${category}-${Date.now()}`,
-      title: "",
-      author: "",
-      mins: 5,
-      date: new Date().toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "2-digit",
-      }),
-      image: "",
-      images: [],
-      category,
-      content: "",
-    };
-    if (category === "popular")
-      setData({ ...data, popularPosts: [...data.popularPosts, newPost] });
-    else setData({ ...data, newestPosts: [...data.newestPosts, newPost] });
-  }
-
-  if (!data)
-    return (
-      <div className="flex items-center justify-center h-40 text-white/40">
-        <Loader2 size={20} className="animate-spin mr-2" /> Loading…
-      </div>
-    );
-
-  const activePosts =
-    activeTab === "popular" ? data.popularPosts : data.newestPosts;
-  const updateFn = activeTab === "popular" ? updatePopular : updateNewest;
-
-  function updateGalleryImage(
-    category: "popular" | "newest",
-    postIndex: number,
-    imageIndex: number,
-    url: string,
-  ) {
-    if (!data) return;
-    setValidationErrors({});
-    const postList = category === "popular" ? [...data.popularPosts] : [...data.newestPosts];
-    const targetPost = { ...postList[postIndex] };
-    const gallery = [...(targetPost.images || [])];
-    gallery[imageIndex] = url;
-    targetPost.images = gallery;
-    postList[postIndex] = targetPost;
-
-    if (category === "popular") {
-      setData({ ...data, popularPosts: postList });
-    } else {
-      setData({ ...data, newestPosts: postList });
-    }
-  }
-
-  function addGalleryImage(category: "popular" | "newest", postIndex: number) {
-    if (!data) return;
-    setValidationErrors({});
-    const postList = category === "popular" ? [...data.popularPosts] : [...data.newestPosts];
-    const targetPost = { ...postList[postIndex] };
-    targetPost.images = [...(targetPost.images || []), ""];
-    postList[postIndex] = targetPost;
-
-    if (category === "popular") {
-      setData({ ...data, popularPosts: postList });
-    } else {
-      setData({ ...data, newestPosts: postList });
-    }
-  }
-
-  function removeGalleryImage(category: "popular" | "newest", postIndex: number, imageIndex: number) {
-    if (!data) return;
-    setValidationErrors({});
-    const postList = category === "popular" ? [...data.popularPosts] : [...data.newestPosts];
-    const targetPost = { ...postList[postIndex] };
-    targetPost.images = (targetPost.images || []).filter((_, idx) => idx !== imageIndex);
-    postList[postIndex] = targetPost;
-
-    if (category === "popular") {
-      setData({ ...data, popularPosts: postList });
-    } else {
-      setData({ ...data, newestPosts: postList });
-    }
-  }
-  const globalErrors = [
-    ...(validationErrors.popularPosts || []),
-    ...(validationErrors.newestPosts || []),
-    ...(validationErrors.slug || []),
-    ...(validationErrors.id || []),
-  ];
+  const globalErrors = [...(errors.popularPosts || []), ...(errors.newestPosts || []), ...(errors.slug || []), ...(errors.id || []), ...(errors[pathPrefix] || [])];
 
   return (
-    <div className="flex flex-col h-full gap-0 font-[Inter,sans-serif]">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6 shrink-0">
-        <div>
-          <h2 className="text-xl font-bold text-white font-[Poppins,sans-serif]">
-            Blog Posts
-          </h2>
-          <p className="text-[#8e8e8e] text-sm mt-1">
-            {data.popularPosts.length} popular · {data.newestPosts.length}{" "}
-            newest
-          </p>
+    <div>
+      <PageHeader
+        title="Blog posts"
+        description={`${data.popularPosts.length} popular · ${data.newestPosts.length} newest`}
+        visibility={<SectionVisibilityToggle sectionId="blogs" label="Show section" />}
+        secondary={<><Button variant="secondary" onPress={addPost}>
+              <Plus size={15} />
+              Add post
+            </Button></>}
+        primary={<SaveButton saving={saving} onPress={save} />}
+      />
+
+      {globalErrors.length > 0 && (
+        <div role="alert" className="mb-4 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+          {globalErrors.map((message, index) => (
+            <p key={index}>{message}</p>
+          ))}
         </div>
-        <div className="flex items-center gap-6">
-          <SectionVisibilityToggle sectionId="blogs" />
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 bg-white hover:bg-gray-200 disabled:opacity-50 text-black text-sm font-semibold px-5 py-2.5 rounded-full transition-colors"
-          >
-            {saving ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <Save size={15} />
-            )}
-            Save Changes
-          </button>
-        </div>
-      </div>
+      )}
 
-      {/* ── Blogs Section Banner ── */}
-      <div className="mb-4 p-4 rounded-2xl border border-[#1e1e1e] bg-[#050505] shrink-0">
-        <ImageUpload
-          label="Blogs Page Header / Banner"
-          value={data.heroBanner || ""}
-          onChange={(v) => setData({ ...data, heroBanner: v })}
-          folder="images/blogs"
-        />
-      </div>
+      <Panel title="Page banner" description="The header picture of the Blogs page." className="mb-6">
+        <ImageUpload label="Banner" value={data.heroBanner || ""} onChange={(value) => setData({ ...data, heroBanner: value })} folder="images/blogs" />
+      </Panel>
 
-      {/* ── Split layout ── */}
-      <div className="flex gap-8 flex-1 min-h-0">
-        {/* LEFT: Form */}
-        <div className="w-[420px] shrink-0 overflow-y-auto pr-2 space-y-4">
-          {globalErrors.length > 0 && (
-            <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-red-300 mb-2">
-                Validation Errors
-              </p>
-              <ul className="space-y-1">
-                {globalErrors.map((msg, i) => (
-                  <li key={`g-${i}`} className="text-[12px] text-red-200">
-                    {msg}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+      <Tabs
+        selectedKey={category}
+        onSelectionChange={(key) => {
+          setCategory(key === "newest" ? "newest" : "popular");
+          setSelected(0);
+        }}
+        className="mb-4"
+      >
+        <Tabs.ListContainer>
+          <Tabs.List aria-label="Post groups">
+            <Tabs.Tab id="popular">
+              Popular ({data.popularPosts.length})
+              <Tabs.Indicator />
+            </Tabs.Tab>
+            <Tabs.Tab id="newest">
+              Newest ({data.newestPosts.length})
+              <Tabs.Indicator />
+            </Tabs.Tab>
+          </Tabs.List>
+        </Tabs.ListContainer>
+      </Tabs>
 
-          {/* Tabs */}
-          <div className="flex gap-2">
-            {(["popular", "newest"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-colors capitalize ${
-                  activeTab === tab
-                    ? "bg-white text-black"
-                    : "border border-[#1e1e1e] text-[#8e8e8e] hover:text-white"
-                }`}
-              >
-                {tab === "popular" && (
-                  <Star
-                    size={12}
-                    className={activeTab === tab ? "fill-black" : ""}
-                  />
-                )}
-                {tab} Posts
-              </button>
-            ))}
-          </div>
+      {!post ? (
+        <EmptyState>No {category} posts yet. Use &ldquo;Add post&rdquo; to create one.</EmptyState>
+      ) : (
+        <div className="grid gap-6 @5xl:grid-cols-[16rem_minmax(0,1fr)]">
+          <ItemList
+            selected={selected}
+            onSelect={setSelected}
+            items={posts.map((item, index) => ({
+              id: String(item.id ?? index),
+              title: item.title || `Post ${index + 1}`,
+              subtitle: `${item.author || "Author"} · ${item.date}`,
+              badge: category === "popular" ? <Star size={13} className="text-warning" /> : undefined,
+            }))}
+          />
 
-          {/* Posts list */}
-          <div className="space-y-3">
-            {activePosts.map((post, i) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                index={i}
-                category={activeTab}
-                errors={validationErrors}
-                onChange={(field, value) => updateFn(i, field, value)}
-                onGalleryImageChange={(imageIndex, url) =>
-                  updateGalleryImage(activeTab, i, imageIndex, url)
-                }
-                onGalleryImageAdd={() => addGalleryImage(activeTab, i)}
-                onGalleryImageRemove={(imageIndex) =>
-                  removeGalleryImage(activeTab, i, imageIndex)
-                }
-                onRemove={() => {
-                  setValidationErrors({});
-                  if (activeTab === "popular")
-                    setData({
-                      ...data,
-                      popularPosts: data.popularPosts.filter((_, j) => j !== i),
-                    });
-                  else
-                    setData({
-                      ...data,
-                      newestPosts: data.newestPosts.filter((_, j) => j !== i),
-                    });
-                }}
+          <div className="flex flex-col gap-4">
+            <Panel title="Details">
+              <TextInput label="Title" value={post.title} onChange={(value) => updatePost({ title: value })} placeholder="Blog post title…" errors={problems("title")} />
+              <div className="grid gap-4 @2xl:grid-cols-3">
+                <TextInput label="Author" value={post.author} onChange={(value) => updatePost({ author: value })} errors={problems("author")} />
+                <TextInput label="Minutes to read" type="number" value={String(post.mins)} onChange={(value) => updatePost({ mins: Number(value) })} errors={problems("mins")} />
+                <TextInput label="Date" value={post.date} onChange={(value) => updatePost({ date: value })} placeholder="Dec 01, 2025" errors={problems("date")} />
+              </div>
+              <TextInput label="Slug (address)" value={post.slug} onChange={(value) => updatePost({ slug: value })} placeholder="my-post" errors={problems("slug")} />
+            </Panel>
+
+            <Panel title="Cover image">
+              <ImageUpload label="Image" value={post.image} onChange={(value) => updatePost({ image: value })} folder="images/blogs" />
+              {problems("image").map((message, index) => (
+                <p key={index} className="text-xs text-danger">
+                  {message}
+                </p>
+              ))}
+            </Panel>
+
+            <Panel title="Content">
+              <TextAreaInput
+                label="Text"
+                description="Paragraphs are separated by an empty line."
+                value={post.content || ""}
+                onChange={(value) => updatePost({ content: value })}
+                rows={8}
+                placeholder="The main text of the post…"
+                errors={problems("content")}
               />
-            ))}
-            <button
-              onClick={() => addPost(activeTab)}
-              className="flex items-center gap-2 text-white hover:text-gray-300 text-xs font-medium mt-1 transition-colors"
-            >
-              <Plus size={13} /> Add{" "}
-              {activeTab === "popular" ? "Popular" : "Newest"} Post
-            </button>
-          </div>
-        </div>
+            </Panel>
 
-        {/* RIGHT: Live preview */}
-        <div className="flex-1 min-w-0 overflow-hidden rounded-2xl border border-[#1e1e1e] bg-black flex flex-col">
-          <div className="px-5 py-3 border-b border-[#1e1e1e] flex items-center justify-between shrink-0">
-            <span className="text-[10px] font-semibold text-[#8e8e8e] uppercase tracking-widest">
-              Live Preview — Blog Section
-            </span>
-            <div className="flex gap-2 text-[10px] text-[#8e8e8e]">
-              <Star size={10} className="inline fill-white text-white" />{" "}
-              {data.popularPosts.length} popular &nbsp;·&nbsp;{" "}
-              {data.newestPosts.length} newest
+            <Panel
+              title="Gallery"
+              description={post.slug === "popular-2" ? "The cover image is the hero picture; gallery image 1 is the second picture." : "Extra pictures that vary the layout of the post page."}
+              actions={
+                <Button size="sm" variant="secondary" onPress={() => setGallery([...(post.images || []), ""])}>
+                  <Plus size={14} />
+                  Add image
+                </Button>
+              }
+            >
+              {(post.images || []).length === 0 && <p className="text-sm italic text-muted">No extra gallery images.</p>}
+              <div className="grid gap-4 @2xl:grid-cols-2">
+                {(post.images || []).map((url, index) => (
+                  <div key={`${post.id}-${index}`} className="flex flex-col gap-2">
+                    <ImageUpload
+                      label={`Gallery ${index + 1}`}
+                      value={url}
+                      onChange={(value) => setGallery((post.images || []).map((image, i) => (i === index ? value : image)))}
+                      folder="images/blogs"
+                    />
+                    {(errors[`${pathPrefix}.images[${index}]`] || []).map((message, i) => (
+                      <p key={i} className="text-xs text-danger">
+                        {message}
+                      </p>
+                    ))}
+                    <Button size="sm" variant="danger-soft" className="w-fit" onPress={() => setGallery((post.images || []).filter((_, i) => i !== index))}>
+                      <Trash2 size={13} />
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              {(errors[`${pathPrefix}.images`] || []).map((message, index) => (
+                <p key={index} className="text-xs text-danger">
+                  {message}
+                </p>
+              ))}
+            </Panel>
+
+            <div>
+              <Button variant="danger-soft" onPress={() => setConfirmDelete(true)}>
+                <Trash2 size={15} />
+                Delete this post
+              </Button>
             </div>
           </div>
-
-          <div className="flex-1 overflow-y-auto p-6 space-y-8">
-            {/* Popular Posts */}
-            {data.popularPosts.length > 0 && (
-              <div className="relative group border border-transparent p-2 -m-2 rounded-xl hover:border-[#1e1e1e]">
-                <div className="absolute -top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black rounded-full px-2 border border-[#1e1e1e] z-10">
-                  <SectionVisibilityToggle
-                    sectionId="blog-popular"
-                    label="Visible"
-                  />
-                </div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Star size={14} className="text-white fill-white" />
-                  <span className="text-sm font-semibold text-white font-[Poppins,sans-serif]">
-                    Popular Posts
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {data.popularPosts.map((post, i) => (
-                    <BlogPreviewCard
-                      key={post.id}
-                      post={post}
-                      featured={i === 0}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Newest Posts */}
-            {data.newestPosts.length > 0 && (
-              <div className="relative group border border-transparent p-2 -m-2 rounded-xl hover:border-[#1e1e1e]">
-                <div className="absolute -top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black rounded-full px-2 border border-[#1e1e1e] z-10">
-                  <SectionVisibilityToggle
-                    sectionId="blog-newest"
-                    label="Visible"
-                  />
-                </div>
-                <div className="mb-4">
-                  <span className="text-sm font-semibold text-white font-[Poppins,sans-serif]">
-                    Newest Posts
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {data.newestPosts.map((post) => (
-                    <BlogPreviewCard key={post.id} post={post} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
-      </div>
+      )}
+
+      <ConfirmModal
+        isOpen={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Delete this post?"
+        message={`“${post?.title || "Untitled"}” will be removed once you save.`}
+        onConfirm={removePost}
+      />
     </div>
   );
 }

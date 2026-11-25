@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
-import ImageKit from "imagekit";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { validateAdminAuth } from "@/lib/adminAuth";
 
-interface UploadResult {
-  url: string;
-}
-
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024; // 50 MB
 
 // Allow-list of raster image types; extension is derived from the MIME type,
 // never from the user-supplied filename.
@@ -17,9 +14,29 @@ const ALLOWED_TYPES: Record<string, string> = {
   "image/webp": "webp",
   "image/gif": "gif",
   "image/avif": "avif",
+  "video/mp4": "mp4",
+  "video/webm": "webm",
 };
 
 const FOLDER_PATTERN = /^[a-z0-9_-]+(\/[a-z0-9_-]+)*$/i;
+
+// Reused across requests so the connection pool is shared.
+let s3Client: S3Client | null = null;
+
+function getS3Config() {
+  const region = process.env.AWS_REGION;
+  const bucket = process.env.S3_BUCKET;
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+  if (!region || !bucket || !accessKeyId || !secretAccessKey) return null;
+
+  // Public base URL: a CloudFront domain if set, otherwise the bucket's own address.
+  const publicUrl = (
+    process.env.S3_PUBLIC_URL || `https://${bucket}.s3.${region}.amazonaws.com`
+  ).replace(/\/+$/, "");
+
+  return { region, bucket, accessKeyId, secretAccessKey, publicUrl };
+}
 
 export async function POST(req: NextRequest) {
   if (!(await validateAdminAuth(req))) {
@@ -37,61 +54,64 @@ export async function POST(req: NextRequest) {
     const ext = ALLOWED_TYPES[file.type];
     if (!ext) {
       return NextResponse.json(
-        { error: "Unsupported file type. Use PNG, JPEG, WebP, GIF or AVIF." },
+        { error: "Unsupported file type. Use PNG, JPEG, WebP, GIF, AVIF, MP4 or WebM." },
         { status: 415 }
       );
     }
 
-    if (file.size > MAX_UPLOAD_BYTES) {
+    const isVideo = file.type.startsWith("video/");
+    const maxBytes = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+    if (file.size > maxBytes) {
       return NextResponse.json(
-        { error: "File too large. Maximum size is 10 MB." },
+        { error: isVideo ? "Video too large. Maximum size is 50 MB." : "File too large. Maximum size is 10 MB." },
         { status: 413 }
       );
     }
 
     // Optional subfolder (e.g. "images/about", "clients") — strictly sanitized
-    // so callers cannot escape /incial-web via "..".
+    // so callers cannot escape the incial-web/ prefix via "..".
     const rawFolder = String(formData.get("folder") ?? "")
       .trim()
       .replace(/^\/+|\/+$/g, "");
     if (rawFolder && !FOLDER_PATTERN.test(rawFolder)) {
       return NextResponse.json({ error: "Invalid folder." }, { status: 400 });
     }
-    const targetFolder = rawFolder
-      ? `/incial-web/${rawFolder}`
-      : "/incial-web/uploads";
 
-    const publicKey = process.env.IMAGEKIT_PUBLIC_KEY;
-    const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
-    const urlEndpoint = process.env.IMAGEKIT_URL_ENDPOINT;
-
-    if (!publicKey || !privateKey || !urlEndpoint) {
+    const config = getS3Config();
+    if (!config) {
       return NextResponse.json(
-        { error: "ImageKit is not configured on the server." },
+        { error: "Image storage (Amazon S3) is not configured on the server." },
         { status: 500 }
       );
     }
 
-    const imagekit = new ImageKit({ publicKey, privateKey, urlEndpoint });
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const filename = `img-${Date.now()}-${randomBytes(4).toString("hex")}.${ext}`;
-
-    const uploadResponse = await new Promise<UploadResult>((resolve, reject) => {
-      imagekit.upload(
-        { file: buffer, fileName: filename, folder: targetFolder },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result as UploadResult);
-        }
-      );
+    s3Client ??= new S3Client({
+      region: config.region,
+      credentials: {
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
+      },
     });
 
-    return NextResponse.json({ url: uploadResponse.url }, { status: 200 });
+    const filename = `${isVideo ? "vid" : "img"}-${Date.now()}-${randomBytes(4).toString("hex")}.${ext}`;
+    const key = ["incial-web", rawFolder || "uploads", filename].join("/");
+
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: config.bucket,
+        Key: key,
+        Body: Buffer.from(await file.arrayBuffer()),
+        ContentType: file.type,
+        // File names are unique, so browsers and a CDN can cache them for good.
+        CacheControl: "public, max-age=31536000, immutable",
+      })
+    );
+
+    return NextResponse.json({ url: `${config.publicUrl}/${key}` }, { status: 200 });
   } catch (error: unknown) {
     console.error("Upload error:", error);
     return NextResponse.json(
-      { error: "Failed to upload to ImageKit." },
+      { error: "Failed to upload the image." },
       { status: 500 }
     );
   }

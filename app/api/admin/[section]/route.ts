@@ -236,6 +236,19 @@ function validateBlogsData(input: unknown): {
     seenIds.add(post.id);
   });
 
+  // a post belongs to one list only: the same id, address or title may not be in both Popular and Newest
+  const popularKeys = new Set(popularPosts.flatMap((post) => [`id:${post.id}`, `slug:${post.slug}`, `title:${post.title.trim().toLowerCase()}`]));
+  newestPosts.forEach((post, index) => {
+    const matches =
+      popularKeys.has(`id:${post.id}`) || popularKeys.has(`slug:${post.slug}`) || popularKeys.has(`title:${post.title.trim().toLowerCase()}`);
+    if (matches) {
+      errors.push({
+        path: `newestPosts[${index}]`,
+        message: `"${post.title}" is already in the Popular list. A post can only be in one list.`,
+      });
+    }
+  });
+
   if (errors.length > 0) {
     return { data: null, errors };
   }
@@ -274,6 +287,32 @@ export async function GET(
   } catch {
     return NextResponse.json({ error: "Failed to read data" }, { status: 500 });
   }
+}
+
+// LinkedIn CDN links are signed, expire within weeks and refuse hotlinking (403), so a photo
+// saved from one silently breaks later. Images must be uploaded (ImageKit) instead.
+const NON_PERSISTENT_IMAGE_HOSTS = ["media.licdn.com", "media-exp1.licdn.com"];
+
+function findNonPersistentImages(value: unknown, path = ""): string[] {
+  if (typeof value === "string") {
+    try {
+      const host = new URL(value).hostname;
+      return NON_PERSISTENT_IMAGE_HOSTS.some((h) => host === h || host.endsWith(".licdn.com"))
+        ? [path]
+        : [];
+    } catch {
+      return [];
+    }
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item, i) => findNonPersistentImages(item, `${path}[${i}]`));
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value).flatMap(([k, v]) =>
+      findNonPersistentImages(v, path ? `${path}.${k}` : k)
+    );
+  }
+  return [];
 }
 
 export async function PUT(
@@ -316,6 +355,20 @@ export async function PUT(
         );
       }
       payload = data;
+    }
+
+    if (section === "about") {
+      const bad = findNonPersistentImages(body);
+      if (bad.length > 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Images hosted on LinkedIn expire and cannot be hot-linked. Upload the photo instead.",
+            details: bad.map((path) => ({ path, message: "Expiring LinkedIn image URL." })),
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const filePath = getDataFilePath(section);

@@ -17,6 +17,7 @@ import { rotatingWords } from "@/lib/constants";
 import { SERVICE_CATEGORIES } from "@/lib/serviceCatalog";
 import BackgroundCircle from "./BackgroundCircle";
 import LogoScreen from "./LogoScreen";
+import ScrollHint from "@/components/ui/ScrollHint";
 import RotatingText from "./RotatingText";
 import ShaderBackground from "@/components/ui/ShaderBackground";
 
@@ -140,6 +141,9 @@ const WORD_INTERVAL_MS = 1500;
 const LAST_WORD_HOLD_MS = 2400;
 const WORDS_FADE_MS = 450;
 const HASH_SCROLL_DELAYS_MS = [350, 1400];
+/** A link to a section hides the page behind black while it jumps there, so the hero is never seen on the way. */
+const HASH_COVER_FADE_MS = 280;
+const HASH_COVER_REVEAL_MS = 700;
 
 /**
  * The desktop home page as one continuous scroll: the intro words and logo, the services
@@ -269,22 +273,33 @@ export default function DesktopHome({ isActive = true }: DesktopHomeProps) {
     else target.scrollIntoView({ behavior: immediate ? "auto" : "smooth" });
   }, []);
 
+  // black over the page while a jump to a section is under way
+  const [hashCover, setHashCover] = useState(Boolean(initialHash));
+
   useEffect(() => {
+    const pending: ReturnType<typeof setTimeout>[] = [];
+
     const handleHash = () => {
       setMenuOpen(false);
       if (stageRef.current === "words") setStage("logo");
-      scrollToHash(false);
+      // fade to black, jump straight to the section (not flying through the hero and the services), fade back
+      setHashCover(true);
+      pending.push(
+        setTimeout(() => scrollToHash(true), HASH_COVER_FADE_MS),
+        setTimeout(() => setHashCover(false), HASH_COVER_FADE_MS + 350),
+      );
     };
     window.addEventListener("hashchange", handleHash);
 
-    // landing on /#contact: wait for the lazy sections to take their space, then jump
-    const timers = initialHash
-      ? HASH_SCROLL_DELAYS_MS.map((delay) => setTimeout(() => scrollToHash(true), delay))
-      : [];
+    // landing on /#contact: the page is hidden until the lazy sections have taken their space and the jump has happened
+    if (initialHash) {
+      HASH_SCROLL_DELAYS_MS.forEach((delay) => pending.push(setTimeout(() => scrollToHash(true), delay)));
+      pending.push(setTimeout(() => setHashCover(false), HASH_COVER_REVEAL_MS));
+    }
 
     return () => {
       window.removeEventListener("hashchange", handleHash);
-      timers.forEach(clearTimeout);
+      pending.forEach(clearTimeout);
     };
   }, [initialHash, scrollToHash]);
 
@@ -314,6 +329,12 @@ export default function DesktopHome({ isActive = true }: DesktopHomeProps) {
     <div className="relative min-h-screen bg-white">
       <Header menuOpen={menuOpen} onToggleMenu={handleToggleMenu} hideMobile />
       <MenuFrame open={menuOpen} />
+
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-[45] bg-black transition-opacity ease-out"
+        style={{ opacity: hashCover ? 1 : 0, transitionDuration: `${HASH_COVER_FADE_MS}ms` }}
+      />
 
       <motion.div
         animate={{
@@ -348,6 +369,10 @@ export default function DesktopHome({ isActive = true }: DesktopHomeProps) {
                 <div className="absolute inset-0">
                   {/* the logo always draws itself, except when a link jumps straight into the page */}
                   <LogoScreen skipAnimation={Boolean(initialHash)} />
+                  <ScrollHint
+                    delay={initialHash ? 0.4 : 3.4}
+                    className="absolute bottom-[clamp(1.25rem,4.5dvh,3rem)] left-1/2 -translate-x-1/2"
+                  />
                 </div>
               )}
             </motion.div>
@@ -363,7 +388,7 @@ export default function DesktopHome({ isActive = true }: DesktopHomeProps) {
             <>
               {/* the hero logo dissolves into dust that settles into the stack; at the end the stack
                   drops and compresses back into the logo */}
-              <div className="relative z-10 -mt-[100dvh]">
+              <div className="pointer-events-none relative z-10 -mt-[100dvh]">
                 <ServicesScroller
                   categories={SERVICE_CATEGORIES}
                   logoSource="[data-logo-source]"

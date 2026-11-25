@@ -2,8 +2,8 @@
 
 import { motion, Variants } from "framer-motion";
 import Image from "next/image";
-import Link from "next/link";
 import React from "react";
+import LiquidButton from "@/components/ui/LiquidButton";
 
 interface LogoScreenProps {
   onNextClick?: () => void;
@@ -61,12 +61,7 @@ export default function LogoScreen({
           transition={skipAnimation ? { duration: 0 } : { delay: 2.5 }}
           className="absolute left-[10%] hidden md:block"
         >
-          <Link
-            href="/about"
-            className="inline-block rounded-full border border-white/30 px-8 py-3 text-sm text-white transition hover:bg-white hover:text-black"
-          >
-            About Us
-          </Link>
+          <LiquidButton href="/about" className="px-8 py-3 text-sm">About Us</LiquidButton>
         </motion.div>
 
         {/* Inner Logo Wrapper: scaled and shifted upwards by 38px to stay perfectly centered */}
@@ -137,14 +132,7 @@ export default function LogoScreen({
           transition={skipAnimation ? { duration: 0 } : { delay: 2.5 }}
           className="absolute right-[10%] hidden md:block"
         >
-          <a
-            href="/pdf/Brochure.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full border border-white/30 px-8 py-3 text-sm text-white transition hover:bg-white hover:text-black inline-block"
-          >
-            Our Works
-          </a>
+          <LiquidButton href="/pdf/Brochure.pdf" className="px-8 py-3 text-sm">Our Works</LiquidButton>
         </motion.div>
       </motion.div>
     );
@@ -168,12 +156,7 @@ export default function LogoScreen({
         transition={compact ? { duration: 0.3 } : skipAnimation ? { duration: 0 } : { delay: 2.5 }}
         className={`absolute left-[10%] hidden md:block ${compact ? "pointer-events-none" : ""}`}
       >
-        <Link
-          href="/about"
-          className="inline-block rounded-full border border-white/30 px-8 py-3 text-sm text-white transition hover:bg-white hover:text-black"
-        >
-          About Us
-        </Link>
+        <LiquidButton href="/about" className="px-8 py-3 text-sm">About Us</LiquidButton>
       </motion.div>
 
       {/* Desktop Logo Container (Standard Flex centering, no offsets) */}
@@ -246,14 +229,7 @@ export default function LogoScreen({
         transition={compact ? { duration: 0.3 } : skipAnimation ? { duration: 0 } : { delay: 2.5 }}
         className={`absolute right-[10%] hidden md:block ${compact ? "pointer-events-none" : ""}`}
       >
-        <a
-          href="/pdf/Brochure.pdf"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-full border border-white/30 px-8 py-3 text-sm text-white transition hover:bg-white hover:text-black inline-block"
-        >
-          Our Works
-        </a>
+        <LiquidButton href="/pdf/Brochure.pdf" className="px-8 py-3 text-sm">Our Works</LiquidButton>
       </motion.div>
     </motion.div>
   );

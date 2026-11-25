@@ -1,0 +1,55 @@
+/*
+ * Admin-only theme: HeroUI's styles, loaded only on admin routes.
+ * Black and white, with blue as the one accent colour (buttons, the active page, progress).
+ */
+@import "tailwindcss";
+@import "@heroui/styles";
+
+.admin-panel {
+  --radius: 0.75rem;
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* white: pure white cards on a soft grey page, black text */
+.admin-panel[data-theme="light"] {
+  --background: oklch(0.97 0 0);
+  --foreground: oklch(0.13 0 0);
+  --surface: oklch(1 0 0);
+  --surface-secondary: oklch(0.96 0 0);
+  --surface-tertiary: oklch(0.93 0 0);
+  --default: oklch(0.94 0 0);
+  --border: oklch(0.9 0 0);
+  --separator: oklch(0.92 0 0);
+  --muted: oklch(0.5 0 0);
+  --accent: oklch(0.6 0.19 250);
+  --accent-foreground: oklch(1 0 0);
+}
+
+/* black: true black page, near-black cards, white text */
+.admin-panel[data-theme="dark"] {
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.98 0 0);
+  --surface: oklch(0.15 0 0);
+  --surface-secondary: oklch(0.19 0 0);
+  --surface-tertiary: oklch(0.23 0 0);
+  --default: oklch(0.24 0 0);
+  --border: oklch(0.27 0 0);
+  --separator: oklch(0.22 0 0);
+  --muted: oklch(0.7 0 0);
+  --accent: oklch(0.72 0.15 250);
+  --accent-foreground: oklch(0.1 0 0);
+}
+
+/* a quiet, thin scrollbar for the admin's scrolling areas */
+.admin-panel ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.admin-panel ::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--foreground) 22%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}

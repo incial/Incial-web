@@ -28,8 +28,9 @@ export default function ClientWrapper({
           y: menuOpen ? 100 : 0,
         }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="relative origin-top overflow-x-hidden bg-black text-white min-h-screen"
-        style={{ zIndex: 30 }}
+        className="relative origin-top overflow-x-clip bg-black text-white min-h-screen"
+        // the page shifts down and in for the open menu; these let the project page resize to fit what is left
+        style={{ zIndex: 30, ["--menu-shift" as string]: menuOpen ? "100px" : "0px", ["--menu-inset" as string]: menuOpen ? "2.5vw" : "0vw" }}
       >
         {/* Content */}
         {children}

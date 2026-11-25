@@ -170,7 +170,6 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
             key="mobile-landing-logo"
             skipAnimation={!playAnimation}
             sizeMode="mobile"
-            ring
           />
         )}
       </AnimatePresence>

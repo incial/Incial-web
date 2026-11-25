@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins, Noto_Sans } from "next/font/google";
 import "./globals.css";
+import CaseZoomOverlay from "@/components/features/case-studies/ZoomOverlay";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -91,6 +92,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
         {children}
+        <CaseZoomOverlay />
       </body>
     </html>
   );

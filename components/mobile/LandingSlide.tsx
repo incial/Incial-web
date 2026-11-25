@@ -5,6 +5,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { MobileSlide } from './MobileSlide';
+import LiquidButton from '@/components/ui/LiquidButton';
+import ScrollHint from '@/components/ui/ScrollHint';
 import { LandingIntroSequence } from './LandingIntroSequence';
 
 interface LandingSlideProps {
@@ -34,13 +36,7 @@ const navTargets: Record<string, string> = {
   products: '/products',
 };
 
-// Memoized CTA Button component
-// The first button is solid white with black text; the second is outlined: a white stroke and white text.
-const BUTTON_STYLES = {
-  solid: 'border-white bg-white text-black hover:bg-white/90 active:bg-white/80',
-  outline: 'border-white bg-transparent text-white hover:bg-white/10 active:bg-white/15',
-} as const;
-
+// The first button is solid white with black text; the second is outlined. Both fill with a liquid on hover.
 const CTAButton = memo(
   ({
     label,
@@ -51,22 +47,19 @@ const CTAButton = memo(
   }: {
     label: string;
     action: string;
-    variant: keyof typeof BUTTON_STYLES;
+    variant: 'solid' | 'outline';
     icon: ReactNode;
     onClick: (action: string) => void;
-  }) => {
-    return (
-      <motion.button
-        onClick={() => onClick(action)}
-        whileTap={{ scale: 0.98 }}
-        className={`flex-none min-w-[11rem] rounded-full border flex items-center justify-center gap-2 px-5 py-3.5 text-[12px] font-semibold whitespace-nowrap transition-colors text-center leading-tight ${BUTTON_STYLES[variant]}`}
-        style={{ transform: 'translateZ(0)' }}
-      >
-        {label}
-        {icon}
-      </motion.button>
-    );
-  }
+  }) => (
+    <LiquidButton
+      variant={variant}
+      onClick={() => onClick(action)}
+      className="min-w-[11rem] flex-none !border-white px-5 py-3.5 text-[12px] font-semibold leading-tight"
+    >
+      {label}
+      {icon}
+    </LiquidButton>
+  ),
 );
 
 CTAButton.displayName = 'CTAButton';
@@ -95,9 +88,13 @@ export const LandingSlide = memo(function LandingSlide({
     }
 
     const target = memoizedNavTargets[action];
-    if (target) {
-      router.push(target);
+    if (!target) return;
+    // a PDF is a file, not a page: the router cannot render it, so it opens in its own tab
+    if (/\.pdf($|[?#])/i.test(target)) {
+      window.open(target, '_blank', 'noopener,noreferrer');
+      return;
     }
+    router.push(target);
   }, [onNavigate, memoizedNavTargets, router]);
 
   // Optimized sequence complete handler
@@ -181,6 +178,12 @@ export const LandingSlide = memo(function LandingSlide({
             </motion.div>
           )}
         </AnimatePresence>
+        {showControls && (
+          <ScrollHint
+            delay={0.5}
+            className="pointer-events-auto absolute bottom-[calc(1.75rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2"
+          />
+        )}
         </div>
       </div>
     </MobileSlide>

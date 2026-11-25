@@ -87,4 +87,9 @@ export async function apiSaveSection<T>(section: string, data: T): Promise<void>
       Array.isArray(err.details) ? err.details : undefined,
     );
   }
+
+  // tells the admin panel's live preview to reload, so it shows what was just saved
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("admin:saved", { detail: { section } }));
+  }
 }

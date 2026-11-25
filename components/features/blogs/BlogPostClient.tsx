@@ -1,7 +1,7 @@
 "use client";
 
 import MenuFrame from "@/components/layout/MenuFrame";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,169 +15,49 @@ interface BlogPostClientProps {
   relatedPosts: BlogPost[];
 }
 
-type LayoutVariant = "cinematic" | "split" | "editorial" | "interwoven";
 type ContentBlockType = "h1" | "h2" | "h3" | "li" | "p" | "divider";
-
-const SENTENCES_BETWEEN_GALLERIES = 6;
 
 interface ContentBlock {
   type: ContentBlockType;
   text: string;
 }
 
+/** After this many sentences a gallery picture is set into the text. */
+const SENTENCES_BETWEEN_GALLERIES = 6;
+const SUBTITLE_MAX = 170;
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 function getPostImages(post: BlogPost): string[] {
-  return (post.images || [])
-    .map((img) => (typeof img === "string" ? img.trim() : ""))
-    .filter(Boolean);
-}
-
-function getLayoutVariant(slug: string): LayoutVariant {
-  if (slug === "popular-2") {
-    return "interwoven";
-  }
-
-  const hash = slug
-    .split("")
-    .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  const variants: LayoutVariant[] = [
-    "cinematic",
-    "split",
-    "editorial",
-    "interwoven",
-  ];
-  return variants[hash % variants.length];
-}
-
-function renderContentBlock(block: ContentBlock, index: number) {
-  if (block.type === "divider") {
-    return (
-      <motion.div
-        key={`d-${index}`}
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.4 }}
-        className="h-px bg-white/10 my-8"
-      />
-    );
-  }
-
-  const styles: Record<Exclude<ContentBlockType, "divider">, string> = {
-    h1: "text-2xl md:text-3xl font-bold text-white mt-4",
-    h2: "text-xl md:text-2xl font-semibold text-white mt-4",
-    h3: "text-lg md:text-xl font-semibold text-white mt-2",
-    li: "text-[16px] md:text-[17px] leading-relaxed text-white/80 ml-6 list-disc",
-    p: "text-[16px] md:text-[17px] leading-relaxed text-white/72 font-light",
-  };
-
-  const Tag = block.type === "li" ? "li" : "p";
-
-  if (block.type === "li") {
-    return (
-      <motion.ul
-        key={`l-${index}`}
-        initial={{ opacity: 0, y: 12 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-30px" }}
-        transition={{ duration: 0.45, delay: index * 0.01 }}
-        className="space-y-2"
-      >
-        <li className={styles.li}>{block.text}</li>
-      </motion.ul>
-    );
-  }
-
-  return (
-    <motion.div
-      key={`b-${index}`}
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, delay: index * 0.02 }}
-    >
-      <Tag className={styles[block.type]}>{block.text}</Tag>
-    </motion.div>
-  );
-}
-
-function GalleryImageFigure({
-  src,
-  alt,
-  index,
-}: {
-  src: string;
-  alt: string;
-  index: number;
-}) {
-  return (
-    <motion.figure
-      key={`g-${index}`}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.55, delay: 0.05 }}
-      className="relative w-full my-8"
-    >
-      <div className="relative w-full overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.02] aspect-[16/10] sm:aspect-[16/9]">
-        <Image
-          src={src}
-          alt={alt}
-          fill
-          className="object-cover object-center"
-        />
-      </div>
-    </motion.figure>
-  );
+  return (post.images || []).map((img) => (typeof img === "string" ? img.trim() : "")).filter(Boolean);
 }
 
 function splitIntoSentences(text: string): string[] {
   const normalized = text.replace(/\s+/g, " ").trim();
-
-  if (!normalized) {
-    return [];
-  }
-
-  const sentences = normalized.match(/[^.!?]+[.!?]+(?:[\"')\]]+)?|[^.!?]+$/g);
-
+  if (!normalized) return [];
+  const sentences = normalized.match(/[^.!?]+[.!?]+(?:["')\]]+)?|[^.!?]+$/g);
   return (sentences ?? [normalized]).map((sentence) => sentence.trim()).filter(Boolean);
 }
 
 function parseContentToBlocks(content?: string): ContentBlock[] {
   if (!content) {
-    return [
-      {
-        type: "p",
-        text: "This post is currently being written. Check back soon for the full article.",
-      },
-    ];
+    return [{ type: "p", text: "This post is currently being written. Check back soon for the full article." }];
   }
 
-  const lines = content.split("\n").map((line) => line.trim());
   const blocks: ContentBlock[] = [];
-
-  for (const line of lines) {
+  for (const raw of content.split("\n")) {
+    const line = raw.trim();
     if (!line) continue;
 
     if (line.startsWith("\\#")) {
-      blocks.push({ type: "p", text: line.slice(1).trim() });
+      blocks.push({ type: "p", text: line.slice(1).replace(/^#+\s*/, "").trim() });
       continue;
     }
-
-    const headingMatch = line.match(/^(#{1,3})\s*(.+)$/);
-    if (headingMatch) {
-      const level = headingMatch[1].length;
-      const text = headingMatch[2].trim();
-
-      if (level === 1) {
-        blocks.push({ type: "h1", text });
-      } else if (level === 2) {
-        blocks.push({ type: "h2", text });
-      } else {
-        blocks.push({ type: "h3", text });
-      }
+    const heading = line.match(/^(#{1,3})\s*(.+)$/);
+    if (heading) {
+      const level = heading[1].length;
+      blocks.push({ type: level === 1 ? "h1" : level === 2 ? "h2" : "h3", text: heading[2].trim() });
       continue;
     }
-
     if (line === "---") {
       blocks.push({ type: "divider", text: "" });
       continue;
@@ -188,795 +68,318 @@ function parseContentToBlocks(content?: string): ContentBlock[] {
     }
     blocks.push({ type: "p", text: line });
   }
-
   return blocks;
 }
 
-function ContentRenderer({
-  blocks,
-  galleryImages = [],
-  altText,
-}: {
-  blocks: ContentBlock[];
-  galleryImages?: string[];
-  altText: string;
-}) {
-  const rendered: React.JSX.Element[] = [];
-  let galleryIndex = 0;
-  let sentencesSinceGallery = 0;
-  let paragraphIndex = 0;
+/**
+ * Splits off a short line for under the heading: the first sentence of the opening paragraph. The
+ * article then begins with the rest of that paragraph (or the next one), so nothing is said twice.
+ */
+function splitIntro(blocks: ContentBlock[]): { subtitle: string; body: ContentBlock[] } {
+  const at = blocks.findIndex((block) => block.type === "p" && block.text.replace(/\s+/g, " ").length >= 30);
+  if (at === -1) return { subtitle: "", body: blocks };
+  const plain = blocks[at].text.replace(/[*_`>]+/g, "").replace(/\s+/g, " ").trim();
+  const sentences = splitIntoSentences(blocks[at].text);
+  const first = splitIntoSentences(plain)[0] ?? plain;
+  const subtitle = first.length > SUBTITLE_MAX ? `${first.slice(0, SUBTITLE_MAX - 1).trimEnd()}…` : first;
+  const rest = sentences.slice(1).join(" ").trim();
+  const body = [...blocks];
+  if (rest) body[at] = { type: "p", text: rest };
+  else body.splice(at, 1);
+  return { subtitle, body };
+}
 
-  function appendGalleryImage() {
-    if (galleryIndex >= galleryImages.length) {
+/** Turns **bold** marks in the saved text into real bold. */
+function inline(text: string): React.ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) =>
+    part.startsWith("**") && part.endsWith("**") && part.length > 4 ? <strong key={index} className="font-semibold text-[#151716]">{part.slice(2, -2)}</strong> : part,
+  );
+}
+
+function initialsOf(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+/** Slides up and fades in as it is scrolled to. */
+function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-8%" }}
+      transition={{ duration: 0.7, delay, ease: EASE }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function renderBlock(block: ContentBlock, key: string): React.JSX.Element {
+  switch (block.type) {
+    case "divider":
+      return <div key={key} className="my-10 h-px bg-black/15" />;
+    case "h1":
+      return (
+        <Reveal key={key}>
+          <h2 className="mt-14 text-[clamp(1.8rem,1.3rem+1.4vw,2.6rem)] font-normal leading-tight tracking-[-0.03em]">{block.text}</h2>
+        </Reveal>
+      );
+    case "h2":
+      return (
+        <Reveal key={key}>
+          <h2 className="mt-12 text-[clamp(1.5rem,1.2rem+1vw,2.1rem)] font-normal leading-tight tracking-[-0.025em]">{block.text}</h2>
+        </Reveal>
+      );
+    case "h3":
+      return (
+        <Reveal key={key}>
+          <h3 className="mt-10 text-[1.25rem] font-semibold leading-snug tracking-[-0.01em]">{block.text}</h3>
+        </Reveal>
+      );
+    case "li":
+      return (
+        <Reveal key={key}>
+          <p className="flex gap-3 text-[1.0625rem] leading-[1.8] text-black/75">
+            <span aria-hidden className="mt-[0.8em] size-1.5 shrink-0 rounded-full bg-[#56A6FF]" />
+            <span>{inline(block.text)}</span>
+          </p>
+        </Reveal>
+      );
+    default:
+      return (
+        <Reveal key={key}>
+          <p className="text-[1.0625rem] leading-[1.85] text-black/75">{inline(block.text)}</p>
+        </Reveal>
+      );
+  }
+}
+
+function GalleryFigure({ src, alt, index }: { src: string; alt: string; index: number }) {
+  return (
+    <Reveal>
+      <figure className="my-10 overflow-hidden rounded-2xl bg-black/5">
+        <div className="relative aspect-[16/10] w-full">
+          <Image src={src} alt={`${alt}: picture ${index + 1}`} fill sizes="(max-width: 1024px) 92vw, 46rem" className="object-cover" />
+        </div>
+      </figure>
+    </Reveal>
+  );
+}
+
+/** The article: the first paragraph is the lead, and gallery pictures are set in between the paragraphs. */
+function Article({ blocks, gallery, title }: { blocks: ContentBlock[]; gallery: string[]; title: string }) {
+  const nodes: React.JSX.Element[] = [];
+  let galleryIndex = 0;
+  let sentences = 0;
+  let leadDone = false;
+
+  const addGallery = () => {
+    if (galleryIndex >= gallery.length) return;
+    nodes.push(<GalleryFigure key={`g-${galleryIndex}`} src={gallery[galleryIndex]} alt={title} index={galleryIndex} />);
+    galleryIndex += 1;
+  };
+
+  blocks.forEach((block, index) => {
+    if (block.type !== "p") {
+      nodes.push(renderBlock(block, `b-${index}`));
       return;
     }
-
-    rendered.push(
-      <GalleryImageFigure
-        key={`g-${galleryIndex}`}
-        src={galleryImages[galleryIndex]}
-        alt={altText}
-        index={galleryIndex}
-      />,
-    );
-    galleryIndex += 1;
-  }
-
-  function appendParagraph(text: string) {
-    rendered.push(renderContentBlock({ type: "p", text }, paragraphIndex));
-    paragraphIndex += 1;
-  }
-
-  for (const block of blocks) {
-    if (block.type !== "p") {
-      rendered.push(renderContentBlock(block, paragraphIndex));
-      paragraphIndex += 1;
-      continue;
+    if (!leadDone) {
+      leadDone = true;
+      nodes.push(
+        <Reveal key={`lead-${index}`}>
+          <p className="text-[clamp(1.25rem,1.1rem+0.6vw,1.6rem)] leading-[1.6] tracking-[-0.01em] text-[#151716]">{inline(block.text)}</p>
+        </Reveal>,
+      );
+      sentences += splitIntoSentences(block.text).length;
+      return;
     }
-
-    const sentences = splitIntoSentences(block.text);
-
-    if (sentences.length === 0) {
-      continue;
+    nodes.push(renderBlock(block, `b-${index}`));
+    sentences += splitIntoSentences(block.text).length;
+    if (sentences >= SENTENCES_BETWEEN_GALLERIES) {
+      addGallery();
+      sentences = 0;
     }
+  });
+  while (galleryIndex < gallery.length) addGallery();
 
-    let chunk: string[] = [];
+  return <div className="flex max-w-[56rem] flex-col gap-6">{nodes}</div>;
+}
 
-    for (const sentence of sentences) {
-      chunk.push(sentence);
-      const endsSentence = /[.!?][\"')\]]?$/.test(sentence);
+/** The fixed column: who wrote it, when, how long it takes to read, and ways to share it. */
+function Details({ post }: { post: BlogPost }) {
+  const [copied, setCopied] = useState(false);
+  const currentUrl = () => (typeof window === "undefined" ? "" : window.location.href);
 
-      if (!endsSentence) {
-        continue;
-      }
-
-      sentencesSinceGallery += 1;
-
-      if (sentencesSinceGallery >= SENTENCES_BETWEEN_GALLERIES) {
-        appendParagraph(chunk.join(" "));
-        chunk = [];
-        appendGalleryImage();
-        sentencesSinceGallery = 0;
-      }
-    }
-
-    if (chunk.length > 0) {
-      appendParagraph(chunk.join(" "));
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(currentUrl());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // the browser blocked it; nothing to do
     }
   }
 
-  for (; galleryIndex < galleryImages.length; galleryIndex += 1) {
-    rendered.push(
-      <GalleryImageFigure
-        key={`g-bottom-${galleryIndex}`}
-        src={galleryImages[galleryIndex]}
-        alt={altText}
-        index={galleryIndex}
-      />,
-    );
-  }
+  const shareClass = "rounded-full border border-black/15 px-3.5 py-1.5 text-[12px] font-medium transition-colors hover:bg-black hover:text-white";
 
   return (
-    <div className="space-y-5">
-      {rendered}
+    <div className="grid grid-cols-[1fr_auto] items-start gap-x-6 gap-y-5 text-[0.9rem] lg:flex lg:flex-col lg:gap-7">
+      <Link href="/blogs" className="col-span-2 w-fit border-b border-black/20 pb-1 text-[11px] font-medium uppercase tracking-[0.08em] transition-opacity hover:opacity-60">
+        <span aria-hidden>← </span>
+        All articles
+      </Link>
+
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#151716] text-sm font-medium text-white">{initialsOf(post.author)}</span>
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.08em] text-black/45">Written by</p>
+          <p className="font-medium">{post.author}</p>
+        </div>
+      </div>
+
+      <dl className="flex flex-col gap-3 text-right lg:gap-5 lg:border-t lg:border-black/15 lg:pt-6 lg:text-left">
+        <div>
+          <dt className="text-[11px] uppercase tracking-[0.08em] text-black/45">Published</dt>
+          <dd className="mt-0.5 whitespace-nowrap font-medium lg:mt-1">{post.date}</dd>
+        </div>
+        <div>
+          <dt className="text-[11px] uppercase tracking-[0.08em] text-black/45">Reading time</dt>
+          <dd className="mt-0.5 font-medium lg:mt-1">{post.mins} min read</dd>
+        </div>
+        {post.category && (
+          <div className="hidden lg:block">
+            <dt className="text-[11px] uppercase tracking-[0.08em] text-black/45">Topic</dt>
+            <dd className="mt-1">
+              <span className="rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-black/60">{post.category}</span>
+            </dd>
+          </div>
+        )}
+      </dl>
+
+      <div className="col-span-2 flex items-center justify-between gap-3 border-t border-black/15 pt-4 lg:block lg:pt-6">
+        {post.category && <span className="rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-black/60 lg:hidden">{post.category}</span>}
+        <p className="mb-3 hidden text-[11px] uppercase tracking-[0.08em] text-black/45 lg:block">Share</p>
+        <div className="flex flex-wrap justify-end gap-2 lg:justify-start">
+          <a href="https://www.linkedin.com/sharing/share-offsite/" onClick={(event) => { event.currentTarget.href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl())}`; }} target="_blank" rel="noopener noreferrer" className={shareClass}>
+            LinkedIn
+          </a>
+          <a href="https://twitter.com/intent/tweet" onClick={(event) => { event.currentTarget.href = `https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl())}&text=${encodeURIComponent(post.title)}`; }} target="_blank" rel="noopener noreferrer" className={shareClass}>
+            X
+          </a>
+          <button type="button" onClick={copy} className={shareClass}>
+            {copied ? "Copied" : "Copy link"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
-function MetaRow({ post }: { post: BlogPost }) {
+function RelatedCard({ post }: { post: BlogPost }) {
+  const src = post.image || post.coverImage || post.heroImage || "";
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.25 }}
-      className="flex flex-wrap items-center gap-3 sm:gap-4 mt-5 text-sm text-white/55"
-    >
-      <span className="font-medium text-white/85">By {post.author}</span>
-      <span className="w-px h-4 bg-white/20" />
-      <span>{post.date}</span>
-      <span className="w-px h-4 bg-white/20" />
-      <span>{post.mins} min read</span>
-    </motion.div>
-  );
-}
-
-function BlogHeroVisual({ post }: { post: BlogPost }) {
-  const heroSrc = post.image || post.coverImage || post.heroImage || "";
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.2 }}
-      className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.02] shadow-[0_24px_80px_rgba(0,0,0,0.35)]"
-    >
-      <div className="absolute inset-0 bg-linear-to-tr from-white/10 via-transparent to-transparent" />
-      <div className="relative aspect-[16/9] sm:aspect-[18/8] min-h-[280px] sm:min-h-[360px] bg-neutral-900">
-        {heroSrc ? (
-          <Image
-            src={heroSrc}
-            alt={post.title}
-            fill
-            priority
-            className="object-cover object-center"
-          />
-        ) : null}
+    <Link href={`/blogs/${post.slug}`} className="group block">
+      <div className="relative aspect-[3/2] w-full overflow-hidden bg-black/10">
+        {src && <Image src={src} alt={post.title} fill sizes="(max-width: 768px) 92vw, 30vw" className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]" />}
       </div>
-      <div className="absolute inset-0 bg-linear-to-t from-black/35 via-transparent to-transparent" />
-    </motion.div>
+      <p className="mt-4 text-[1.2rem] font-normal leading-snug tracking-[-0.02em]">{post.title}</p>
+      <p className="mt-1 text-[0.85rem] text-black/45">
+        {post.author} · {post.mins} min read
+      </p>
+    </Link>
   );
 }
 
-function RelatedCard({ post, index }: { post: BlogPost; index: number }) {
-  const cardImg = post.image || post.coverImage || post.heroImage || "";
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.4, delay: index * 0.08 }}
-    >
-      <Link href={`/blogs/${post.slug}`} className="group block">
-        <div className="bg-white rounded-[20px] p-[8px] flex flex-col gap-[8px] shadow-sm group-hover:shadow-md transition-shadow duration-300">
-          <div className="relative rounded-[14px] overflow-hidden aspect-video w-full bg-neutral-900">
-            {cardImg ? (
-              <Image
-                src={cardImg}
-                alt={post.title}
-                fill
-                className="object-cover object-center"
-              />
-            ) : null}
-            <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-3">
-              <h4 className="text-[13px] font-semibold leading-snug text-white line-clamp-2">
-                {post.title}
-              </h4>
-            </div>
-          </div>
-          <div className="flex items-center justify-between px-1.5 pb-1 text-[11px] text-gray-400 italic">
-            <span>{post.author}</span>
-            <span>{post.mins} min read</span>
-          </div>
-        </div>
-      </Link>
-    </motion.div>
-  );
-}
-
-/** Mobile-only related posts horizontal scroll strip */
-function MobileRelatedStrip({ posts }: { posts: BlogPost[] }) {
-  if (!posts.length) return null;
-  return (
-    <section className="sm:hidden mt-10">
-      <h3 className="text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-4 px-1">
-        Related Posts
-      </h3>
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-none snap-x snap-mandatory">
-        {posts.map((rp, i) => (
-          <div key={rp.id} className="snap-start shrink-0 w-[68vw] max-w-[260px]">
-            <RelatedCard post={rp} index={i} />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/** Back link used in all variants */
-function BackLink() {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.2 }}
-      className="mt-12 pt-8 border-t border-white/10"
-    >
-      <Link
-        href="/blogs"
-        className="inline-flex items-center gap-2 text-sm font-medium text-white/55 hover:text-white transition-colors group"
-      >
-        <span className="transform group-hover:-translate-x-1 transition-transform duration-200">
-          ←
-        </span>
-        Back to all blogs
-      </Link>
-    </motion.div>
-  );
-}
-
-export default function BlogPostClient({
-  post,
-  relatedPosts,
-}: BlogPostClientProps) {
+export default function BlogPostClient({ post, relatedPosts }: BlogPostClientProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const variant = getLayoutVariant(post.slug);
-  const blocks = parseContentToBlocks(post.content);
-  const coverImage = post.image || post.coverImage || post.heroImage || "";
-  const galleryImages = getPostImages(post);
-
-  const breadcrumbItems = [
-    { label: "Home", href: "/" },
-    { label: "Blogs", href: "/blogs" },
-    { label: post.title },
-  ];
+  const { subtitle, body: blocks } = useMemo(() => splitIntro(parseContentToBlocks(post.content)), [post.content]);
+  const gallery = getPostImages(post);
+  const cover = post.coverImage || post.heroImage || post.image || "";
 
   return (
     <div className="relative min-h-screen bg-white">
-      <Header menuOpen={menuOpen} onToggleMenu={() => setMenuOpen(!menuOpen)} />
+      <Header menuOpen={menuOpen} onToggleMenu={() => setMenuOpen(!menuOpen)} blend />
 
       <MenuFrame open={menuOpen} />
 
       <motion.div
-        animate={{
-          y: menuOpen ? 100 : 0,
-        }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="relative origin-top overflow-hidden bg-black text-white min-h-screen"
+        animate={{ y: menuOpen ? 100 : 0 }}
+        transition={{ duration: 0.5, ease: EASE }}
+        className="relative origin-top overflow-x-clip bg-white text-[#151716] min-h-screen"
         style={{ zIndex: 30 }}
       >
-        {/* ─────────────────────────── CINEMATIC ─────────────────────────── */}
-        {variant === "cinematic" && (
-          <>
-            {/* ── MOBILE hero (stacked, no cinematic overlay text) ── */}
-            <div className="sm:hidden">
-              <div className="relative w-full aspect-[4/3] overflow-hidden">
-                <Image
-                  src={coverImage}
-                  alt={post.title}
-                  fill
-                  priority
-                  className="object-cover object-center"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-              </div>
+        {/* the cover fills the whole screen: the picture, the heading and a short line about the article */}
+        <section className="relative flex h-dvh min-h-[34rem] items-end overflow-hidden bg-black text-white">
+          {cover && <Image src={cover} alt="" fill priority sizes="100vw" className="object-cover opacity-80" />}
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/25" />
+          {/* at the top of the image, under the site's own header */}
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: EASE }}
+            className="absolute inset-x-0 top-24 z-10 mx-auto max-w-[1431px] px-5 sm:px-8 md:top-28 lg:px-12"
+          >
+            <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Blogs", href: "/blogs" }, { label: post.title }]} variant="pill" size="base" animate={false} className="!justify-start !pt-0" />
+          </motion.div>
+          <div className="relative z-10 mx-auto w-full max-w-[1431px] px-5 pb-14 pt-40 sm:px-8 md:pb-20 lg:px-12">
+            <motion.h1
+              initial={{ opacity: 0, y: 36 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.1, ease: EASE }}
+              className="max-w-[20ch] text-balance text-[clamp(2.3rem,1.2rem+4.4vw,5.2rem)] font-normal leading-[1.04] tracking-[-0.04em]"
+            >
+              {post.title}
+            </motion.h1>
+            {subtitle && (
+              <motion.p
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3, ease: EASE }}
+                className="mt-6 max-w-[40rem] text-[clamp(1rem,0.9rem+0.5vw,1.3rem)] leading-relaxed text-white/80"
+              >
+                {subtitle}
+              </motion.p>
+            )}
+          </div>
+        </section>
 
-              <div className="px-5 pt-6 pb-10">
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/40 mb-3"
-                >
-                  {post.category === "popular" ? "Popular" : "Newest"}
-                </motion.span>
+        {/* just below the cover, two columns: the details stay still on the left, the article runs down the right */}
+        <div className="mx-auto grid max-w-[1431px] lg:grid-cols-[20rem_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]">
+          <aside className="border-b border-black/15 px-5 py-6 sm:px-8 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-6rem)] lg:self-start lg:overflow-y-auto lg:border-b-0 lg:border-r lg:py-14 lg:pl-12 lg:pr-10">
+            <Details post={post} />
+          </aside>
+          <article className="px-5 py-14 sm:px-8 md:py-20 lg:px-16 xl:px-20">
+            <Article blocks={blocks} gallery={gallery} title={post.title} />
+          </article>
+        </div>
 
-                <motion.h1
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, delay: 0.1 }}
-                  className="text-[26px] font-bold leading-[1.15] text-white"
-                >
-                  {post.title}
-                </motion.h1>
-
-                <MetaRow post={post} />
-
-                <div className="mt-10">
-                  <ContentRenderer
-                    blocks={blocks}
-                    galleryImages={galleryImages}
-                    altText={post.title}
-                  />
-                </div>
-
-                <MobileRelatedStrip posts={relatedPosts} />
-                <BackLink />
+        {relatedPosts.length > 0 && (
+          <section className="border-t border-black/15">
+            <div className="mx-auto max-w-[1431px] px-5 py-20 sm:px-8 lg:px-12">
+              <h2 className="mb-12 inline-flex items-center gap-4 text-2xl font-normal tracking-[-0.02em] md:text-3xl">
+                <span className="h-px w-10 bg-black/30" />
+                More to read
+              </h2>
+              <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+                {relatedPosts.map((related) => (
+                  <RelatedCard key={related.id} post={related} />
+                ))}
               </div>
             </div>
-
-            {/* ── DESKTOP hero (original cinematic) ── */}
-            <div className="hidden sm:block">
-              <div className="relative w-full h-[55vh] min-h-[340px] overflow-hidden">
-                <Image
-                  src={coverImage}
-                  alt={post.title}
-                  fill
-                  priority
-                  className="object-cover object-center"
-                />
-                <div className="absolute inset-0 bg-linear-to-b from-black/30 via-transparent to-black" />
-
-                <div className="absolute bottom-0 left-0 right-0 px-5 sm:px-8 lg:px-12 pb-10 max-w-[1431px] mx-auto">
-                  <div className="mb-3 pt-6 flex">
-                    <Breadcrumbs
-                      items={breadcrumbItems}
-                      variant="pill"
-                      size="lg"
-                    />
-                  </div>
-
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.4, delay: 0.15 }}
-                    className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/40 mb-3"
-                  >
-                    {post.category === "popular" ? "Popular" : "Newest"}
-                  </motion.span>
-
-                  <motion.h1
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                    className="text-3xl md:text-5xl lg:text-6xl font-bold leading-[1.1] max-w-4xl"
-                  >
-                    {post.title}
-                  </motion.h1>
-
-                  <MetaRow post={post} />
-                </div>
-              </div>
-
-              <main className="px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto py-16">
-                <div className="flex flex-col lg:flex-row gap-16">
-                  <article className="flex-1 min-w-0">
-                    <div className="max-w-[760px]">
-                      <motion.div
-                        initial={{ scaleX: 0 }}
-                        animate={{ scaleX: 1 }}
-                        transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-                        className="origin-left h-px bg-white/10 mb-10"
-                      />
-                      <ContentRenderer
-                        blocks={blocks}
-                        galleryImages={galleryImages}
-                        altText={post.title}
-                      />
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                        className="mt-14 pt-10 border-t border-white/10"
-                      >
-                        <Link
-                          href="/blogs"
-                          className="inline-flex items-center gap-2 text-sm font-medium text-white/50 hover:text-white transition-colors group"
-                        >
-                          <span className="transform group-hover:-translate-x-1 transition-transform duration-200">
-                            ←
-                          </span>
-                          Back to all blogs
-                        </Link>
-                      </motion.div>
-                    </div>
-                  </article>
-
-                  {relatedPosts.length > 0 && (
-                    <aside className="w-full lg:w-[320px] shrink-0">
-                      <motion.div
-                        initial={{ opacity: 0, x: 24 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, delay: 0.3 }}
-                      >
-                        <h3 className="text-sm font-semibold uppercase tracking-widest text-white/40 mb-6">
-                          Related Posts
-                        </h3>
-                        <div className="space-y-5">
-                          {relatedPosts.map((rp, i) => (
-                            <RelatedCard key={rp.id} post={rp} index={i} />
-                          ))}
-                        </div>
-                      </motion.div>
-                    </aside>
-                  )}
-                </div>
-              </main>
-            </div>
-          </>
+          </section>
         )}
 
-        {/* ─────────────────────────── SPLIT ─────────────────────────── */}
-        {variant === "split" && (
-          <>
-            {/* ── MOBILE split ── */}
-            <div className="sm:hidden px-5 py-8">
-              {/* cover image */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.1 }}
-                className="relative rounded-[20px] overflow-hidden w-full aspect-[4/3] border border-white/10 mb-6"
-              >
-                <Image
-                  src={coverImage}
-                  alt={post.title}
-                  fill
-                  priority
-                  className="object-cover object-center"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              </motion.div>
-
-              {/* category + title + meta */}
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.4 }}
-                className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/45 mb-2"
-              >
-                {post.category}
-              </motion.span>
-              <motion.h1
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.12 }}
-                className="text-[24px] font-bold leading-[1.18] text-white"
-              >
-                {post.title}
-              </motion.h1>
-              <MetaRow post={post} />
-
-              {/* content */}
-              <div className="mt-8 rounded-[18px] border border-white/10 bg-white/[0.02] p-5">
-                <ContentRenderer
-                  blocks={blocks}
-                  galleryImages={galleryImages}
-                  altText={post.title}
-                />
-              </div>
-
-              <MobileRelatedStrip posts={relatedPosts} />
-              <BackLink />
-            </div>
-
-            {/* ── DESKTOP split (original) ── */}
-            <main className="hidden sm:block px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto py-10 sm:py-14">
-              <div className="mb-8">
-                <Breadcrumbs
-                  items={breadcrumbItems}
-                  variant="pill"
-                  size="lg"
-                />
-              </div>
-
-              <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch mb-14">
-                <div className="lg:col-span-5 flex flex-col justify-center">
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.4 }}
-                    className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/45 mb-3"
-                  >
-                    {post.category}
-                  </motion.span>
-                  <motion.h1
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.1 }}
-                    className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.08]"
-                  >
-                    {post.title}
-                  </motion.h1>
-                  <MetaRow post={post} />
-                </div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
-                  className="lg:col-span-7 relative rounded-[26px] overflow-hidden min-h-[280px] sm:min-h-[380px] border border-white/10"
-                >
-                  <Image
-                    src={coverImage}
-                    alt={post.title}
-                    fill
-                    priority
-                    className="object-cover object-center"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
-                </motion.div>
-              </section>
-
-              <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
-                {relatedPosts.length > 0 && (
-                  <aside className="lg:col-span-4 lg:order-1 order-2">
-                    <div className="lg:sticky lg:top-28">
-                      <h3 className="text-sm font-semibold uppercase tracking-widest text-white/40 mb-6">
-                        Related Posts
-                      </h3>
-                      <div className="space-y-5">
-                        {relatedPosts.map((rp, i) => (
-                          <RelatedCard key={rp.id} post={rp} index={i} />
-                        ))}
-                      </div>
-                    </div>
-                  </aside>
-                )}
-
-                <article className="lg:col-span-8 lg:order-2 order-1">
-                  <div className="rounded-[22px] border border-white/10 bg-white/[0.02] p-5 sm:p-8">
-                    <ContentRenderer
-                      blocks={blocks}
-                      galleryImages={galleryImages}
-                      altText={post.title}
-                    />
-                  </div>
-
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className="mt-10"
-                  >
-                    <Link
-                      href="/blogs"
-                      className="inline-flex items-center gap-2 text-sm font-medium text-white/55 hover:text-white transition-colors group"
-                    >
-                      <span className="transform group-hover:-translate-x-1 transition-transform duration-200">
-                        ←
-                      </span>
-                      Back to all blogs
-                    </Link>
-                  </motion.div>
-                </article>
-              </section>
-            </main>
-          </>
-        )}
-
-        {/* ─────────────────────────── EDITORIAL ─────────────────────────── */}
-        {variant === "editorial" && (
-          <>
-            {/* ── MOBILE editorial ── */}
-            <div className="sm:hidden px-5 py-8">
-              {/* category + title */}
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.4 }}
-                className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/40 mb-2"
-              >
-                {post.category}
-              </motion.span>
-              <motion.h1
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.1 }}
-                className="text-[24px] font-bold leading-[1.18] text-white"
-              >
-                {post.title}
-              </motion.h1>
-              <MetaRow post={post} />
-
-              {/* hero image */}
-              <div className="mt-6 mb-8">
-                <BlogHeroVisual post={post} />
-              </div>
-
-              {/* content */}
-              <ContentRenderer
-                blocks={blocks}
-                galleryImages={galleryImages}
-                altText={post.title}
-              />
-
-              <MobileRelatedStrip posts={relatedPosts} />
-              <BackLink />
-            </div>
-
-            {/* ── DESKTOP editorial (original) ── */}
-            <main className="hidden sm:block px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto py-10 sm:py-14">
-              <div className="mb-8 flex justify-center lg:justify-start">
-                <Breadcrumbs
-                  items={breadcrumbItems}
-                  variant="pill"
-                  size="lg"
-                />
-              </div>
-
-              <section className="text-center max-w-4xl mx-auto mb-10">
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/40 mb-3"
-                >
-                  {post.category}
-                </motion.span>
-                <motion.h1
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.1 }}
-                  className="text-3xl sm:text-5xl lg:text-6xl font-bold leading-[1.08]"
-                >
-                  {post.title}
-                </motion.h1>
-                <div className="flex justify-center">
-                  <MetaRow post={post} />
-                </div>
-              </section>
-
-              <div className="max-w-5xl mx-auto mb-14">
-                <BlogHeroVisual post={post} />
-              </div>
-
-              <article className="max-w-3xl mx-auto">
-                <ContentRenderer
-                  blocks={blocks}
-                  galleryImages={galleryImages}
-                  altText={post.title}
-                />
-
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="mt-12 pt-8 border-t border-white/10"
-                >
-                  <Link
-                    href="/blogs"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-white/55 hover:text-white transition-colors group"
-                  >
-                    <span className="transform group-hover:-translate-x-1 transition-transform duration-200">
-                      ←
-                    </span>
-                    Back to all blogs
-                  </Link>
-                </motion.div>
-              </article>
-
-              {relatedPosts.length > 0 && (
-                <section className="mt-16">
-                  <h3 className="text-sm font-semibold uppercase tracking-widest text-white/40 mb-6 text-center">
-                    Related Posts
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {relatedPosts.map((rp, i) => (
-                      <RelatedCard key={rp.id} post={rp} index={i} />
-                    ))}
-                  </div>
-                </section>
-              )}
-            </main>
-          </>
-        )}
-
-        {/* ─────────────────────────── INTERWOVEN ─────────────────────────── */}
-        {variant === "interwoven" && (
-          <>
-            {/* ── MOBILE interwoven ── */}
-            <div className="sm:hidden px-5 py-8">
-              {/* category + title */}
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.4 }}
-                className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/40 mb-2"
-              >
-                {post.category}
-              </motion.span>
-              <motion.h1
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.1 }}
-                className="text-[24px] font-bold leading-[1.18] text-white"
-              >
-                {post.title}
-              </motion.h1>
-              <MetaRow post={post} />
-
-              {/* hero image */}
-              <div className="mt-6 mb-8">
-                <BlogHeroVisual post={post} />
-              </div>
-
-              {/* content */}
-              <ContentRenderer
-                blocks={blocks}
-                galleryImages={galleryImages}
-                altText={post.title}
-              />
-
-              <MobileRelatedStrip posts={relatedPosts} />
-              <BackLink />
-            </div>
-
-            {/* ── DESKTOP interwoven (original) ── */}
-            <main className="hidden sm:block px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto py-10 sm:py-14">
-              <div className="mb-8">
-                <Breadcrumbs
-                  items={breadcrumbItems}
-                  variant="pill"
-                  size="lg"
-                />
-              </div>
-
-              <section className="max-w-4xl mb-10">
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="inline-block uppercase text-[10px] tracking-widest font-semibold text-white/40 mb-3"
-                >
-                  {post.category}
-                </motion.span>
-                <motion.h1
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.1 }}
-                  className="text-3xl sm:text-5xl lg:text-6xl font-bold leading-[1.08]"
-                >
-                  {post.title}
-                </motion.h1>
-                <MetaRow post={post} />
-              </section>
-
-              <div className="max-w-6xl mb-14">
-                <BlogHeroVisual post={post} />
-              </div>
-
-              <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
-                <article className="lg:col-span-8">
-                  <ContentRenderer
-                    blocks={blocks}
-                    galleryImages={galleryImages}
-                    altText={post.title}
-                  />
-
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className="mt-12 pt-8 border-t border-white/10"
-                  >
-                    <Link
-                      href="/blogs"
-                      className="inline-flex items-center gap-2 text-sm font-medium text-white/55 hover:text-white transition-colors group"
-                    >
-                      <span className="transform group-hover:-translate-x-1 transition-transform duration-200">
-                        ←
-                      </span>
-                      Back to all blogs
-                    </Link>
-                  </motion.div>
-                </article>
-
-                {relatedPosts.length > 0 && (
-                  <aside className="lg:col-span-4">
-                    <div className="lg:sticky lg:top-28">
-                      <h3 className="text-sm font-semibold uppercase tracking-widest text-white/40 mb-6">
-                        Related Posts
-                      </h3>
-                      <div className="space-y-5">
-                        {relatedPosts.map((rp, i) => (
-                          <RelatedCard key={rp.id} post={rp} index={i} />
-                        ))}
-                      </div>
-                    </div>
-                  </aside>
-                )}
-              </section>
-            </main>
-          </>
-        )}
-
-        <div className="px-5 sm:px-8 lg:px-12 max-w-[1431px] mx-auto">
-          <Footer />
+        <div className="rounded-t-[2rem] bg-black pb-4 pt-8 text-white">
+          <div className="mx-auto max-w-[1431px] px-5 sm:px-8 lg:px-12">
+            <Footer />
+          </div>
         </div>
       </motion.div>
     </div>

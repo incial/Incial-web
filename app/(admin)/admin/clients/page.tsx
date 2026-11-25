@@ -2,143 +2,71 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Loader2, Save, Plus, Trash2 } from "lucide-react";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { apiGetSection, apiSaveSection } from "@/lib/adminApi";
-import type { ClientsData, Client, ClientLocation, Testimonial } from "@/lib/dataLoader";
-import { LOCATION_PRESETS } from "@/lib/clientLocations";
+import { Button, Chip, Label, ListBox, Select } from "@heroui/react";
+import { ArrowLeft, ArrowRight, MapPin, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import SectionVisibilityToggle from "@/components/admin/SectionVisibilityToggle";
+import { apiGetSection, apiSaveSection } from "@/lib/adminApi";
+import type { Client, ClientLocation, ClientsData, Testimonial } from "@/lib/dataLoader";
+import { LOCATION_PRESETS } from "@/lib/clientLocations";
 import ImageUpload from "@/components/admin/ImageUpload";
-const inputCls =
-  "w-full bg-transparent border border-[#1e1e1e] rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#555] focus:outline-none focus:border-white/50 transition-all font-[Inter,sans-serif]";
-const labelCls =
-  "text-[10px] font-semibold text-[#8e8e8e] uppercase tracking-wider font-[Inter,sans-serif]";
+import SectionVisibilityToggle from "@/components/admin/SectionVisibilityToggle";
+import { EditDrawer, EmptyState, LoadingState, PageHeader, Panel, SaveButton, TextAreaInput, TextInput } from "@/components/admin/ui";
 
-function SortableClientItem({ client }: { client: Client }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: client.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="bg-white rounded-[5px] flex items-center justify-center aspect-[3/2] relative overflow-hidden cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-white/50 transition-all select-none touch-none"
-    >
-      {client.src ? (
-        <Image
-          src={client.src}
-          alt={client.name}
-          fill
-          sizes="150px"
-          quality={60}
-          className="object-contain p-2 pointer-events-none"
-        />
-      ) : (
-        <span className="text-[8px] text-gray-400 text-center px-1 leading-tight pointer-events-none">
-          {client.name || "Logo"}
-        </span>
-      )}
-    </div>
-  );
-}
-
+const NO_LOCATION = "__none__";
 const CUSTOM_LOCATION = "__custom__";
 
-/** Picks where a client is based (a preset city, or custom coordinates) for the home page map. */
-function ClientLocationField({
-  location,
-  onChange,
-}: {
-  location: ClientLocation | undefined;
-  onChange: (location: ClientLocation | undefined) => void;
-}) {
-  const presetMatch = LOCATION_PRESETS.find((preset) => preset.label === location?.label);
-  const [isCustom, setIsCustom] = useState(Boolean(location && !presetMatch));
-  const selectValue = isCustom ? CUSTOM_LOCATION : (presetMatch?.label ?? "");
+/** Where a client is based: a city from the list, or custom coordinates. Drives the world map on the home page. */
+function LocationField({ location, onChange }: { location: ClientLocation | undefined; onChange: (location: ClientLocation | undefined) => void }) {
+  const preset = LOCATION_PRESETS.find((candidate) => candidate.label === location?.label);
+  const [isCustom, setIsCustom] = useState(Boolean(location && !preset));
+  const selected = isCustom ? CUSTOM_LOCATION : (preset?.label ?? NO_LOCATION);
 
-  function handleSelect(value: string) {
-    if (value === CUSTOM_LOCATION) {
+  function choose(key: string) {
+    if (key === CUSTOM_LOCATION) {
       setIsCustom(true);
       return;
     }
     setIsCustom(false);
-    onChange(LOCATION_PRESETS.find((preset) => preset.label === value));
+    onChange(key === NO_LOCATION ? undefined : LOCATION_PRESETS.find((candidate) => candidate.label === key));
   }
 
-  function handleCustom(field: keyof ClientLocation, raw: string) {
+  function setField(field: keyof ClientLocation, raw: string) {
     const base: ClientLocation = location ?? { label: "", lat: 0, lng: 0 };
     onChange({ ...base, [field]: field === "label" ? raw : Number(raw) });
   }
 
   return (
-    <div className="space-y-2">
-      <label className={labelCls}>Location (world map)</label>
-      <select
-        value={selectValue}
-        onChange={(e) => handleSelect(e.target.value)}
-        className={`${inputCls} bg-black`}
-      >
-        <option value="">No location</option>
-        {LOCATION_PRESETS.map((preset) => (
-          <option key={preset.label} value={preset.label}>
-            {preset.label}
-          </option>
-        ))}
-        <option value={CUSTOM_LOCATION}>Custom coordinates…</option>
-      </select>
+    <div className="flex flex-col gap-3">
+      <Select selectedKey={selected} onSelectionChange={(key) => choose(String(key))} className="w-full">
+        <Label>Location on the world map</Label>
+        <Select.Trigger>
+          <Select.Value />
+          <Select.Indicator />
+        </Select.Trigger>
+        <Select.Popover>
+          <ListBox>
+            <ListBox.Item id={NO_LOCATION} textValue="No location">
+              No location
+              <ListBox.ItemIndicator />
+            </ListBox.Item>
+            {LOCATION_PRESETS.map((candidate) => (
+              <ListBox.Item key={candidate.label} id={candidate.label} textValue={candidate.label}>
+                {candidate.label}
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            ))}
+            <ListBox.Item id={CUSTOM_LOCATION} textValue="Custom coordinates">
+              Custom coordinates…
+              <ListBox.ItemIndicator />
+            </ListBox.Item>
+          </ListBox>
+        </Select.Popover>
+      </Select>
       {isCustom && (
-        <div className="grid grid-cols-3 gap-2">
-          <input
-            type="text"
-            value={location?.label ?? ""}
-            onChange={(e) => handleCustom("label", e.target.value)}
-            placeholder="City"
-            className={inputCls}
-          />
-          <input
-            type="number"
-            step="0.01"
-            min={-90}
-            max={90}
-            value={location?.lat ?? ""}
-            onChange={(e) => handleCustom("lat", e.target.value)}
-            placeholder="Latitude"
-            className={inputCls}
-          />
-          <input
-            type="number"
-            step="0.01"
-            min={-180}
-            max={180}
-            value={location?.lng ?? ""}
-            onChange={(e) => handleCustom("lng", e.target.value)}
-            placeholder="Longitude"
-            className={inputCls}
-          />
+        <div className="grid grid-cols-3 gap-3">
+          <TextInput label="City" value={location?.label ?? ""} onChange={(value) => setField("label", value)} />
+          <TextInput label="Latitude" type="number" value={String(location?.lat ?? "")} onChange={(value) => setField("lat", value)} />
+          <TextInput label="Longitude" type="number" value={String(location?.lng ?? "")} onChange={(value) => setField("lng", value)} />
         </div>
       )}
     </div>
@@ -148,43 +76,69 @@ function ClientLocationField({
 export default function AdminClientsPage() {
   const [data, setData] = useState<ClientsData | null>(null);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState<number | null>(null);
 
   useEffect(() => {
     apiGetSection<ClientsData>("clients")
       .then(setData)
-      .catch(() => {});
+      .catch(() => setData({ headerText: "", clients: [], testimonials: [] }));
   }, []);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
+  if (!data) return <LoadingState label="Loading clients…" />;
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      setData((prev) => {
-        if (!prev) return prev;
-        const oldIndex = prev.clients.findIndex((c) => c.id === active.id);
-        const newIndex = prev.clients.findIndex((c) => c.id === over.id);
-
-        return {
-          ...prev,
-          clients: arrayMove(prev.clients, oldIndex, newIndex),
-        };
-      });
-    }
+  function change(patch: Partial<ClientsData>) {
+    setData((current) => (current ? { ...current, ...patch } : current));
   }
 
-  async function handleSave() {
+  function updateClient(index: number, patch: Partial<Client>) {
+    setData((current) => {
+      if (!current) return current;
+      const clients = [...current.clients];
+      const next = { ...clients[index], ...patch };
+      if (!next.location) delete next.location;
+      clients[index] = next;
+      return { ...current, clients };
+    });
+  }
+
+  function moveClient(index: number, by: number) {
+    setData((current) => {
+      if (!current) return current;
+      const target = index + by;
+      if (target < 0 || target >= current.clients.length) return current;
+      const clients = [...current.clients];
+      [clients[index], clients[target]] = [clients[target], clients[index]];
+      return { ...current, clients };
+    });
+    setEditing((current) => (current === null ? current : current + by));
+  }
+
+  function addClient() {
+    const next = [...data!.clients, { id: String(Date.now()), name: "", src: "" }];
+    change({ clients: next });
+    setEditing(next.length - 1);
+  }
+
+  function removeClient(index: number) {
+    change({ clients: data!.clients.filter((_, i) => i !== index) });
+    setEditing(null);
+  }
+
+  function updateTestimonial(index: number, patch: Partial<Testimonial>) {
+    setData((current) => {
+      if (!current) return current;
+      const testimonials = [...current.testimonials];
+      testimonials[index] = { ...testimonials[index], ...patch };
+      return { ...current, testimonials };
+    });
+  }
+
+  async function save() {
     if (!data) return;
     setSaving(true);
     try {
       await apiSaveSection("clients", data);
-      toast.success("Clients section saved!");
+      toast.success("Clients saved.");
     } catch {
       toast.error("Failed to save.");
     } finally {
@@ -192,302 +146,132 @@ export default function AdminClientsPage() {
     }
   }
 
-  function updateClient(idx: number, field: keyof Client, value: string) {
-    if (!data) return;
-    const clients = [...data.clients];
-    clients[idx] = { ...clients[idx], [field]: value };
-    setData({ ...data, clients });
-  }
-
-  function updateClientLocation(idx: number, location: ClientLocation | undefined) {
-    if (!data) return;
-    const clients = [...data.clients];
-    const next: Client = { ...clients[idx], location };
-    if (!location) delete next.location;
-    clients[idx] = next;
-    setData({ ...data, clients });
-  }
-
-  function addClient() {
-    if (!data) return;
-    setData({
-      ...data,
-      clients: [...data.clients, { id: String(Date.now()), name: "", src: "" }],
-    });
-  }
-
-  function removeClient(idx: number) {
-    if (!data) return;
-    setData({ ...data, clients: data.clients.filter((_, i) => i !== idx) });
-  }
-
-  function updateTestimonial(
-    idx: number,
-    field: keyof Testimonial,
-    value: string,
-  ) {
-    if (!data) return;
-    const testimonials = [...data.testimonials];
-    testimonials[idx] = { ...testimonials[idx], [field]: value };
-    setData({ ...data, testimonials });
-  }
-
-  function addTestimonial() {
-    if (!data) return;
-    setData({
-      ...data,
-      testimonials: [
-        ...data.testimonials,
-        { id: String(Date.now()), quote: "", author: "" },
-      ],
-    });
-  }
-
-  function removeTestimonial(idx: number) {
-    if (!data) return;
-    setData({
-      ...data,
-      testimonials: data.testimonials.filter((_, i) => i !== idx),
-    });
-  }
-
-  if (!data)
-    return (
-      <div className="flex items-center justify-center h-40 text-white/40">
-        <Loader2 size={20} className="animate-spin mr-2" /> Loading…
-      </div>
-    );
+  const placed = data.clients.filter((client) => client.location).length;
+  const active = editing !== null ? data.clients[editing] : undefined;
 
   return (
-    <div className="flex flex-col h-full gap-0 font-[Inter,sans-serif]">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6 shrink-0">
-        <div>
-          <h2 className="text-xl font-bold text-white font-[Poppins,sans-serif]">
-            Clients Section
-          </h2>
-          <p className="text-[#8e8e8e] text-sm mt-1">
-            Manage client logos and testimonials.
-          </p>
-        </div>
-        <div className="flex items-center gap-6">
-          <SectionVisibilityToggle sectionId="client" />
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 bg-white hover:bg-gray-200 disabled:opacity-50 text-black text-sm font-semibold px-5 py-2.5 rounded-full transition-colors"
-          >
-            {saving ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <Save size={15} />
-            )}
-            Save Changes
-          </button>
-        </div>
-      </div>
+    <div>
+      <PageHeader
+        title="Clients"
+        description="The logos on the home page, where each sits on the world map, and the testimonials."
+        visibility={<SectionVisibilityToggle sectionId="client" label="Show section" />}
+        secondary={
+          <Button variant="secondary" onPress={addClient}>
+            <Plus size={15} />
+            Add client
+          </Button>
+        }
+        primary={<SaveButton saving={saving} onPress={save} />}
+      />
 
-      {/* ── Split layout ── */}
-      <div className="flex gap-8 flex-1 min-h-0">
-        {/* LEFT: Form */}
-        <div className="w-[420px] shrink-0 overflow-y-auto pr-2 space-y-6">
-          {/* Header text */}
-          <div className="bg-transparent border border-[#1e1e1e] rounded-2xl p-5">
-            <p className="text-white font-semibold text-sm mb-4 font-[Poppins,sans-serif]">
-              Section Header
-            </p>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Header Text</label>
-              <input
-                type="text"
-                value={data.headerText}
-                onChange={(e) =>
-                  setData({ ...data, headerText: e.target.value })
-                }
-                placeholder="Some of Our Awesome Clients:"
-                className={inputCls}
-              />
-            </div>
-          </div>
-
-          {/* Clients */}
-          <div className="bg-transparent border border-[#1e1e1e] rounded-2xl p-5">
-            <p className="text-white font-semibold text-sm mb-4 font-[Poppins,sans-serif]">
-              Client Logos ({data.clients.length})
-            </p>
-            <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-              {data.clients.map((client, i) => (
-                <div
+      <div className="grid items-start gap-6 @5xl:grid-cols-[minmax(0,1fr)_21rem]">
+        {/* the logos fill the main column */}
+        <Panel
+          title={`Client logos (${data.clients.length})`}
+          description={`${placed} of ${data.clients.length} placed on the world map. Click a logo to edit it.`}
+          actions={<SectionVisibilityToggle sectionId="client-logos" label="Show logos" />}
+        >
+          {data.clients.length === 0 ? (
+            <EmptyState>No clients yet. Use &ldquo;Add client&rdquo; to create the first one.</EmptyState>
+          ) : (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3">
+              {data.clients.map((client, index) => (
+                <button
                   key={client.id}
-                  className="border border-[#1e1e1e] rounded-xl p-3 space-y-3"
+                  type="button"
+                  onClick={() => setEditing(index)}
+                  className="group flex flex-col gap-2 rounded-2xl border border-separator bg-surface-secondary p-2 text-left transition-all hover:-translate-y-0.5 hover:border-accent focus-visible:outline-2 focus-visible:outline-accent"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-9 bg-white rounded-md relative overflow-hidden shrink-0">
-                      {client.src && (
-                        <Image
-                          src={client.src}
-                          alt={client.name}
-                          fill
-                          sizes="50px"
-                          quality={60}
-                          className="object-contain p-1"
-                        />
-                      )}
-                    </div>
-                    <div className="flex-1 w-full min-w-[200px]">
-                      <ImageUpload
-                        label="Logo Upload"
-                        value={client.src}
-                        onChange={(v) => updateClient(i, "src", v)}
-                        folder="clients"
-                      />
-                    </div>
-                    <button
-                      onClick={() => removeClient(i)}
-                      className="text-red-500/70 hover:text-red-500 shrink-0"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                  <ClientLocationField
-                    location={client.location}
-                    onChange={(location) => updateClientLocation(i, location)}
-                  />
-                </div>
+                  <span className="relative block aspect-[5/3] w-full overflow-hidden rounded-xl bg-white">
+                    {client.src ? (
+                      <Image src={client.src} alt={client.name} fill sizes="200px" className="object-contain p-3" />
+                    ) : (
+                      <span className="flex h-full items-center justify-center text-xs text-black/40">No logo</span>
+                    )}
+                  </span>
+                  <span className="px-1 pb-1">
+                    <span className="block truncate text-sm font-medium text-foreground">{client.name || "Untitled"}</span>
+                    {client.location ? (
+                      <Chip size="sm" variant="soft" color="accent" className="mt-1">
+                        <MapPin size={11} />
+                        {client.location.label.split(",")[0]}
+                      </Chip>
+                    ) : (
+                      <span className="mt-1 block text-xs text-muted">Not on the map</span>
+                    )}
+                  </span>
+                </button>
               ))}
             </div>
-            <button
-              onClick={addClient}
-              className="flex items-center gap-2 text-white hover:text-gray-300 text-xs font-medium mt-3 transition-colors"
-            >
-              <Plus size={13} /> Add Client
-            </button>
-          </div>
+          )}
+        </Panel>
 
-          {/* Testimonials */}
-          <div className="bg-transparent border border-[#1e1e1e] rounded-2xl p-5">
-            <p className="text-white font-semibold text-sm mb-4 font-[Poppins,sans-serif]">
-              Testimonials
-            </p>
-            <div className="space-y-3">
-              {data.testimonials.map((t, i) => (
-                <div
-                  key={t.id}
-                  className="border border-[#1e1e1e] rounded-xl p-4 space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={labelCls}>Testimonial {i + 1}</span>
-                    <button
-                      onClick={() => removeTestimonial(i)}
-                      className="text-red-500/70 hover:text-red-500"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className={labelCls}>Quote</label>
-                    <textarea
-                      rows={3}
-                      value={t.quote}
-                      onChange={(e) =>
-                        updateTestimonial(i, "quote", e.target.value)
-                      }
-                      placeholder="Client testimonial..."
-                      className={`${inputCls} resize-none`}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className={labelCls}>Author</label>
-                    <input
-                      type="text"
-                      value={t.author}
-                      onChange={(e) =>
-                        updateTestimonial(i, "author", e.target.value)
-                      }
-                      placeholder="~ Client Name"
-                      className={inputCls}
-                    />
-                  </div>
+        {/* heading and testimonials sit beside them */}
+        <div className="flex flex-col gap-6 @5xl:sticky @5xl:top-24">
+          <Panel title="Heading">
+            <TextInput label="Section heading" value={data.headerText} onChange={(value) => change({ headerText: value })} placeholder="Some of Our Awesome Clients:" />
+          </Panel>
+
+          <Panel
+            title="Testimonials"
+            actions={
+              <Button size="sm" variant="secondary" onPress={() => change({ testimonials: [...data.testimonials, { id: String(Date.now()), quote: "", author: "" }] })}>
+                <Plus size={14} />
+                Add
+              </Button>
+            }
+          >
+            <SectionVisibilityToggle sectionId="client-testimonials" label="Show testimonials" />
+            {data.testimonials.length === 0 ? (
+              <p className="text-sm italic text-muted">No testimonials yet.</p>
+            ) : (
+              data.testimonials.map((testimonial, index) => (
+                <div key={testimonial.id} className="flex flex-col gap-3 rounded-2xl border border-separator p-3">
+                  <TextAreaInput label="Quote" value={testimonial.quote} onChange={(value) => updateTestimonial(index, { quote: value })} rows={3} />
+                  <TextInput label="Author" value={testimonial.author} onChange={(value) => updateTestimonial(index, { author: value })} placeholder="~ Client name" />
+                  <Button size="sm" variant="danger-soft" className="w-fit" onPress={() => change({ testimonials: data.testimonials.filter((_, i) => i !== index) })}>
+                    <Trash2 size={13} />
+                    Remove
+                  </Button>
                 </div>
-              ))}
-              <button
-                onClick={addTestimonial}
-                className="flex items-center gap-2 text-white hover:text-gray-300 text-xs font-medium mt-1 transition-colors"
-              >
-                <Plus size={13} /> Add Testimonial
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT: Live preview mirroring main site */}
-        <div className="flex-1 min-w-0 overflow-hidden rounded-2xl border border-[#1e1e1e] bg-black flex flex-col">
-          <div className="px-5 py-3 border-b border-[#1e1e1e] shrink-0">
-            <span className="text-[10px] font-semibold text-[#8e8e8e] uppercase tracking-widest">
-              Live Preview — Clients Section
-            </span>
-          </div>
-
-          <div className="flex-1 overflow-y-auto flex flex-col justify-center items-center px-8 py-10 gap-10">
-            {/* Header */}
-            <p className="text-xl md:text-2xl italic font-light tracking-wide text-white font-[Poppins]">
-              {data.headerText || "Some of Our Awesome Clients:"}
-            </p>
-
-            {/* Logo grid mirroring main site */}
-            {data.clients.length > 0 && (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <div className="relative group border border-transparent p-4 -m-4 rounded-2xl hover:border-[#1e1e1e] w-full">
-                  <div className="absolute -top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black rounded-full px-2 border border-[#1e1e1e] z-10">
-                    <SectionVisibilityToggle
-                      sectionId="client-logos"
-                      label="Visible"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 w-full">
-                    <SortableContext
-                      items={data.clients}
-                      strategy={rectSortingStrategy}
-                    >
-                      {data.clients.map((client) => (
-                        <SortableClientItem key={client.id} client={client} />
-                      ))}
-                    </SortableContext>
-                  </div>
-                </div>
-              </DndContext>
+              ))
             )}
-
-            {/* Testimonials mirroring main site */}
-            {data.testimonials.length > 0 && (
-              <div className="relative group border border-transparent p-4 -m-4 rounded-2xl hover:border-[#1e1e1e] w-full max-w-3xl">
-                <div className="absolute -top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black rounded-full px-2 border border-[#1e1e1e] z-10">
-                  <SectionVisibilityToggle
-                    sectionId="client-testimonials"
-                    label="Visible"
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-20 w-full">
-                  {data.testimonials.map((t) => (
-                    <div key={t.id} className="flex flex-col">
-                      <p className="text-base italic text-white/80 mb-3 font-light leading-relaxed font-[Poppins]">
-                        &ldquo;{t.quote}&rdquo;
-                      </p>
-                      <p className="text-right text-white/60 font-light text-sm italic tracking-wide">
-                        ~ {t.author}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          </Panel>
         </div>
       </div>
+
+      <EditDrawer
+        isOpen={editing !== null}
+        onOpenChange={(open) => !open && setEditing(null)}
+        title={active?.name || "Client"}
+        description="Name, logo and where it appears on the world map."
+        footer={
+          editing !== null ? (
+            <Button variant="danger-soft" onPress={() => removeClient(editing)}>
+              <Trash2 size={14} />
+              Remove
+            </Button>
+          ) : undefined
+        }
+      >
+        {active && editing !== null && (
+          <>
+            <TextInput label="Name" value={active.name} onChange={(value) => updateClient(editing, { name: value })} placeholder="Client name" />
+            <ImageUpload label="Logo" value={active.src} onChange={(value) => updateClient(editing, { src: value })} folder="clients" />
+            <LocationField key={active.id} location={active.location} onChange={(location) => updateClient(editing, { location })} />
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="secondary" isDisabled={editing === 0} onPress={() => moveClient(editing, -1)}>
+                <ArrowLeft size={14} />
+                Move earlier
+              </Button>
+              <Button size="sm" variant="secondary" isDisabled={editing === data.clients.length - 1} onPress={() => moveClient(editing, 1)}>
+                Move later
+                <ArrowRight size={14} />
+              </Button>
+            </div>
+          </>
+        )}
+      </EditDrawer>
     </div>
   );
 }

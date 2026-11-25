@@ -57,7 +57,7 @@ export const ServicesStageSlide = memo(function ServicesStageSlide({
   return (
     <div
       ref={wrapperRef}
-      className="relative w-full snap-start"
+      className="pointer-events-none relative w-full snap-start"
       style={{ marginTop: 'calc(-1 * var(--slide-height, 100dvh))' }}
     >
       {/* scroll target for #services: just inside the section, past the logo hand-off */}

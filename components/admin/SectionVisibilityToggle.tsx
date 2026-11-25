@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Label, Spinner, Switch } from "@heroui/react";
 import { apiGetSection, apiSaveSection } from "@/lib/adminApi";
 import type { SectionsConfig } from "@/lib/dataLoader";
 import { toast } from "sonner";
@@ -11,10 +11,8 @@ interface SectionVisibilityToggleProps {
   label?: string;
 }
 
-export default function SectionVisibilityToggle({
-  sectionId,
-  label = "Visible on Website",
-}: SectionVisibilityToggleProps) {
+/** A switch that shows or hides one section of the public website. */
+export default function SectionVisibilityToggle({ sectionId, label = "Visible on website" }: SectionVisibilityToggleProps) {
   const [data, setData] = useState<SectionsConfig | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -24,32 +22,20 @@ export default function SectionVisibilityToggle({
       .catch(() => {});
   }, []);
 
-  const sectionConfig = data?.sections.find((s) => s.id === sectionId);
-  const isEnabled = sectionConfig?.enabled ?? true;
+  const isEnabled = data?.sections.find((section) => section.id === sectionId)?.enabled ?? true;
 
-  async function handleToggle() {
+  async function handleChange(next: boolean) {
     if (!data) return;
     setSaving(true);
     try {
-      const newSections = data.sections.map((s) => {
-        if (s.id === sectionId) {
-          return { ...s, enabled: !s.enabled };
-        }
-        return s;
-      });
+      const exists = data.sections.some((section) => section.id === sectionId);
+      const sections = exists
+        ? data.sections.map((section) => (section.id === sectionId ? { ...section, enabled: next } : section))
+        : [...data.sections, { id: sectionId, label, enabled: next }];
 
-      // If it doesn't exist, we could add it, but it should exist.
-      if (!data.sections.find((s) => s.id === sectionId)) {
-        newSections.push({
-          id: sectionId,
-          label: label,
-          enabled: !isEnabled,
-        });
-      }
-
-      await apiSaveSection("sections", { sections: newSections });
-      setData({ ...data, sections: newSections });
-      toast.success(isEnabled ? `${label} disabled.` : `${label} enabled.`);
+      await apiSaveSection("sections", { sections });
+      setData({ ...data, sections });
+      toast.success(next ? `${label}: shown.` : `${label}: hidden.`);
     } catch {
       toast.error("Failed to update visibility.");
     } finally {
@@ -57,32 +43,16 @@ export default function SectionVisibilityToggle({
     }
   }
 
-  if (!data) {
-    return (
-      <div className="flex items-center gap-2 text-[#8e8e8e] text-sm">
-        <Loader2 size={14} className="animate-spin" />
-      </div>
-    );
-  }
+  if (!data) return <Spinner size="sm" />;
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-xs font-semibold text-[#8e8e8e] uppercase tracking-wider font-[Inter,sans-serif]">
-        {label}
-      </span>
-      <button
-        onClick={handleToggle}
-        disabled={saving}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50 ${
-          isEnabled ? "bg-white" : "bg-[#2e2e2e]"
-        }`}
-      >
-        <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform ${
-            isEnabled ? "translate-x-6" : "translate-x-1"
-          }`}
-        />
-      </button>
-    </div>
+    <Switch className="flex-row items-center gap-3" isSelected={isEnabled} isDisabled={saving} onChange={handleChange}>
+      <Switch.Control>
+        <Switch.Thumb />
+      </Switch.Control>
+      <Switch.Content>
+        <Label>{label}</Label>
+      </Switch.Content>
+    </Switch>
   );
 }

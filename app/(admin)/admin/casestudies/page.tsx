@@ -1,18 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import { Loader2, Save, Plus, Trash2, Star, StarOff } from "lucide-react";
+import { Button } from "@heroui/react";
+import { Plus, Star, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { apiGetSection, apiSaveSection } from "@/lib/adminApi";
 import type { CaseStudiesData, CaseStudy } from "@/lib/dataLoader";
-import { pickImage } from "@/lib/imageUtils";
-import { toast } from "sonner";
-import SectionVisibilityToggle from "@/components/admin/SectionVisibilityToggle";
 import ImageUpload from "@/components/admin/ImageUpload";
-const inputCls =
-  "w-full bg-transparent border border-[#1e1e1e] rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#555] focus:outline-none focus:border-white/50 transition-all font-[Inter,sans-serif]";
-const labelCls =
-  "text-[10px] font-semibold text-[#8e8e8e] uppercase tracking-wider font-[Inter,sans-serif]";
+import ItemList from "@/components/admin/ItemList";
+import SectionVisibilityToggle from "@/components/admin/SectionVisibilityToggle";
+import {
+  ConfirmModal,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+  Panel,
+  SaveButton,
+  TextAreaInput,
+  TextInput,
+  ToggleSwitch,
+} from "@/components/admin/ui";
 
 function newCase(): CaseStudy {
   return {
@@ -34,19 +41,59 @@ export default function AdminCaseStudiesPage() {
   const [data, setData] = useState<CaseStudiesData | null>(null);
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState(0);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     apiGetSection<CaseStudiesData>("casestudies")
       .then(setData)
-      .catch(() => {});
+      .catch(() => setData({ cases: [] }));
   }, []);
 
-  async function handleSave() {
+  if (!data) return <LoadingState label="Loading case studies…" />;
+
+  const active: CaseStudy | undefined = data.cases[selected];
+
+  function update<K extends keyof CaseStudy>(field: K, value: CaseStudy[K]) {
+    setData((current) => {
+      if (!current) return current;
+      const cases = [...current.cases];
+      cases[selected] = { ...cases[selected], [field]: value };
+      return { ...current, cases };
+    });
+  }
+
+  function setSection(index: number, patch: { title?: string; content?: string }) {
+    if (!active) return;
+    const sections = [...(active.sections || [])];
+    sections[index] = { ...sections[index], ...patch };
+    update("sections", sections);
+  }
+
+  function setGallery(index: number, value: string) {
+    if (!active) return;
+    const images = [...(active.images || [])];
+    images[index] = value;
+    update("images", images);
+  }
+
+  function addCase() {
+    const next = [...data!.cases, newCase()];
+    setData({ ...data!, cases: next });
+    setSelected(next.length - 1);
+  }
+
+  function removeCase() {
+    const next = data!.cases.filter((_, index) => index !== selected);
+    setData({ ...data!, cases: next });
+    setSelected(Math.min(selected, Math.max(0, next.length - 1)));
+  }
+
+  async function save() {
     if (!data) return;
     setSaving(true);
     try {
       await apiSaveSection("casestudies", data);
-      toast.success("Case studies saved!");
+      toast.success("Case studies saved.");
     } catch {
       toast.error("Failed to save.");
     } finally {
@@ -54,501 +101,118 @@ export default function AdminCaseStudiesPage() {
     }
   }
 
-  function updateCase<K extends keyof CaseStudy>(field: K, value: CaseStudy[K]) {
-    if (!data) return;
-    const cases = [...data.cases];
-    cases[selected] = { ...cases[selected], [field]: value };
-    setData({ ...data, cases });
-  }
-
-  function addSection(caseIdx: number) {
-    if (!data) return;
-    const cases = [...data.cases];
-    const sections = [
-      ...(cases[caseIdx].sections || []),
-      { title: "", content: "" },
-    ];
-    cases[caseIdx] = { ...cases[caseIdx], sections };
-    setData({ ...data, cases });
-  }
-
-  function updateSection(
-    caseIdx: number,
-    sectionIdx: number,
-    field: "title" | "content",
-    value: string,
-  ) {
-    if (!data) return;
-    const cases = [...data.cases];
-    const sections = [...cases[caseIdx].sections];
-    sections[sectionIdx] = { ...sections[sectionIdx], [field]: value };
-    cases[caseIdx] = { ...cases[caseIdx], sections };
-    setData({ ...data, cases });
-  }
-
-  function removeSection(caseIdx: number, sectionIdx: number) {
-    if (!data) return;
-    const cases = [...data.cases];
-    const sections = cases[caseIdx].sections.filter((_, i) => i !== sectionIdx);
-    cases[caseIdx] = { ...cases[caseIdx], sections };
-    setData({ ...data, cases });
-  }
-
-  function addCase() {
-    if (!data) return;
-    const next = [...data.cases, newCase()];
-    setData({ ...data, cases: next });
-    setSelected(next.length - 1);
-  }
-
-  function removeCase(idx: number) {
-    if (!data) return;
-    const next = data.cases.filter((_, i) => i !== idx);
-    setData({ ...data, cases: next });
-    setSelected(Math.min(selected, Math.max(0, next.length - 1)));
-  }
-
-  if (!data)
-    return (
-      <div className="flex items-center justify-center h-40 text-white/40">
-        <Loader2 size={20} className="animate-spin mr-2" /> Loading…
-      </div>
-    );
-
-  const active = data.cases[selected];
-
   return (
-    <div className="flex flex-col h-full gap-0 font-[Inter,sans-serif]">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6 shrink-0">
-        <div>
-          <h2 className="text-xl font-bold text-white font-[Poppins,sans-serif]">
-            Case Studies
-          </h2>
-          <p className="text-[#8e8e8e] text-sm mt-1">
-            {data.cases.length} case
-            {data.cases.length === 1 ? " study" : " studies"} ·{" "}
-            {data.cases.filter((c) => c.featured).length} featured
-          </p>
-        </div>
-        <div className="flex items-center gap-6">
-          <SectionVisibilityToggle sectionId="casestudies" />
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 bg-white hover:bg-gray-200 disabled:opacity-50 text-black text-sm font-semibold px-5 py-2.5 rounded-full transition-colors"
-          >
-            {saving ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <Save size={15} />
-            )}
-            Save Changes
-          </button>
-        </div>
-      </div>
+    <div>
+      <PageHeader
+        title="Case studies"
+        description={`${data.cases.length} ${data.cases.length === 1 ? "case study" : "case studies"} · ${data.cases.filter((c) => c.featured).length} featured`}
+        visibility={<SectionVisibilityToggle sectionId="casestudies" label="Show section" />}
+        secondary={<><Button variant="secondary" onPress={addCase}>
+              <Plus size={15} />
+              Add case study
+            </Button></>}
+        primary={<SaveButton saving={saving} onPress={save} />}
+      />
 
-            {/* ── Case Studies Section Banner ── */}
-      <div className="mb-4 p-4 rounded-2xl border border-[#1e1e1e] bg-[#050505] shrink-0">
-        <ImageUpload
-          label="Case Studies Page Header / Banner"
-          value={data.heroBanner || ""}
-          onChange={(v) => setData({ ...data, heroBanner: v })}
-          folder="images/case-studies"
-        />
-      </div>
+      <Panel title="Page banner" description="The header picture of the Case Studies page." className="mb-6">
+        <ImageUpload label="Banner" value={data.heroBanner || ""} onChange={(value) => setData({ ...data, heroBanner: value })} folder="images/case-studies" />
+      </Panel>
 
-      {/* ── Split layout ── */}
-      <div className="flex gap-6 flex-1 min-h-0">
-        {/* LEFT: Case list + editor */}
-        <div className="w-[440px] shrink-0 flex flex-col gap-4 overflow-hidden">
-          {/* Case list tabs */}
-          <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1 shrink-0">
-            {data.cases.map((c, i) => (
-              <button
-                key={c.id}
-                onClick={() => setSelected(i)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-left transition-all group ${
-                  selected === i
-                    ? "bg-white text-black"
-                    : "border border-[#1e1e1e] text-[#8e8e8e] hover:text-white hover:bg-[#0a0a0a]"
-                }`}
-              >
-                {c.featured ? (
-                  <Star
-                    size={12}
-                    className={`shrink-0 ${selected === i ? "fill-black text-black" : "fill-white text-white"}`}
-                  />
-                ) : (
-                  <div className="w-3 h-3 shrink-0" />
-                )}
-                <span className="flex-1 text-sm font-medium truncate font-[Poppins,sans-serif]">
-                  {c.title || `Case Study ${i + 1}`}
-                </span>
-                <span
-                  className={`text-[10px] font-semibold uppercase tracking-wider ${selected === i ? "text-black/50" : "text-[#555]"}`}
-                >
-                  {c.category || "General"}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeCase(i);
-                  }}
-                  className={`shrink-0 ${selected === i ? "text-red-500" : "text-red-500/0 group-hover:text-red-500/70"}`}
-                >
-                  <Trash2 size={12} />
-                </button>
-              </button>
-            ))}
-            <button
-              onClick={addCase}
-              className="flex items-center gap-2 px-4 py-2 text-xs text-white hover:text-gray-300 font-medium transition-colors"
-            >
-              <Plus size={13} /> Add Case Study
-            </button>
-          </div>
+      {!active ? (
+        <EmptyState>No case studies yet. Use &ldquo;Add case study&rdquo; to create one.</EmptyState>
+      ) : (
+        <div className="grid gap-6 @5xl:grid-cols-[16rem_minmax(0,1fr)]">
+          <ItemList
+            selected={selected}
+            onSelect={setSelected}
+            items={data.cases.map((item, index) => ({
+              id: item.id ?? String(index),
+              title: item.title || `Case study ${index + 1}`,
+              subtitle: item.category || "General",
+              badge: item.featured ? <Star size={13} className="text-warning" /> : undefined,
+            }))}
+          />
 
-          {/* Editor form for selected case */}
-          {active && (
-            <div className="flex-1 overflow-y-auto pr-1 space-y-4 border border-[#1e1e1e] rounded-2xl p-5">
+          <div className="flex flex-col gap-4">
+            <Panel title="Details">
+              <div className="grid gap-4 @2xl:grid-cols-2">
+                <TextInput label="Title" value={active.title} onChange={(value) => update("title", value)} placeholder="Project title" />
+                <TextInput label="Slug (address)" value={active.slug} onChange={(value) => update("slug", value)} placeholder="my-project" />
+                <TextInput label="Category" value={active.category} onChange={(value) => update("category", value)} placeholder="Branding / Technology" />
+                <TextInput label="Location" value={active.location || ""} onChange={(value) => update("location", value)} placeholder="Kerala, India" />
+              </div>
+              <ToggleSwitch label="Featured" description="Highlighted on the case studies page" isSelected={Boolean(active.featured)} onChange={(value) => update("featured", value)} />
+            </Panel>
+
+            <Panel title="Pictures" description="If one of the two main pictures is missing, the other is used.">
+              <div className="grid gap-4 @2xl:grid-cols-2">
+                <ImageUpload label="Cover image (thumbnail)" value={active.coverImage || ""} onChange={(value) => update("coverImage", value)} folder="images/case-studies" />
+                <ImageUpload label="Hero image (banner)" value={active.heroImage || ""} onChange={(value) => update("heroImage", value)} folder="images/case-studies" />
+              </div>
               <div className="flex items-center justify-between">
-                <span className={labelCls}>
-                  Editing: Case Study {selected + 1}
-                </span>
-                <button
-                  onClick={() => updateCase("featured", !active.featured)}
-                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full transition-colors ${
-                    active.featured
-                      ? "bg-white text-black"
-                      : "border border-[#1e1e1e] text-[#8e8e8e] hover:text-white"
-                  }`}
-                >
-                  {active.featured ? (
-                    <>
-                      <Star size={11} className="fill-black text-black" />{" "}
-                      Featured
-                    </>
-                  ) : (
-                    <>
-                      <StarOff size={11} /> Set Featured
-                    </>
-                  )}
-                </button>
+                <p className="text-sm font-medium text-foreground">Gallery</p>
+                <Button size="sm" variant="secondary" onPress={() => update("images", [...(active.images || []), ""])}>
+                  <Plus size={14} />
+                  Add picture
+                </Button>
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className={labelCls}>Title</label>
-                  <input
-                    type="text"
-                    value={active.title}
-                    onChange={(e) => updateCase("title", e.target.value)}
-                    placeholder="Project title"
-                    className={inputCls}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className={labelCls}>Slug (URL)</label>
-                  <input
-                    type="text"
-                    value={active.slug}
-                    onChange={(e) => updateCase("slug", e.target.value)}
-                    placeholder="my-project"
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className={labelCls}>Category</label>
-                  <input
-                    type="text"
-                    value={active.category}
-                    onChange={(e) => updateCase("category", e.target.value)}
-                    placeholder="Branding / Technology"
-                    className={inputCls}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className={labelCls}>Location</label>
-                  <input
-                    type="text"
-                    value={active.location || ""}
-                    onChange={(e) => updateCase("location", e.target.value)}
-                    placeholder="Kerala, India"
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <p className="col-span-2 text-[11px] text-[#555] -mb-1">
-                  The website uses the Cover Image as the list thumbnail and the
-                  Hero Image as the page banner. If one is empty (or still the
-                  placeholder), the other is used.
-                </p>
-                <div className="space-y-1.5">
-                  <ImageUpload
-                    label="Cover Image (Thumbnail)"
-                    value={active.coverImage || ""}
-                    onChange={(v) => updateCase("coverImage", v)}
-                    folder="images/case-studies"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <ImageUpload
-                    label="Hero Image (Header/Banner)"
-                    value={active.heroImage || ""}
-                    onChange={(v) => updateCase("heroImage", v)}
-                    folder="images/case-studies"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-[#1e1e1e]">
-                <div className="flex items-center justify-between">
-                  <label className={labelCls}>Gallery Images</label>
-                  <button
-                    type="button"
-                    onClick={() => updateCase("images", [...(active.images || []), ""])}
-                    className="flex items-center gap-1 text-[11px] text-[#8e8e8e] hover:text-white transition-colors"
-                  >
-                    <Plus size={12} /> Add Image
-                  </button>
-                </div>
-                {(active.images || []).length === 0 ? (
-                  <p className="text-[11px] text-[#555]">
-                    No gallery images. Add as many as you like — they appear as
-                    a gallery at the bottom of the case study page.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3">
-                    {(active.images || []).map((url, gi) => (
-                      <div
-                        key={`gallery-${active.id ?? active.slug}-${gi}`}
-                        className="relative p-2 border border-[#1e1e1e] rounded-xl bg-[#050505]"
-                      >
-                        <ImageUpload
-                          label={`Gallery ${gi + 1}`}
-                          value={url}
-                          onChange={(v) =>
-                            updateCase(
-                              "images",
-                              (active.images || []).map((u, i) => (i === gi ? v : u)),
-                            )
-                          }
-                          folder="images/case-studies"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateCase(
-                              "images",
-                              (active.images || []).filter((_, i) => i !== gi),
-                            )
-                          }
-                          className="absolute top-2 right-2 text-red-500/70 hover:text-red-500 transition-colors"
-                          title="Remove gallery image"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className={labelCls}>Hero Quote (Summary)</label>
-                <textarea
-                  rows={3}
-                  value={active.heroQuote}
-                  onChange={(e) => updateCase("heroQuote", e.target.value)}
-                  placeholder="How do you take a traditional..."
-                  className={`${inputCls} resize-none`}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className={labelCls}>Introduction</label>
-                <textarea
-                  rows={4}
-                  value={active.introduction}
-                  onChange={(e) => updateCase("introduction", e.target.value)}
-                  placeholder="Client was a home decor brand..."
-                  className={`${inputCls} resize-none`}
-                />
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-[#1e1e1e]">
-                <label className={labelCls}>Content Sections</label>
-                {(active.sections || []).map((sec, si) => (
-                  <div
-                    key={si}
-                    className="flex flex-col gap-2 p-3 border border-[#1e1e1e] rounded-xl bg-[#050505] relative group"
-                  >
-                    <input
-                      type="text"
-                      value={sec.title}
-                      onChange={(e) =>
-                        updateSection(selected, si, "title", e.target.value)
-                      }
-                      placeholder="Section Title (optional)"
-                      className={`${inputCls} py-1.5`}
-                    />
-                    <textarea
-                      rows={3}
-                      value={sec.content}
-                      onChange={(e) =>
-                        updateSection(selected, si, "content", e.target.value)
-                      }
-                      placeholder="Section Content"
-                      className={`${inputCls} py-1.5 resize-none`}
-                    />
-                    <button
-                      onClick={() => removeSection(selected, si)}
-                      className="absolute top-3 right-3 text-red-500/0 group-hover:text-red-500/70 hover:!text-red-500 transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+              <div className="grid gap-4 @2xl:grid-cols-2">
+                {(active.images || []).map((url, index) => (
+                  <div key={index} className="flex flex-col gap-2">
+                    <ImageUpload label={`Gallery ${index + 1}`} value={url} onChange={(value) => setGallery(index, value)} folder="images/case-studies" />
+                    <Button size="sm" variant="danger-soft" className="w-fit" onPress={() => update("images", (active.images || []).filter((_, i) => i !== index))}>
+                      <Trash2 size={13} />
+                      Remove
+                    </Button>
                   </div>
                 ))}
-                <button
-                  onClick={() => addSection(selected)}
-                  className="mt-2 flex items-center justify-center w-full gap-2 px-4 py-2 border border-[#1e1e1e] border-dashed rounded-xl text-xs text-[#8e8e8e] hover:text-white hover:border-[#333] transition-all"
-                >
-                  <Plus size={13} /> Add Content Section
-                </button>
               </div>
-            </div>
-          )}
-          {data.cases.length === 0 && (
-            <div className="flex-1 flex items-center justify-center border border-[#1e1e1e] rounded-2xl text-[#555] text-sm italic">
-              No case studies yet. Click &ldquo;Add Case Study&rdquo; above.
-            </div>
-          )}
-        </div>
+            </Panel>
 
-        {/* RIGHT: Live preview */}
-        <div className="flex-1 min-w-0 overflow-hidden rounded-2xl border border-[#1e1e1e] bg-black flex flex-col">
-          <div className="px-5 py-3 border-b border-[#1e1e1e] shrink-0 flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-[#8e8e8e] uppercase tracking-widest">
-              Live Preview — Case Studies
-            </span>
-            <span className="text-[10px] text-[#555]">
-              {data.cases.filter((c) => c.featured).length} featured ·{" "}
-              {data.cases.length} total
-            </span>
-          </div>
+            <Panel title="Text">
+              <TextAreaInput label="Hero quote (summary)" value={active.heroQuote} onChange={(value) => update("heroQuote", value)} rows={3} placeholder="How do you take a traditional…" />
+              <TextAreaInput label="Introduction" value={active.introduction} onChange={(value) => update("introduction", value)} rows={4} placeholder="The client was a home décor brand…" />
+            </Panel>
 
-          <div className="flex-1 overflow-y-auto p-6 bg-[#0a0a0a]">
-            {active && (
-              <div
-                className={`mx-auto max-w-2xl bg-black rounded-xl overflow-hidden border border-[#1e1e1e] pb-10 shadow-xl`}
-              >
-                <div className="relative w-full h-[220px]">
-                  {pickImage(active.heroImage, active.coverImage) ? (
-                    <Image
-                      src={pickImage(active.heroImage, active.coverImage)}
-                      alt={active.title}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[#111] text-[#555]">
-                      No Hero Image
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/60" />
-                  <div className="absolute inset-0 flex flex-col justify-between p-6">
-                    <h1 className="text-white font-[Poppins] font-bold text-2xl">
-                      {active.title || "Untitled Title"}
-                    </h1>
-                    <p className="text-white font-[Poppins] italic text-sm line-clamp-3">
-                      &quot;{active.heroQuote || "Hero quote text goes here"}&quot;
-                    </p>
-                  </div>
+            <Panel
+              title="Content sections"
+              actions={
+                <Button size="sm" variant="secondary" onPress={() => update("sections", [...(active.sections || []), { title: "", content: "" }])}>
+                  <Plus size={14} />
+                  Add section
+                </Button>
+              }
+            >
+              {(active.sections || []).length === 0 && <p className="text-sm italic text-muted">No sections yet.</p>}
+              {(active.sections || []).map((section, index) => (
+                <div key={index} className="flex flex-col gap-3 rounded-2xl border border-separator p-4">
+                  <TextInput label="Section title (optional)" value={section.title} onChange={(value) => setSection(index, { title: value })} />
+                  <TextAreaInput label="Content" value={section.content} onChange={(value) => setSection(index, { content: value })} rows={4} />
+                  <Button size="sm" variant="danger-soft" className="w-fit" onPress={() => update("sections", active.sections.filter((_, i) => i !== index))}>
+                    <Trash2 size={13} />
+                    Remove section
+                  </Button>
                 </div>
-
-                <div className="px-6 pt-8 space-y-6">
-                  {active.introduction && (
-                    <p className="text-gray-300 font-[Poppins] text-sm leading-relaxed">
-                      {active.introduction}
-                    </p>
-                  )}
-
-                  <div className="space-y-6 mt-6">
-                    {(active.sections || []).map((sec, idx) => (
-                      <section key={idx}>
-                        {sec.title && (
-                          <h2 className="text-white font-[Poppins] font-bold text-base mb-2">
-                            {sec.title}
-                          </h2>
-                        )}
-                        {sec.content && (
-                          <p className="text-gray-300 font-[Poppins] text-sm leading-relaxed">
-                            {sec.content}
-                          </p>
-                        )}
-                      </section>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Grid preview for the rest */}
-            <div className="mt-10 grid grid-cols-2 lg:grid-cols-3 gap-4 border-t border-[#1e1e1e] pt-6 relative group border border-transparent p-4 -m-4 rounded-2xl hover:border-[#1e1e1e]">
-              <div className="absolute -top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black rounded-full px-2 border border-[#1e1e1e] z-10">
-                <SectionVisibilityToggle
-                  sectionId="casestudies-list"
-                  label="Visible"
-                />
-              </div>
-              {data.cases.map((c, i) => (
-                <button
-                  key={c.id}
-                  onClick={() => setSelected(i)}
-                  className={`border rounded-xl overflow-hidden text-left transition-all ${selected === i ? "border-white" : "border-[#1e1e1e] hover:border-[#333]"}`}
-                >
-                  <div className="h-24 bg-[#111] relative overflow-hidden">
-                    {pickImage(c.coverImage, c.heroImage) ? (
-                      <Image
-                        src={pickImage(c.coverImage, c.heroImage)}
-                        alt={c.title}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[#555] text-[10px]">
-                        No image
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 bg-[#050505]">
-                    <div className="flex items-center gap-1 mb-1">
-                      {c.featured && (
-                        <Star
-                          size={9}
-                          className="fill-white text-white shrink-0"
-                        />
-                      )}
-                      <span className="text-[9px] font-semibold text-[#555] uppercase tracking-wider truncate">
-                        {c.category}
-                      </span>
-                    </div>
-                    <p className="text-white text-xs font-semibold font-[Poppins,sans-serif] leading-tight line-clamp-1">
-                      {c.title || "Untitled"}
-                    </p>
-                  </div>
-                </button>
               ))}
+            </Panel>
+
+            <div>
+              <Button variant="danger-soft" onPress={() => setConfirmDelete(true)}>
+                <Trash2 size={15} />
+                Delete this case study
+              </Button>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      <ConfirmModal
+        isOpen={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Delete this case study?"
+        message={`“${active?.title || "Untitled"}” will be removed once you save.`}
+        onConfirm={removeCase}
+      />
     </div>
   );
 }

@@ -229,3 +229,110 @@ body .admin-panel textarea {
     animation: none;
   }
 }
+
+/* Liquid-fill buttons: the fill rises from the bottom edge, its wavy top slides sideways. */
+.liquid-button-fill {
+  transform: translateY(calc(100% + 0.8rem));
+  transition: transform 0.9s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.liquid-button:hover .liquid-button-fill,
+.liquid-button:focus-visible .liquid-button-fill {
+  transform: translateY(0);
+}
+
+.liquid-button-wave {
+  animation: liquid-wave 1.8s linear infinite;
+}
+
+@keyframes liquid-wave {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-button-wave {
+    animation: none;
+  }
+  .liquid-button-fill {
+    transition-duration: 0.01ms;
+  }
+}
+
+/* "Scroll down" hint: the dot inside the mouse outline drifts down and fades, then repeats. */
+.scroll-hint-dot {
+  animation: scroll-hint-drift 1.8s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+}
+
+@keyframes scroll-hint-drift {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  25% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-hint-dot {
+    animation: none;
+  }
+}
+
+/* "Scroll down" hint: the whole hint bobs, and a ring pulses out of the mouse outline. */
+.scroll-hint-bob {
+  animation: scroll-hint-bob 1.8s ease-in-out infinite;
+}
+
+@keyframes scroll-hint-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(7px);
+  }
+}
+
+.scroll-hint-pulse::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  border: 1.5px solid currentColor;
+  opacity: 0;
+  animation: scroll-hint-ring 1.8s ease-out infinite;
+}
+
+@keyframes scroll-hint-ring {
+  0% {
+    opacity: 0.75;
+    transform: scale(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-hint-bob,
+  .scroll-hint-pulse::after {
+    animation: none;
+  }
+}
+
+/* products hero hint animations */

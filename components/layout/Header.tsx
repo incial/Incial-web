@@ -15,6 +15,11 @@ interface HeaderProps {
   variant?: "default" | "pill";
   hidden?: boolean;
   hideMobile?: boolean;
+  /**
+   * For light pages: the white header ink is drawn with a difference blend, so it reads as dark on
+   * a light page and as white over anything dark.
+   */
+  blend?: boolean;
 }
 
 export default function Header({
@@ -23,6 +28,7 @@ export default function Header({
   variant = "default",
   hidden,
   hideMobile = false,
+  blend = false,
 }: HeaderProps) {
   const pathname = usePathname();
   const shouldHideMobile = hideMobile || pathname === "/";
@@ -80,6 +86,7 @@ export default function Header({
   }, [menuOpen, pathname]);
 
   const shouldHide = !menuOpen && (hidden ?? scrollHidden);
+  const blendClass = blend ? " mix-blend-difference" : "";
 
   if (variant === "pill") {
     return (
@@ -106,9 +113,12 @@ export default function Header({
           </motion.div>
         )}
 
-        <AnimatePresence>
-          {!shouldHideMobile && menuOpen && <MobileMenu isOpen={menuOpen} onClose={onToggleMenu} />}
-        </AnimatePresence>
+        {/* always mounted: the menu animates itself in and out */}
+        {!shouldHideMobile && (
+          <div className="md:hidden">
+            <MobileMenu isOpen={menuOpen} onClose={onToggleMenu} />
+          </div>
+        )}
 
         {/* ── DESKTOP pill header (unchanged) ── */}
         <motion.header
@@ -156,7 +166,7 @@ export default function Header({
           animate={{ y: shouldHide ? -96 : 0, opacity: shouldHide ? 0 : 1 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           style={{ pointerEvents: menuOpen || shouldHide ? "none" : "auto" }}
-          className="fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-transparent px-6 py-5 md:hidden"
+          className={`fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-transparent px-6 py-5 md:hidden${blendClass}`}
         >
           <div className="text-sm font-light tracking-wide text-white">
             We Are <span className="font-bold">incial.</span>
@@ -171,14 +181,16 @@ export default function Header({
         </motion.div>
       )}
 
+      {/* always mounted: the phone menu animates itself in and out */}
+      {!shouldHideMobile && (
+        <div className="md:hidden">
+          <MobileMenu isOpen={menuOpen} onClose={onToggleMenu} />
+        </div>
+      )}
+
       <AnimatePresence>
         {menuOpen && (
           <>
-            {!shouldHideMobile && (
-              <div className="md:hidden">
-                <MobileMenu isOpen={menuOpen} onClose={onToggleMenu} />
-              </div>
-            )}
             <div className="hidden md:block">
               <NavMenu onClose={onToggleMenu} />
             </div>
@@ -195,7 +207,7 @@ export default function Header({
           opacity: shouldHide ? 0 : 1,
         }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed left-0 right-0 top-0 z-50 origin-top items-center justify-between px-10 pb-4 pt-10 md:px-20 hidden md:flex"
+        className={`fixed left-0 right-0 top-0 z-50 origin-top items-center justify-between px-10 pb-4 pt-10 md:px-20 hidden md:flex${blendClass}`}
       >
         <div className="text-xl font-light tracking-wide text-white">
           We Are <span className="font-bold">incial.</span>

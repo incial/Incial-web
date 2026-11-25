@@ -292,7 +292,8 @@ export default function ServicesScroller({
       ref={containerRef}
       aria-label="Our services"
       style={{ height: `${scrollSteps * SCROLL_PER_STEP_VH + 100 + holdVh}vh` }}
-      className={`relative text-white ${bridge ? "bg-transparent" : "bg-black"}`}
+      // in bridge mode this section is laid over the hero, so it must not swallow the hero's clicks
+      className={`relative text-white ${bridge ? "pointer-events-none bg-transparent" : "bg-black"}`}
     >
       <div
         className={`sticky top-0 h-screen w-full overflow-hidden supports-[height:100dvh]:h-dvh ${bridge ? "pointer-events-none" : ""}`}
