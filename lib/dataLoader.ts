@@ -1,17 +1,12 @@
-import fs from "fs";
-import path from "path";
+import { requireContent } from "./contentStore";
 import { normalizeImageUrl, pickImage } from "./imageUtils";
 
 export { normalizeImageUrl };
 
-function readData<T>(filename: string): T {
-  const filePath = path.join(process.cwd(), "data", filename);
-  const raw = fs.readFileSync(filePath, "utf-8");
-  return JSON.parse(raw) as T;
-}
+// Content comes from the shared content store (the database, falling back to data/*.json).
 
-export function loadBlogsData(): BlogsData {
-  const data = readData<BlogsData>("blogs.json");
+export async function loadBlogsData(): Promise<BlogsData> {
+  const data = await requireContent<BlogsData>("blogs");
   const normalizePost = (p: BlogPost): BlogPost => ({
     ...p,
     image: normalizeImageUrl(p.image),
@@ -26,14 +21,32 @@ export function loadBlogsData(): BlogsData {
   };
 }
 
-export function loadBlogBySlug(slug: string): BlogPost | null {
-  const data = loadBlogsData();
+export async function loadBlogBySlug(slug: string): Promise<BlogPost | null> {
+  const data = await loadBlogsData();
   const all = [...data.popularPosts, ...data.newestPosts];
   return all.find((p) => p.slug === slug) ?? null;
 }
 
-export function loadCaseStudiesData(): CaseStudiesData {
-  const data = readData<CaseStudiesData>("casestudies.json");
+export async function loadAboutData(): Promise<AboutData> {
+  const data = await requireContent<AboutData>("about");
+  return {
+    ...data,
+    heroBanner: normalizeImageUrl(data.heroBanner),
+    brandImage: normalizeImageUrl(data.brandImage),
+    impactImage: normalizeImageUrl(data.impactImage),
+    teamMembers: (data.teamMembers || []).map((m) => ({
+      ...m,
+      img: normalizeImageUrl(m.img),
+    })),
+    awards: (data.awards || []).map((a) => ({
+      ...a,
+      icon: normalizeImageUrl(a.icon),
+    })),
+  };
+}
+
+export async function loadCaseStudiesData(): Promise<CaseStudiesData> {
+  const data = await requireContent<CaseStudiesData>("casestudies");
   return {
     heroBanner: normalizeImageUrl(data.heroBanner),
     cases: (data.cases || []).map((c) => ({

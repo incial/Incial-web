@@ -4,6 +4,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
+import { preloadCachedImage } from "@/lib/publicCache";
 
 interface Rect {
   top: number;
@@ -49,10 +50,7 @@ export function projectPictureRect(): Rect {
 /** Starts the picture's trip from its place in the gallery to its place on the project page. */
 export function startCaseZoom(request: ZoomRequest) {
   for (const src of request.preload ?? []) {
-    if (src) {
-      const image = new window.Image();
-      image.src = src;
-    }
+    preloadCachedImage(src);
   }
   publish(request);
 }

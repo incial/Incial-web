@@ -23,6 +23,15 @@ model Service {
   updatedAt   DateTime @updatedAt
 }
 
+/// Site content edited in the admin panel (about, blogs, clients, ... and the media manifest),
+/// one JSON document per section, shared by every environment that uses this database.
+/// Created by lib/contentStore.ts if it does not exist yet.
+model ContentDocument {
+  key       String   @id
+  data      Json
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
 model ContactSubmission {
   id        String   @id @default(uuid())
   name      String

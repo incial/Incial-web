@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { navLinks, socialLinks } from '@/lib/constants';
 import type { SectionConfig } from '@/lib/dataLoader';
-import { fetchJsonIfAvailable } from '@/lib/adminApi';
+import { fetchCachedJson } from '@/lib/publicCache';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -62,7 +62,7 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
   useEffect(() => {
     if (!isOpen) return;
 
-    fetchJsonIfAvailable<{ sections: SectionConfig[] }>('/api/admin/sections')
+    fetchCachedJson<{ sections: SectionConfig[] }>('/api/admin/sections')
       .then((data) => {
         const enabled = data?.sections
           ? data.sections.filter((s) => s.enabled).map((s) => s.id)

@@ -9,6 +9,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-poppins);
+  /* one typeface across the site: index numbers and accent words use Poppins too */
+  --font-mono: var(--font-poppins);
+  --font-serif: var(--font-poppins);
   --font-noto-stack: var(--font-noto-sans), var(--font-noto-sans-jp),
     var(--font-noto-sans-kr), var(--font-noto-sans-malayalam),
     var(--font-noto-sans-devanagari), var(--font-noto-sans-arabic);
@@ -264,36 +267,7 @@ body .admin-panel textarea {
   }
 }
 
-/* "Scroll down" hint: the dot inside the mouse outline drifts down and fades, then repeats. */
-.scroll-hint-dot {
-  animation: scroll-hint-drift 1.8s cubic-bezier(0.45, 0, 0.25, 1) infinite;
-}
-
-@keyframes scroll-hint-drift {
-  0% {
-    opacity: 0;
-    transform: translateY(0);
-  }
-  25% {
-    opacity: 1;
-  }
-  80% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .scroll-hint-dot {
-    animation: none;
-  }
-}
-
-/* "Scroll down" hint: the whole hint bobs, and a ring pulses out of the mouse outline. */
+/* "Scroll down" hint: staggered downward cascade on the double chevrons + gentle bob. */
 .scroll-hint-bob {
   animation: scroll-hint-bob 1.8s ease-in-out infinite;
 }
@@ -304,36 +278,115 @@ body .admin-panel textarea {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(7px);
+    transform: translateY(4px);
   }
 }
 
-.scroll-hint-pulse::after {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  border-radius: 9999px;
-  border: 1.5px solid currentColor;
-  opacity: 0;
-  animation: scroll-hint-ring 1.8s ease-out infinite;
+.scroll-arrow-top {
+  animation: scroll-arrow-cascade 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-@keyframes scroll-hint-ring {
-  0% {
-    opacity: 0.75;
-    transform: scale(0.85);
-  }
+.scroll-arrow-bottom {
+  animation: scroll-arrow-cascade 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.22s infinite;
+}
+
+@keyframes scroll-arrow-cascade {
+  0%,
   100% {
-    opacity: 0;
-    transform: scale(1.7);
+    opacity: 0.35;
+    transform: translateY(-1px);
+  }
+  45% {
+    opacity: 1;
+    transform: translateY(2px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .scroll-hint-bob,
-  .scroll-hint-pulse::after {
+  .scroll-arrow-top,
+  .scroll-arrow-bottom {
     animation: none;
   }
 }
 
 /* products hero hint animations */
+
+/* ── Micro-interactions: one set of easings and timings for the whole site ──
+ * Every link, button and field eases its colour, border, shadow and opacity in and out, buttons
+ * give a small press, and keyboard focus rings slide into place. These are base-layer defaults:
+ * any component with its own transition classes keeps them. `transform` is never transitioned
+ * here, so elements moved by framer-motion are not slowed down; the press uses the separate
+ * `scale` property instead.
+ */
+:root {
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-press: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --micro-fast: 160ms;
+  --micro: 320ms;
+  --micro-slow: 520ms;
+}
+
+@layer base {
+  a,
+  button,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  summary,
+  label,
+  input,
+  textarea,
+  select {
+    transition-property: color, background-color, border-color, outline-color, outline-offset,
+      text-decoration-color, opacity, box-shadow, filter, scale;
+    transition-duration: var(--micro);
+    transition-timing-function: var(--ease-out-soft);
+  }
+
+  /* a press: the button dips a touch, then springs back when released */
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    scale: 0.97;
+    transition-duration: var(--micro-fast);
+    transition-timing-function: var(--ease-in-out-soft);
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    transition-timing-function: var(--ease-press);
+  }
+
+  /* text links: underlines sit a little below the letters */
+  a {
+    text-underline-offset: 0.22em;
+  }
+
+  /* keyboard focus: the ring eases out from the element */
+  :focus-visible {
+    outline: 2px solid #56a6ff;
+    outline-offset: 4px;
+  }
+  :focus:not(:focus-visible) {
+    outline-offset: 0;
+  }
+
+  img {
+    transition-property: opacity, filter, scale;
+    transition-duration: var(--micro-slow);
+    transition-timing-function: var(--ease-out-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @layer base {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 1ms !important;
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

@@ -10,7 +10,7 @@ This file defines mandatory operating guardrails and senior-engineering standard
 - **Package Manager**: **pnpm only** (`pnpm-lock.yaml`, `pnpm-workspace.yaml`, Node `>= 20.9.0`). Never use `npm` or `yarn`, and never commit `package-lock.json` or `yarn.lock`.
 - **Path Alias**: `@/*` maps to the repository root (`tsconfig.json`).
 - **Two Separate Data Stores**:
-  1. **CMS JSON files** in `data/*.json` (`about`, `clients`, `trust`, `blogs`, `services`, `casestudies`, `products`, `sections`, plus `data/media-manifest.json`) — edited via `/admin/*` -> `PUT /api/admin/[section]`, read via `lib/dataLoader.ts` or `/api/admin/[section]`.
+  1. **CMS content** (`about`, `clients`, `trust`, `blogs`, `services`, `casestudies`, `products`, `sections`, plus the `media-manifest`) — stored as one JSON document per section in the Neon `ContentDocument` table through `lib/contentStore.ts` (table created on first use). `data/*.json` is the fallback when `DATABASE_URL` is unset or the database is unreachable, and the source the running production server copies in on first read. Edited via `/admin/*` -> `PUT /api/admin/[section]`, read via `lib/dataLoader.ts` or `/api/admin/[section]`.
   2. **Neon Serverless Postgres** via Prisma (`prisma/schema.prisma`: `Service`, `ContactSubmission`) — accessed through `@/lib/prisma`, `lib/actions/service.actions.ts`, and `app/api/contact/route.ts`.
 - **Dual UI Architecture**: Desktop views (`app/(marketing)`, `components/sections`, `components/features`) and dedicated mobile views (`components/mobile/`, switched via `hooks/useDevice.ts` at `<= 768px`).
 - **Host Constraints**: `pnpm start` runs Node with `--max-old-space-size=512` (512 MB heap cap for small hosts). Avoid heavy runtime libraries and in-memory buffering of large files.
@@ -116,12 +116,13 @@ Media storage (`lib/s3.ts`, `lib/mediaStore.ts`, `lib/uploadRules.ts`, `app/api/
 
 ---
 
-## 6. CMS Data (`data/*.json`) & Environment Divergence
+## 6. CMS Content Store (`lib/contentStore.ts`)
 
-- Admin edits on production write to `data/*.json` on the live server filesystem (`docs/deployment.md`).
-- **Local `data/*.json` and production `data/*.json` diverge.**
-- Agents must **not** overwrite or reformat unrelated `data/*.json` files while working on code changes.
-- Before merging `dev` -> `main` or deploying, remind the user/maintainer to check whether production `data/*.json` edits need to be pulled (`GET /api/admin/<section>`) or excluded from deployment so live CMS edits are not overwritten.
+- Admin edits are saved to the `ContentDocument` table in the database `DATABASE_URL` points to, so every environment using that database (production and development) sees the same content, and deploys never overwrite live edits.
+- To work on a copy instead of live content, point development at a Neon branch of the production database (it can be reset from production at any time).
+- Reads fall back to `data/*.json` when there is no database or it is unreachable (for 60s after a failure). Saves never fall back: with `DATABASE_URL` set they go to the database or fail visibly.
+- The running production server copies a section from its `data/*.json` into the table the first time it reads a section that is not there yet; builds and development never copy files in.
+- Agents must **not** write to the `ContentDocument` table or overwrite unrelated `data/*.json` files while working on code changes.
 
 ---
 

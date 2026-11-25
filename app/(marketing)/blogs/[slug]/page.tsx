@@ -12,7 +12,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = loadBlogBySlug(slug);
+  const post = await loadBlogBySlug(slug);
   if (!post) return { title: "Blog", robots: { index: false } };
   const description = `Read "${post.title}" by ${post.author} — ${post.mins} min read.`;
   const url = `/blogs/${post.slug}`;
@@ -39,12 +39,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = loadBlogBySlug(slug);
+  const post = await loadBlogBySlug(slug);
 
   if (!post) notFound();
 
   // Build related posts: same category, exclude current
-  const data = loadBlogsData();
+  const data = await loadBlogsData();
   const pool =
     post.category === "popular" ? data.popularPosts : data.newestPosts;
   const relatedPosts = pool.filter((p) => p.slug !== slug).slice(0, 3);

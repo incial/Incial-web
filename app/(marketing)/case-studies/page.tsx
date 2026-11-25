@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   openGraph: { title: "Case Studies", url: "/case-studies" },
 };
 
-export default function CaseStudiesPage() {
-  const data = loadCaseStudiesData();
+export default async function CaseStudiesPage() {
+  const data = await loadCaseStudiesData();
   const caseStudies = data.cases.filter((c) => c.slug);
 
   return (

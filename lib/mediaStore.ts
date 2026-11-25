@@ -1,11 +1,8 @@
-import fs from "fs";
-import path from "path";
 import { DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
 import { S3_ROOT, getS3Client, publicUrlFor, type S3Config } from "@/lib/s3";
+import { invalidateMediaResponseCache } from "@/lib/mediaResponseCache";
+import { MEDIA_MANIFEST_KEY, readAllContent, readContent, writeContent } from "@/lib/contentStore";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-/** A record of every file uploaded through the admin, so the library works even when listing the bucket is not allowed. */
-const MANIFEST = path.join(DATA_DIR, "media-manifest.json");
 /** Folders that are not for the website (data backups) and never appear in the library. */
 const HIDDEN = [`${S3_ROOT}/backups/`, `${S3_ROOT}/_check/`];
 
@@ -50,28 +47,23 @@ const metaCache = new Map<string, ManifestEntry>();
 
 // ── manifest ──────────────────────────────────────────────────────────────
 
-function readManifest(): ManifestEntry[] {
-  try {
-    const parsed = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+// kept in the shared content store with the site content (see lib/contentStore.ts)
+async function readManifest(): Promise<ManifestEntry[]> {
+  const record = await readContent<unknown>(MEDIA_MANIFEST_KEY);
+  return Array.isArray(record?.data) ? (record.data as ManifestEntry[]) : [];
 }
 
-function writeManifest(entries: ManifestEntry[]) {
-  const tmp = `${MANIFEST}.${process.pid}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(entries, null, 2), "utf8");
-  fs.renameSync(tmp, MANIFEST);
+async function writeManifest(entries: ManifestEntry[]) {
+  await writeContent(MEDIA_MANIFEST_KEY, entries);
 }
 
-export function recordFile(entry: ManifestEntry) {
-  const entries = readManifest().filter((existing) => existing.key !== entry.key);
-  writeManifest([...entries, entry]);
+export async function recordFile(entry: ManifestEntry) {
+  const entries = (await readManifest()).filter((existing) => existing.key !== entry.key);
+  await writeManifest([...entries, entry]);
 }
 
-function forgetFile(key: string) {
-  writeManifest(readManifest().filter((entry) => entry.key !== key));
+async function forgetFile(key: string) {
+  await writeManifest((await readManifest()).filter((entry) => entry.key !== key));
 }
 
 // ── where files are used ──────────────────────────────────────────────────
@@ -88,22 +80,11 @@ export function keyFromUrl(value: string, config: S3Config): string | null {
   return null;
 }
 
-function dataFiles(): string[] {
-  return fs.readdirSync(DATA_DIR).filter((file) => file.endsWith(".json") && file !== path.basename(MANIFEST));
-}
-
 /** Every stored file the site content refers to, with a readable "where" for each use. */
-export function scanUsage(config: S3Config): Map<string, MediaUsage[]> {
+export async function scanUsage(config: S3Config): Promise<Map<string, MediaUsage[]>> {
   const usage = new Map<string, MediaUsage[]>();
-  for (const file of dataFiles()) {
-    const section = file.replace(/\.json$/, "");
+  for (const { key: section, data } of await readAllContent()) {
     const sectionLabel = SECTION_LABELS[section] ?? section;
-    let data: unknown;
-    try {
-      data = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), "utf8"));
-    } catch {
-      continue;
-    }
     const walk = (value: unknown, owner: string) => {
       if (typeof value === "string") {
         const key = keyFromUrl(value, config);
@@ -130,12 +111,10 @@ export function scanUsage(config: S3Config): Map<string, MediaUsage[]> {
   return usage;
 }
 
-/** Points every use of one file at another, across all site content. Returns how many files changed. */
-export function replaceInContent(oldKey: string, newUrl: string, config: S3Config): number {
+/** Points every use of one file at another, across all site content. Returns how many sections changed. */
+export async function replaceInContent(oldKey: string, newUrl: string, config: S3Config): Promise<number> {
   let changed = 0;
-  for (const file of dataFiles()) {
-    const full = path.join(DATA_DIR, file);
-    const data = JSON.parse(fs.readFileSync(full, "utf8"));
+  for (const { key: section, data } of await readAllContent()) {
     let touched = false;
     const swap = (value: unknown): unknown => {
       if (typeof value === "string") {
@@ -151,9 +130,7 @@ export function replaceInContent(oldKey: string, newUrl: string, config: S3Confi
     };
     const next = swap(data);
     if (touched) {
-      const tmp = `${full}.${process.pid}.tmp`;
-      fs.writeFileSync(tmp, JSON.stringify(next, null, 2), "utf8");
-      fs.renameSync(tmp, full);
+      await writeContent(section, next);
       changed++;
     }
   }
@@ -221,7 +198,7 @@ async function describe(config: S3Config, entries: ManifestEntry[]): Promise<Man
  * the files the site content refers to plus everything uploaded through the admin.
  */
 export async function listMedia(config: S3Config): Promise<{ source: "bucket" | "index"; files: MediaFile[] }> {
-  const usage = scanUsage(config);
+  const usage = await scanUsage(config);
   let source: "bucket" | "index" = "bucket";
   let entries: ManifestEntry[];
   try {
@@ -230,7 +207,7 @@ export async function listMedia(config: S3Config): Promise<{ source: "bucket" | 
     if (!isListDenied(error)) throw error;
     source = "index";
     const known = new Map<string, ManifestEntry>();
-    for (const entry of readManifest()) known.set(entry.key, entry);
+    for (const entry of await readManifest()) known.set(entry.key, entry);
     for (const key of usage.keys()) if (!known.has(key)) known.set(key, { key });
     entries = [...known.values()];
   }
@@ -262,11 +239,13 @@ export async function putFile(config: S3Config, key: string, body: Buffer, conte
   );
   const entry: ManifestEntry = { key, size: body.length, contentType, lastModified: new Date().toISOString() };
   metaCache.set(key, entry);
-  recordFile(entry);
+  invalidateMediaResponseCache(key);
+  await recordFile(entry);
 }
 
 export async function deleteFile(config: S3Config, key: string) {
   await getS3Client(config).send(new DeleteObjectCommand({ Bucket: config.bucket, Key: key }));
   metaCache.delete(key);
-  forgetFile(key);
+  invalidateMediaResponseCache(key);
+  await forgetFile(key);
 }

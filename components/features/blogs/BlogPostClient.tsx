@@ -212,7 +212,7 @@ function Article({ blocks, gallery, title }: { blocks: ContentBlock[]; gallery: 
   return <div className="flex max-w-[56rem] flex-col gap-6">{nodes}</div>;
 }
 
-/** The fixed column: who wrote it, when, how long it takes to read, and ways to share it. */
+/** The left column: "All articles" at the top, separated from the post details below. */
 function Details({ post }: { post: BlogPost }) {
   const [copied, setCopied] = useState(false);
   const currentUrl = () => (typeof window === "undefined" ? "" : window.location.href);
@@ -230,52 +230,58 @@ function Details({ post }: { post: BlogPost }) {
   const shareClass = "rounded-full border border-black/15 px-3.5 py-1.5 text-[12px] font-medium transition-colors hover:bg-black hover:text-white";
 
   return (
-    <div className="grid grid-cols-[1fr_auto] items-start gap-x-6 gap-y-5 text-[0.9rem] lg:flex lg:flex-col lg:gap-7">
-      <Link href="/blogs" className="col-span-2 w-fit border-b border-black/20 pb-1 text-[11px] font-medium uppercase tracking-[0.08em] transition-opacity hover:opacity-60">
-        <span aria-hidden>← </span>
-        All articles
-      </Link>
-
-      <div className="flex min-w-0 items-center gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#151716] text-sm font-medium text-white">{initialsOf(post.author)}</span>
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.08em] text-black/45">Written by</p>
-          <p className="font-medium">{post.author}</p>
-        </div>
+    <div className="flex flex-col">
+      {/* Top navigation strip, separated by a thin line from the metadata below */}
+      <div className="border-b border-black/15 pb-4 lg:px-12 lg:pb-5 lg:pt-8">
+        <Link href="/blogs" className="inline-flex w-fit items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] transition-opacity hover:opacity-60">
+          <span aria-hidden>←</span>
+          All articles
+        </Link>
       </div>
 
-      <dl className="flex flex-col gap-3 text-right lg:gap-5 lg:border-t lg:border-black/15 lg:pt-6 lg:text-left">
-        <div>
-          <dt className="text-[11px] uppercase tracking-[0.08em] text-black/45">Published</dt>
-          <dd className="mt-0.5 whitespace-nowrap font-medium lg:mt-1">{post.date}</dd>
-        </div>
-        <div>
-          <dt className="text-[11px] uppercase tracking-[0.08em] text-black/45">Reading time</dt>
-          <dd className="mt-0.5 font-medium lg:mt-1">{post.mins} min read</dd>
-        </div>
-        {post.category && (
-          <div className="hidden lg:block">
-            <dt className="text-[11px] uppercase tracking-[0.08em] text-black/45">Topic</dt>
-            <dd className="mt-1">
-              <span className="rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-black/60">{post.category}</span>
-            </dd>
+      {/* Article metadata & sharing */}
+      <div className="grid grid-cols-[1fr_auto] items-start gap-x-6 gap-y-5 pt-5 text-[0.9rem] lg:flex lg:flex-col lg:gap-7 lg:py-8 lg:pl-12 lg:pr-10">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#151716] text-sm font-medium text-white">{initialsOf(post.author)}</span>
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.08em] text-black/45">Written by</p>
+            <p className="font-medium">{post.author}</p>
           </div>
-        )}
-      </dl>
+        </div>
 
-      <div className="col-span-2 flex items-center justify-between gap-3 border-t border-black/15 pt-4 lg:block lg:pt-6">
-        {post.category && <span className="rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-black/60 lg:hidden">{post.category}</span>}
-        <p className="mb-3 hidden text-[11px] uppercase tracking-[0.08em] text-black/45 lg:block">Share</p>
-        <div className="flex flex-wrap justify-end gap-2 lg:justify-start">
-          <a href="https://www.linkedin.com/sharing/share-offsite/" onClick={(event) => { event.currentTarget.href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl())}`; }} target="_blank" rel="noopener noreferrer" className={shareClass}>
-            LinkedIn
-          </a>
-          <a href="https://twitter.com/intent/tweet" onClick={(event) => { event.currentTarget.href = `https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl())}&text=${encodeURIComponent(post.title)}`; }} target="_blank" rel="noopener noreferrer" className={shareClass}>
-            X
-          </a>
-          <button type="button" onClick={copy} className={shareClass}>
-            {copied ? "Copied" : "Copy link"}
-          </button>
+        <dl className="flex flex-col gap-3 text-right lg:gap-5 lg:border-t lg:border-black/15 lg:pt-6 lg:text-left">
+          <div>
+            <dt className="text-[11px] uppercase tracking-[0.08em] text-black/45">Published</dt>
+            <dd className="mt-0.5 whitespace-nowrap font-medium lg:mt-1">{post.date}</dd>
+          </div>
+          <div>
+            <dt className="text-[11px] uppercase tracking-[0.08em] text-black/45">Reading time</dt>
+            <dd className="mt-0.5 font-medium lg:mt-1">{post.mins} min read</dd>
+          </div>
+          {post.category && (
+            <div className="hidden lg:block">
+              <dt className="text-[11px] uppercase tracking-[0.08em] text-black/45">Topic</dt>
+              <dd className="mt-1">
+                <span className="rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-black/60">{post.category}</span>
+              </dd>
+            </div>
+          )}
+        </dl>
+
+        <div className="col-span-2 flex items-center justify-between gap-3 border-t border-black/15 pt-4 lg:block lg:pt-6">
+          {post.category && <span className="rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-black/60 lg:hidden">{post.category}</span>}
+          <p className="mb-3 hidden text-[11px] uppercase tracking-[0.08em] text-black/45 lg:block">Share</p>
+          <div className="flex flex-wrap justify-end gap-2 lg:justify-start">
+            <a href="https://www.linkedin.com/sharing/share-offsite/" onClick={(event) => { event.currentTarget.href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl())}`; }} target="_blank" rel="noopener noreferrer" className={shareClass}>
+              LinkedIn
+            </a>
+            <a href="https://twitter.com/intent/tweet" onClick={(event) => { event.currentTarget.href = `https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl())}&text=${encodeURIComponent(post.title)}`; }} target="_blank" rel="noopener noreferrer" className={shareClass}>
+              X
+            </a>
+            <button type="button" onClick={copy} className={shareClass}>
+              {copied ? "Copied" : "Copy link"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -350,10 +356,10 @@ export default function BlogPostClient({ post, relatedPosts }: BlogPostClientPro
           </div>
         </section>
 
-        {/* just below the cover, two columns: the details stay fixed on the left, the article scrolls on the right */}
+        {/* just below the cover, two columns aligned together as the whole page scrolls */}
         <div className="border-t border-black/15">
           <div className="mx-auto grid max-w-[1431px] lg:grid-cols-[20rem_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]">
-            <aside className="border-b border-black/15 px-5 py-6 sm:px-8 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-6rem)] lg:self-start lg:overflow-y-auto lg:border-b-0 lg:py-14 lg:pl-12 lg:pr-10">
+            <aside className="border-b border-black/15 px-5 py-6 sm:px-8 lg:border-b-0 lg:p-0">
               <Details post={post} />
             </aside>
             <article className="px-5 py-14 sm:px-8 md:py-20 lg:border-l lg:border-black/15 lg:px-16 xl:px-20">

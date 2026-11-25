@@ -22,7 +22,7 @@ function parseDate(value?: string): Date | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map(
@@ -34,7 +34,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }),
   );
 
-  const blogs = loadBlogsData();
+  const blogs = await loadBlogsData();
   const blogEntries: MetadataRoute.Sitemap = [
     ...blogs.popularPosts,
     ...blogs.newestPosts,
@@ -47,7 +47,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     }));
 
-  const caseEntries: MetadataRoute.Sitemap = loadCaseStudiesData()
+  const caseEntries: MetadataRoute.Sitemap = (await loadCaseStudiesData())
     .cases.filter((c) => c.slug)
     .map((c) => ({
       url: `${SITE_URL}/case-studies/${c.slug}`,

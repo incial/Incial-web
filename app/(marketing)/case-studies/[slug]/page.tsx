@@ -10,7 +10,7 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  const data = loadCaseStudiesData();
+  const data = await loadCaseStudiesData();
   return data.cases
     .filter((c) => c.slug)
     .map((c) => ({
@@ -22,7 +22,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
-  const data = loadCaseStudiesData();
+  const data = await loadCaseStudiesData();
   const caseStudy = data.cases.find((c) => c.slug === slug);
   if (!caseStudy) return { title: "Case Study Not Found", robots: { index: false } };
   const image = caseStudy.heroImage || caseStudy.coverImage;
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function CaseStudyDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const data = loadCaseStudiesData();
+  const data = await loadCaseStudiesData();
   const caseStudy = data.cases.find((c) => c.slug === slug);
 
   if (!caseStudy) notFound();

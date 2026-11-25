@@ -153,8 +153,18 @@ export default function AdminAboutPage() {
                   <Accordion.Item key={member.id} id={member.id}>
                     <Accordion.Heading>
                       <Accordion.Trigger>
-                        <span className="relative me-3 size-9 shrink-0 overflow-hidden rounded-full bg-default">
-                          {member.img && <Image src={member.img} alt="" fill sizes="36px" className="object-cover" />}
+                        <span className="relative me-3 flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-default text-xs font-semibold text-muted">
+                          {member.img ? (
+                            <Image src={member.img} alt="" fill sizes="36px" className="object-cover" />
+                          ) : (
+                            // no photo stored yet: the initials, as on the website
+                            (member.name || "?")
+                              .trim()
+                              .split(/\s+/)
+                              .slice(0, 2)
+                              .map((word) => word[0]?.toUpperCase() ?? "")
+                              .join("")
+                          )}
                         </span>
                         <span className="min-w-0 flex-1 text-left">
                           <span className="block truncate text-sm font-medium">{member.name || "New member"}</span>
