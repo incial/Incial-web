@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { geoNaturalEarth1 } from "d3-geo";
 import type { ClientLocation } from "@/lib/dataLoader";
 import { HQ_LOCATION, isValidLocation } from "@/lib/clientLocations";
+import { loadLandDots } from "@/lib/mapData";
 
 interface ClientWorldMapProps {
   /** Client locations; each gets an animated thread from Incial's base. */
@@ -32,24 +33,6 @@ const MAX_STAGGER_MS = 2200;
 const PULSE_PERIOD_MS = 3400;
 const ACCENT = "86, 166, 255";
 const LABEL_MIN_WIDTH = 640;
-
-let dotsRequest: Promise<Point[]> | null = null;
-
-/** Land is drawn from a precomputed dot grid shipped with the site (no third-party fetch). */
-function loadLandDots(): Promise<Point[]> {
-  if (!dotsRequest) {
-    dotsRequest = fetch("/data/land-dots.json")
-      .then((res) => {
-        if (!res.ok) throw new Error("land dots unavailable");
-        return res.json() as Promise<Point[]>;
-      })
-      .catch(() => {
-        dotsRequest = null;
-        return [];
-      });
-  }
-  return dotsRequest;
-}
 
 function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));

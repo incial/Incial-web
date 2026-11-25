@@ -1,69 +1,8 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { greetings } from "@/lib/constants";
-
+/**
+ * Route fallback: a plain black screen. The greetings are played once by the home page itself
+ * (app/page.tsx); this fallback used to run its own greeting loop too, so the greetings restarted
+ * when the page took over and, on a slow load, repeated several times.
+ */
 export default function Loading() {
-  const [index, setIndex] = useState(0);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && sessionStorage.getItem("initial-load-done")) {
-      setIsInitialLoad(false);
-      return;
-    }
-    const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % greetings.length);
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (!isInitialLoad) {
-    return null;
-  }
-
-  const currentGreeting = greetings[index];
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={index}
-          lang={currentGreeting.lang}
-          className="flex text-4xl font-semibold text-white sm:text-5xl font-[var(--font-noto-stack)]"
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          variants={{
-            hidden: {},
-            visible: {
-              transition: { staggerChildren: 0.03 },
-            },
-            exit: {
-              transition: { staggerChildren: 0.02, staggerDirection: -1 },
-            },
-          }}
-        >
-          {Array.from(
-            new Intl.Segmenter(currentGreeting.lang, {
-              granularity: "grapheme",
-            }).segment(currentGreeting.text),
-          ).map((item, i) => (
-            <motion.span
-              key={i}
-              variants={{
-                hidden: { opacity: 0, y: 8 },
-                visible: { opacity: 1, y: 0 },
-                exit: { opacity: 0, y: -8 },
-              }}
-              transition={{ duration: 0.12, ease: "easeOut" }}
-              className={item.segment === " " ? "w-2" : ""}
-            >
-              {item.segment}
-            </motion.span>
-          ))}
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
+  return <div className="fixed inset-0 z-50 bg-black" />;
 }

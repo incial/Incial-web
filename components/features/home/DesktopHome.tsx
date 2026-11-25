@@ -12,6 +12,7 @@ import {
 import type Lenis from "lenis";
 import { Header, MenuFrame } from "@/components/layout";
 import { useViewProgress } from "@/lib/useViewProgress";
+import { useAdaptiveProgress } from "@/lib/useAdaptiveProgress";
 import ServicesScroller from "@/components/features/services/ServicesScroller";
 import { rotatingWords } from "@/lib/constants";
 import { SERVICE_CATEGORIES } from "@/lib/serviceCatalog";
@@ -32,7 +33,7 @@ const ContactSection = dynamic(() => import("@/components/sections/ContactSectio
 });
 
 /** Scroll length of the logo-to-trust transition, in viewport heights. */
-const TRUST_TAIL_DVH = 300;
+const TRUST_TAIL_DVH = 240;
 /**
  * The services logo rests pinned for this long (viewport heights) after it has re-formed. The
  * Trust stage is pinned over it from the start of that rest, so the grainy logo and the solid
@@ -54,7 +55,7 @@ const CLIENTS_HOLD_DVH = 40;
  */
 function ClientsToContact() {
   const contactRef = useRef<HTMLDivElement>(null);
-  const contactRise = useViewProgress(contactRef);
+  const contactRise = useAdaptiveProgress(useViewProgress(contactRef), CONTACT_EXIT_DVH);
 
   return (
     <>
@@ -83,8 +84,11 @@ function ClientsToContact() {
  */
 function TrustTransition() {
   const tailRef = useRef<HTMLDivElement>(null);
-  const progress = useMotionValue(0);
-  const exit = useMotionValue(0);
+  const rawProgress = useMotionValue(0);
+  const rawExit = useMotionValue(0);
+  // smoothed with a speed limit, so a fast scroll still plays the dive and the reveal in full
+  const progress = useAdaptiveProgress(rawProgress, TRUST_TAIL_DVH);
+  const exit = useAdaptiveProgress(rawExit, TRUST_EXIT_DVH);
   const { scrollY } = useScroll();
 
   // `progress`: 0 when the tail's top meets the bottom of the screen, 1 after TRUST_TAIL_DVH of
@@ -98,9 +102,9 @@ function TrustTransition() {
     const travelled = vh - top;
     const mainSpan = (TRUST_TAIL_DVH / 100) * vh;
     const exitSpan = (TRUST_EXIT_DVH / 100) * vh;
-    progress.set(Math.min(1, Math.max(0, travelled / mainSpan)));
-    exit.set(Math.min(1, Math.max(0, (travelled - mainSpan) / exitSpan)));
-  }, [progress, exit]);
+    rawProgress.set(Math.min(1, Math.max(0, travelled / mainSpan)));
+    rawExit.set(Math.min(1, Math.max(0, (travelled - mainSpan) / exitSpan)));
+  }, [rawProgress, rawExit]);
 
   useMotionValueEvent(scrollY, "change", update);
   useEffect(() => {
@@ -176,7 +180,7 @@ export default function DesktopHome({ isActive = true }: DesktopHomeProps) {
       if (disposed) return;
       // lerp: each frame closes a share of the gap to the target, so the page follows the wheel and
       // stops soon after it does (a fixed-duration glide keeps drifting on its own)
-      instance = new LenisCtor({ lerp: 0.2, wheelMultiplier: 1, smoothWheel: true, autoRaf: true });
+      instance = new LenisCtor({ lerp: 0.15, wheelMultiplier: 1, smoothWheel: true, autoRaf: true });
       lenisRef.current = instance;
       if (stageRef.current === "words") instance.stop();
     });

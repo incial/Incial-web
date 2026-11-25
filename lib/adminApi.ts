@@ -3,6 +3,8 @@
  * Auth is handled by NextAuth session cookies (server-side) and Bearer token fallback.
  */
 
+import { invalidateCmsCache } from "@/lib/publicCache";
+
 export interface AdminValidationError {
   path: string;
   message: string;
@@ -20,7 +22,7 @@ export class AdminApiError extends Error {
   }
 }
 
-export async function fetchJsonIfAvailable<T>(url: string): Promise<T | null> {
+export async function fetchJsonIfAvailable<T>(url: string, init?: RequestInit): Promise<T | null> {
   const token =
     typeof window !== "undefined"
       ? localStorage.getItem("admin_token") || ""
@@ -31,7 +33,7 @@ export async function fetchJsonIfAvailable<T>(url: string): Promise<T | null> {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, { headers });
+  const res = await fetch(url, { ...init, headers: { ...headers, ...init?.headers } });
 
   if (!res.ok) {
     return null;
@@ -50,7 +52,9 @@ export async function fetchJsonIfAvailable<T>(url: string): Promise<T | null> {
 }
 
 export async function apiGetSection<T>(section: string): Promise<T> {
-  const data = await fetchJsonIfAvailable<T>(`/api/admin/${section}`);
+  const data = await fetchJsonIfAvailable<T>(`/api/admin/${section}?fresh=1`, {
+    cache: "no-store",
+  });
   if (data === null) {
     throw new Error(`Failed to load ${section}`);
   }
@@ -88,7 +92,8 @@ export async function apiSaveSection<T>(section: string, data: T): Promise<void>
     );
   }
 
-  // tells the admin panel's live preview to reload, so it shows what was just saved
+  // Clear client-side CMS cache and notify the admin live preview to reload.
+  invalidateCmsCache();
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("admin:saved", { detail: { section } }));
   }

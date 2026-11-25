@@ -1,15 +1,9 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
-import {
-  motion,
-  useMotionValueEvent,
-  useScroll,
-  useSpring,
-  useTransform,
-  type MotionValue,
-} from "framer-motion";
+import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
 import type { ServiceCategory } from "@/lib/serviceCatalog";
+import { useAdaptiveProgress } from "@/lib/useAdaptiveProgress";
 import DustCanvas from "./DustCanvas";
 import IsoStage from "./IsoStage";
 import { useStageLayout } from "./useStageLayout";
@@ -43,13 +37,13 @@ interface ServicesScrollerProps {
 
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-const SCROLL_PER_STEP_VH = 45;
+const SCROLL_PER_STEP_VH = 40;
 const INTRO_SHARE = 0.1;
 /** Scroll progress where the intro has just finished: the stack is open on its first plate. */
 export const STACK_START_PROGRESS = INTRO_SHARE;
-/** A scroll jump bigger than this (of the whole section) snaps the animation instead of replaying. */
-const JUMP_THRESHOLD = 0.08;
 const OUTRO_SHARE = 0.1;
+/** Share of each item's scroll during which it rests fully in focus (half before, half after the move). */
+const ITEM_REST_SHARE = 0.3;
 const ITEM_HEIGHT_REM = 3.2;
 const HEADING_HEIGHT_REM = 9.5;
 const FADE_NEAR_REM = 4;
@@ -99,6 +93,18 @@ function buildFlow(categories: ReadonlyArray<ServiceCategory>) {
   });
 
   return { rows, itemCenters };
+}
+
+/**
+ * Turns a continuous item position into one that pauses on each item: the integer part is kept,
+ * and the move to the next item happens in the middle of the step, eased, so every item (and its
+ * plate) is seen fully in focus before the next one comes in.
+ */
+function restOnItems(position: number): number {
+  const base = Math.floor(position);
+  const fraction = position - base;
+  const half = ITEM_REST_SHARE / 2;
+  return base + smoothstep((fraction - half) / (1 - ITEM_REST_SHARE));
 }
 
 /** 1 at the focus line, easing down to a faint trace far away. */
@@ -200,22 +206,15 @@ export default function ServicesScroller({
     container: scrollContainerRef,
     offset: ["start start", "end end"],
   });
-  const smooth = useSpring(scrollYProgress, {
-    stiffness: 120,
-    damping: 28,
-    mass: 0.4,
-  });
+  // follows the scroll smoothly with a speed limit: a fast flick still plays every plate and
+  // item, and a jump (link, programmatic scroll) lands at once
+  const smooth = useAdaptiveProgress(scrollYProgress, scrollSteps * SCROLL_PER_STEP_VH + holdVh);
 
-  // Park the spring at the end when arriving from the next section, so the section does not
-  // play its whole animation to get there (the scroll position itself is set by the owner).
+  // Park at the end when arriving from the next section, so the section does not play its
+  // whole animation to get there (the scroll position itself is set by the owner).
   useIsomorphicLayoutEffect(() => {
     if (initialProgress > 0) smooth.jump(initialProgress);
   }, [initialProgress, smooth]);
-
-  // a jump in position (link, programmatic scroll) lands immediately instead of replaying
-  useMotionValueEvent(scrollYProgress, "change", (v) => {
-    if (Math.abs(v - smooth.get()) > JUMP_THRESHOLD) smooth.jump(v);
-  });
 
   // timeline: intro (centred dust logo moves into place, becomes isometric) | sections |
   // outro (stack folds back, logo returns to the centre)
@@ -232,9 +231,8 @@ export default function ServicesScroller({
   const morph = useTransform([intro, outro], ([i, o]: number[]) =>
     smoothstep(i) * (1 - smoothstep((o - 0.45) / 0.55)),
   );
-  const active = useTransform(
-    timeline,
-    (p) => clamp01((p - INTRO_SHARE) / (1 - INTRO_SHARE - OUTRO_SHARE)) * lastIndex,
+  const active = useTransform(timeline, (p) =>
+    restOnItems(clamp01((p - INTRO_SHARE) / (1 - INTRO_SHARE - OUTRO_SHARE)) * lastIndex),
   );
   const revealed = useTransform([active, morph, collapse], ([a, m, c]: number[]) =>
     (a + 1) * smoothstep((m - 0.85) / 0.15) * (1 - c),

@@ -19,6 +19,12 @@ const securityHeaders = [
 const longCache = [
   { key: "Cache-Control", value: "public, max-age=2592000, stale-while-revalidate=86400" },
 ];
+const weekCache = [
+  { key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" },
+];
+const shortAssetCache = [
+  { key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" },
+];
 
 const nextConfig: NextConfig = {
   compress: true,
@@ -55,8 +61,12 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
       // Only the brand logo is long-cached: /images and /clients hold files that
-      // can be replaced under the same name, which would show stale pictures.
+      // can be replaced under the same name, so they use a 1-hour cache with SWR
+      // instead of 30 days, avoiding repeat revalidations within a visit.
       { source: "/logo/:path*", headers: longCache },
+      { source: "/data/:path*", headers: weekCache },
+      { source: "/images/:path*", headers: shortAssetCache },
+      { source: "/clients/:path*", headers: shortAssetCache },
     ];
   },
 };

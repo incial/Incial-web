@@ -15,6 +15,7 @@ export const pageTitles: Record<string, string> = {
   "/admin/casestudies": "Case studies",
   "/admin/products": "Products",
   "/admin/settings": "Section settings",
+  "/admin/media": "Media library",
 };
 
 interface AdminHeaderProps {

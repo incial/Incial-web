@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type RefObject } from "react";
-import type { MotionValue } from "framer-motion";
+import { cancelFrame, frame as frameLoop, type FrameData, type MotionValue } from "framer-motion";
 import {
   LOGO_SCALE,
   PLATE_SIDE,
@@ -12,7 +12,6 @@ import {
   type StageSpec,
   clamp01,
   insideLogo,
-  planeToScreen,
   smoothstep,
   stackLayout,
 } from "./isoGeometry";
@@ -67,9 +66,14 @@ const DISSOLVE_DELAY_S = 0.15;
 const DISSOLVE_S = 0.7;
 const SAMPLE_RETRY_MS = 400;
 const LANDING_SHIFT_SHARE = 0.18;
-const WHITE = "#ffffff";
-const SOFT = "#c9ccd6";
-const BLUE = "#7db1ff";
+const WHITE = 0;
+const SOFT = 1;
+const BLUE = 2;
+/** Particle colours, indexed by WHITE / SOFT / BLUE. */
+const PALETTE = ["#ffffff", "#c9ccd6", "#7db1ff"] as const;
+/** Opacity is rounded to this many steps so particles can be filled in a few batches. */
+const ALPHA_LEVELS = 12;
+const COS45 = Math.SQRT1_2;
 
 const enum Part {
   LidLogo,
@@ -334,7 +338,16 @@ export default function DustCanvas({
     const plateY = new Float32Array(plateCount);
     const cursor = { x: -9999, y: -9999 }; // client px
     const flatScale = Math.min(5, (spec.viewH * 0.9) / 80, (spec.viewW * 0.7) / 80);
-    let frame = 0;
+    // per-frame particle output, drawn in batches (one fill per colour and opacity level)
+    const drawX = new Float32Array(count);
+    const drawY = new Float32Array(count);
+    const drawSize = new Float32Array(count);
+    const drawBucket = new Int16Array(count);
+    const bucketUsed = new Uint8Array(PALETTE.length * ALPHA_LEVELS);
+    // layout read once per frame in the read phase, before any styles are written
+    let rect: DOMRect | null = null;
+    let box: DOMRect | null = null;
+    let liveLogo: DOMRect | null = null;
     let disposed = false;
     let sample: LogoSample | null = null;
     let waitingForLogo = Boolean(logoSource);
@@ -400,8 +413,16 @@ export default function DustCanvas({
     window.addEventListener("pointercancel", handleRelease, { passive: true });
     document.documentElement.addEventListener("pointerleave", handleLeave);
 
-    const draw = (time: number) => {
-      frame = requestAnimationFrame(draw);
+    // Runs in framer-motion's frame loop: positions are read in its read step (with all other
+    // reads, before any style is written), and the canvas is drawn in its render step. Reading
+    // layout from a separate animation frame after styles changed forced a layout every frame.
+    const readLayout = () => {
+      rect = canvas.getBoundingClientRect();
+      box = anchorRef.current ? anchorRef.current.getBoundingClientRect() : null;
+      liveLogo = sample && sample.element.isConnected ? sample.element.getBoundingClientRect() : null;
+    };
+
+    const draw = ({ timestamp: time }: FrameData) => {
       const anchor = anchorRef.current;
       const entryValue = entry ? entry.get() : 1;
       if (waitingForLogo) {
@@ -442,9 +463,7 @@ export default function DustCanvas({
       const a = active.get();
       const layout = stackLayout(r);
 
-      const rect = canvas.getBoundingClientRect();
-      const box = anchor.getBoundingClientRect();
-      if (rect.width === 0 || box.width === 0) return;
+      if (!rect || !box || rect.width === 0 || box.width === 0) return;
       // the section has scrolled away above the screen
       if (bridged && box.bottom < 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -473,7 +492,7 @@ export default function DustCanvas({
       // where the real logo is right now (kept from the last good read if it is hidden)
       let logoBox: DOMRect | null = null;
       if (sample) {
-        const live = sample.element.isConnected ? sample.element.getBoundingClientRect() : null;
+        const live = liveLogo;
         // while bridging, the dust stays where the logo was when scrolling began
         if (live && live.width > 0 && (!bridgeActive || entryValue <= holdShare + 0.001)) sample.lastBox = live;
         logoBox = sample.lastBox;
@@ -491,7 +510,6 @@ export default function DustCanvas({
         );
       }
 
-      let currentColor = "";
       for (let i = 0; i < count; i++) {
         const seed = p.seed[i];
         const part = p.part[i] as Part;
@@ -503,24 +521,19 @@ export default function DustCanvas({
         if (part === Part.Plate) {
           const kk = p.plate[i];
           const o = open[kk];
-          const [px, py] = planeToScreen(
-            p.u[i],
-            p.v[i],
-            spec.stackX + (1 - o) * PLATE_SLIDE,
-            plateY[kk],
-          );
+          const px = spec.stackX + (1 - o) * PLATE_SLIDE + (p.u[i] - p.v[i]) * COS45;
+          const py = plateY[kk] + (p.u[i] + p.v[i]) * COS45 * 0.5;
           const restX = p.rest[i * 2] + Math.sin(time * 0.0007 + seed) * 6;
           const restY = p.rest[i * 2 + 1] + Math.cos(time * 0.0009 + seed) * 6;
           isoX = restX + (px - restX) * o;
           isoY = restY + (py + p.dy[i] - restY) * o;
           alphaStack *= 0.25 + 0.75 * o;
           color = lit[kk] > 0.35 ? BLUE : SOFT;
-        } else if (part === Part.BaseOutline || part === Part.BaseSide) {
-          [isoX, isoY] = planeToScreen(p.u[i], p.v[i], spec.stackX, layout.baseY);
-          isoY += p.dy[i];
         } else {
-          [isoX, isoY] = planeToScreen(p.u[i], p.v[i], spec.stackX, layout.lidY);
-          isoY += p.dy[i];
+          // the base slab, or the lid with the logo on it
+          const planeY = part === Part.BaseOutline || part === Part.BaseSide ? layout.baseY : layout.lidY;
+          isoX = spec.stackX + (p.u[i] - p.v[i]) * COS45;
+          isoY = planeY + (p.u[i] + p.v[i]) * COS45 * 0.5 + p.dy[i];
         }
 
         const u = clamp01(m * 1.7 - p.delay[i] * 0.7);
@@ -549,7 +562,9 @@ export default function DustCanvas({
 
         const dx = baseX + offX[i] - cursorX;
         const dy = baseY + offY[i] - cursorY;
-        const dist = Math.hypot(dx, dy);
+        // most particles are far from the cursor: skip the square root for them
+        const near = dx < cursorRadius && dx > -cursorRadius && dy < cursorRadius && dy > -cursorRadius;
+        const dist = near ? Math.hypot(dx, dy) : cursorRadius;
         if (dist < cursorRadius && dist > 0.001) {
           const push = (1 - dist / cursorRadius) ** 2 * CURSOR_FORCE;
           velX[i] += (dx / dist) * push;
@@ -561,24 +576,36 @@ export default function DustCanvas({
         offY[i] += velY[i];
 
         const alpha = (0.95 + (alphaStack - 0.95) * e) * fade;
-        if (alpha < 0.01) continue;
-        const tint = e > 0.5 ? color : WHITE;
-        if (tint !== currentColor) {
-          ctx.fillStyle = tint;
-          currentColor = tint;
+        if (alpha < 0.01) {
+          drawBucket[i] = -1;
+          continue;
         }
-        ctx.globalAlpha = alpha;
-        const size = (1.1 + alpha * 0.9 + 0.5 * (1 - e)) * unitScale;
-        ctx.fillRect(
-          originX + (baseX + offX[i]) * unitScale,
-          originY + (baseY + offY[i]) * unitScale,
-          size,
-          size,
-        );
+        const tint = e > 0.5 ? color : WHITE;
+        const level = Math.min(ALPHA_LEVELS - 1, Math.round(alpha * (ALPHA_LEVELS - 1)));
+        const bucket = tint * ALPHA_LEVELS + level;
+        drawBucket[i] = bucket;
+        bucketUsed[bucket] = 1;
+        drawSize[i] = (1.1 + alpha * 0.9 + 0.5 * (1 - e)) * unitScale;
+        drawX[i] = originX + (baseX + offX[i]) * unitScale;
+        drawY[i] = originY + (baseY + offY[i]) * unitScale;
+      }
+
+      // one path and one fill per colour and opacity step, instead of a fill per particle
+      for (let bucket = 0; bucket < bucketUsed.length; bucket++) {
+        if (!bucketUsed[bucket]) continue;
+        bucketUsed[bucket] = 0;
+        ctx.fillStyle = PALETTE[Math.floor(bucket / ALPHA_LEVELS)];
+        ctx.globalAlpha = Math.max(0.01, (bucket % ALPHA_LEVELS) / (ALPHA_LEVELS - 1));
+        ctx.beginPath();
+        for (let i = 0; i < count; i++) {
+          if (drawBucket[i] === bucket) ctx.rect(drawX[i], drawY[i], drawSize[i], drawSize[i]);
+        }
+        ctx.fill();
       }
       ctx.globalAlpha = 1;
     };
-    frame = requestAnimationFrame(draw);
+    frameLoop.read(readLayout, true);
+    frameLoop.render(draw, true);
 
     return () => {
       disposed = true;
@@ -587,7 +614,8 @@ export default function DustCanvas({
         sample.element.style.visibility = "";
         sample.element.closest<HTMLElement>("[data-mobile-scroll]")?.style.removeProperty("--landing-shift");
       }
-      cancelAnimationFrame(frame);
+      cancelFrame(readLayout);
+      cancelFrame(draw);
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", handlePointer);
       window.removeEventListener("pointerup", handleRelease);

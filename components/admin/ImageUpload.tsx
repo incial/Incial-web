@@ -2,10 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import MediaPicker from "@/components/admin/media/MediaPicker";
 import {
   UploadCloud,
   X,
   CheckCircle2,
+  Images,
 } from "lucide-react";
 
 interface ImageUploadProps {
@@ -26,6 +28,7 @@ export default function ImageUpload({
   kind = "image",
 }: ImageUploadProps) {
   const isVideo = kind === "video";
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [justUploaded, setJustUploaded] = useState(false);
@@ -162,8 +165,16 @@ export default function ImageUpload({
         <label className="text-[10px] font-semibold text-muted uppercase tracking-wider font-[Inter,sans-serif] flex-1 truncate pr-2">
           {label}
         </label>
-
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/10"
+        >
+          <Images size={12} />
+          Choose from library
+        </button>
       </div>
+      <MediaPicker isOpen={pickerOpen} onOpenChange={setPickerOpen} onPick={(url) => onChange(url)} kind={kind} folder={folder} />
 
         <div
           className={`w-full bg-surface-secondary rounded-xl overflow-hidden border transition-all ${

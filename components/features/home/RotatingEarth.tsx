@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { geoGraticule, geoOrthographic, geoPath, type GeoPermissibleObjects } from "d3-geo";
 import { timer } from "d3-timer";
+import { loadLandDots, loadWorldOutline } from "@/lib/mapData";
 
 interface RotatingEarthProps {
   width?: number;
@@ -130,35 +131,25 @@ export default function RotatingEarth({
       projection.scale(radius).translate([nextSize / 2, nextSize / 2]);
       render();
     };
+    let isDisposed = false;
     const loadWorldData = async () => {
       // The halftone dots ship with the site and are all the globe needs. The land outline comes
       // from a third-party site and is only a nicety: if it cannot be fetched the globe is still
       // drawn (it used to be replaced by an error message).
-      const loadOutline = async () => {
-        try {
-          const res = await fetch(
-            "https://raw.githubusercontent.com/martynafford/natural-earth-geojson/refs/heads/master/110m/physical/ne_110m_land.json",
-          );
-          if (res.ok) landFeatures = await res.json();
-        } catch {
-          // no outline: dots only
-        }
-      };
-
-      try {
-        const dotsRes = await fetch("/data/land-dots.json");
-        if (!dotsRes.ok) throw new Error("Failed to load precomputed land dots");
-        const dotsData: [number, number][] = await dotsRes.json();
-        dotsData.forEach(([lng, lat]) => {
-          allDots.push({ lng, lat, visible: true });
-        });
-        render();
-      } catch {
+      const dotsData = await loadLandDots();
+      if (isDisposed) return;
+      if (dotsData.length === 0) {
         setError("Failed to load land map data");
         return;
       }
+      dotsData.forEach(([lng, lat]) => {
+        allDots.push({ lng, lat, visible: true });
+      });
+      render();
 
-      await loadOutline();
+      const outline = await loadWorldOutline();
+      if (isDisposed || !outline) return;
+      landFeatures = outline;
       render();
     };
 
@@ -256,6 +247,7 @@ export default function RotatingEarth({
 
     // Cleanup
     return () => {
+      isDisposed = true;
       resizeObserver.disconnect();
       visibilityObserver.disconnect();
       window.removeEventListener("resize", fitCanvasToContainer);

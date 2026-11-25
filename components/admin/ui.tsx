@@ -205,8 +205,8 @@ export function EditDrawer({
   return (
     <Drawer>
       <Drawer.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-        <Drawer.Content placement="right" className="w-full max-w-md">
-          <Drawer.Dialog>
+        <Drawer.Content placement="right">
+          <Drawer.Dialog className="sm:w-[28rem]">
             <Drawer.CloseTrigger />
             <Drawer.Header>
               <Drawer.Heading>{title}</Drawer.Heading>

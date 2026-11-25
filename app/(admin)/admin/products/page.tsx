@@ -74,6 +74,15 @@ export default function AdminProductsPage() {
     });
   }
 
+  function updateFields(patch: Partial<Product>) {
+    setData((current) => {
+      if (!current) return current;
+      const products = [...current.products];
+      products[selected] = { ...products[selected], ...patch };
+      return { ...current, products };
+    });
+  }
+
   function setParagraph(index: number, value: string) {
     if (!active) return;
     const description = [...paragraphsOf(active)];
@@ -184,31 +193,56 @@ export default function AdminProductsPage() {
                 placeholder="https://…"
               />
             </Panel>
-            <Panel title="Banner" description="The picture or video shown beside the product's text." className="@6xl:col-span-2">
-              <ToggleButtonGroup
-                selectionMode="single"
-                disallowEmptySelection
-                selectedKeys={new Set([active.mediaType ?? "image"])}
-                onSelectionChange={(keys) => {
-                  const next = Array.from(keys)[0];
-                  if (next === "image" || next === "video") update("mediaType", next);
-                }}
-              >
-                <ToggleButton id="image">Image</ToggleButton>
-                <ToggleButton id="video">
-                  <ToggleButtonGroup.Separator />
-                  Video
-                </ToggleButton>
-              </ToggleButtonGroup>
+            <Panel
+              title="Banner"
+              description="Upload an image, a video, or both. Uploading a video automatically switches the banner to Video; use the toggle to switch anytime."
+              className="@6xl:col-span-2"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <ToggleButtonGroup
+                  selectionMode="single"
+                  disallowEmptySelection
+                  selectedKeys={new Set([active.mediaType ?? (active.video ? "video" : "image")])}
+                  onSelectionChange={(keys) => {
+                    const next = Array.from(keys)[0];
+                    if (next === "image" || next === "video") update("mediaType", next);
+                  }}
+                >
+                  <ToggleButton id="image">Show Image</ToggleButton>
+                  <ToggleButton id="video">
+                    <ToggleButtonGroup.Separator />
+                    Show Video
+                  </ToggleButton>
+                </ToggleButtonGroup>
+                <span className="text-xs text-muted">
+                  {(active.mediaType ?? (active.video ? "video" : "image")) === "video"
+                    ? active.video
+                      ? "Video will display on the product page"
+                      : "Upload or choose a video below"
+                    : "Image will display on the product page"}
+                </span>
+              </div>
 
-              {active.mediaType === "video" ? (
-                <div className="grid gap-4 @2xl:grid-cols-2">
-                  <ImageUpload kind="video" label="Video" value={active.video ?? ""} onChange={(value) => update("video", value)} folder="videos/products" />
-                  <ImageUpload label="Poster image (shown while the video loads)" value={active.image} onChange={(value) => update("image", value)} folder="images/products" />
-                </div>
-              ) : (
-                <ImageUpload label="Image" value={active.image} onChange={(value) => update("image", value)} folder="images/products" />
-              )}
+              <div className="grid gap-4 @2xl:grid-cols-2">
+                <ImageUpload
+                  label={active.mediaType === "video" || active.video ? "Poster / fallback image" : "Product image"}
+                  value={active.image}
+                  onChange={(value) => update("image", value)}
+                  folder="images/products"
+                />
+                <ImageUpload
+                  kind="video"
+                  label="Product video (auto-activates Video mode)"
+                  value={active.video ?? ""}
+                  onChange={(value) =>
+                    updateFields({
+                      video: value,
+                      mediaType: value ? "video" : "image",
+                    })
+                  }
+                  folder="videos/products"
+                />
+              </div>
             </Panel>
 
 

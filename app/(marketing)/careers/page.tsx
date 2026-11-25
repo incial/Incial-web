@@ -1,14 +1,14 @@
 "use client";
 
 import MenuFrame from "@/components/layout/MenuFrame";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
-import type { SectionConfig } from "@/lib/dataLoader";
+import { useSectionsConfig } from "@/lib/useSectionsConfig";
 
 // ── Job Card skeleton ──────────────────────────────────────────────────────
 interface Job {
@@ -159,25 +159,8 @@ function FadeIn({
 export default function CareersPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const jobs: Job[] = [];
-  const [isDisabled, setIsDisabled] = useState(false);
-
-  useEffect(() => {
-    async function fetchConfig() {
-      try {
-        const res = await fetch("/api/admin/sections");
-        const data = await res.json();
-        const careersConfig = data.sections?.find(
-          (s: SectionConfig) => s.id === "careers",
-        );
-        if (careersConfig && !careersConfig.enabled) {
-          setIsDisabled(true);
-        }
-      } catch {
-        // Ignore
-      }
-    }
-    fetchConfig();
-  }, []);
+  const sectionsConfig = useSectionsConfig();
+  const isDisabled = sectionsConfig["careers"] === false;
 
   if (isDisabled) {
     return (

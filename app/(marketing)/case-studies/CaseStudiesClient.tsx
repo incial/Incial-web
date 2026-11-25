@@ -1,14 +1,15 @@
 "use client";
 
 import MenuFrame from "@/components/layout/MenuFrame";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ShaderHero from "@/components/ui/ShaderHero";
 import StretchHeading from "@/components/features/products/StretchHeading";
 import CaseStudyGallery from "@/components/features/case-studies/CaseStudyGallery";
-import type { CaseStudy, SectionConfig } from "@/lib/dataLoader";
+import type { CaseStudy } from "@/lib/dataLoader";
+import { useSectionsConfig } from "@/lib/useSectionsConfig";
 
 interface CaseStudiesClientProps {
   caseStudies: CaseStudy[];
@@ -21,26 +22,8 @@ export default function CaseStudiesClient({
   heroBanner,
 }: CaseStudiesClientProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isDisabled, setIsDisabled] = useState(false);
-
-  useEffect(() => {
-    async function fetchConfig() {
-      try {
-        const res = await fetch("/api/admin/sections", { cache: "no-store" });
-        const data = await res.json();
-        const csConfig = data.sections?.find(
-          (s: SectionConfig) => s.id === "casestudies",
-        );
-        if (csConfig && !csConfig.enabled) {
-          setIsDisabled(true);
-        }
-      } catch {
-        // Ignore
-      }
-    }
-
-    fetchConfig();
-  }, []);
+  const sectionsConfig = useSectionsConfig();
+  const isDisabled = sectionsConfig["casestudies"] === false;
 
   if (isDisabled) {
     return (

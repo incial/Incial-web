@@ -27,6 +27,7 @@ const fadeUp = {
 };
 
 import type { AboutData, TeamMember } from "@/lib/dataLoader";
+import { fetchCachedJson } from "@/lib/publicCache";
 
 interface AboutSectionProps {
   onBack?: () => void;
@@ -49,14 +50,16 @@ export default function AboutSection({
     : teamMembers.slice(0, 6);
 
   useEffect(() => {
-    fetch("/api/admin/about")
-      .then((res) => res.json())
-      .then((d) => {
-        setData(d);
-        setBrandSrc(d?.brandImage || imgBrand);
-        setImpactSrc(d?.impactImage || imgImpact);
-      })
-      .catch(console.error);
+    let cancelled = false;
+    fetchCachedJson<AboutData>("/api/admin/about").then((d) => {
+      if (cancelled || !d) return;
+      setData(d);
+      setBrandSrc(d.brandImage || imgBrand);
+      setImpactSrc(d.impactImage || imgImpact);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

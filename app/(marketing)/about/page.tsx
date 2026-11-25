@@ -4,28 +4,13 @@ import MenuFrame from "@/components/layout/MenuFrame";
 import { motion } from "framer-motion";
 import { AboutSection } from "@/components/sections";
 import { Header } from "@/components/layout";
-import { useState, useEffect } from "react";
-import type { SectionConfig } from "@/lib/dataLoader";
+import { useState } from "react";
+import { useSectionsConfig } from "@/lib/useSectionsConfig";
 
 export default function AboutPage() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isDisabled, setIsDisabled] = useState(false);
-
-  useEffect(() => {
-    async function fetchConfig() {
-      try {
-        const res = await fetch("/api/admin/sections");
-        const data = await res.json();
-        const aboutConfig = data.sections?.find((s: SectionConfig) => s.id === "about");
-        if (aboutConfig && !aboutConfig.enabled) {
-          setIsDisabled(true);
-        }
-      } catch {
-        // Ignore
-      }
-    }
-    fetchConfig();
-  }, []);
+  const sectionsConfig = useSectionsConfig();
+  const isDisabled = sectionsConfig["about"] === false;
 
   if (isDisabled) {
     return (

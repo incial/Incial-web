@@ -7,52 +7,27 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProductsFlow from "@/components/features/products/ProductsFlow";
 import ProductsOutro from "@/components/features/products/ProductsOutro";
-import type { ProductsData, Product, SectionConfig } from "@/lib/dataLoader";
+import type { ProductsData, Product } from "@/lib/dataLoader";
+import { fetchCachedJson } from "@/lib/publicCache";
+import { useSectionsConfig } from "@/lib/useSectionsConfig";
 
 // ── Page ───────────────────────────────────────────────────────────────────
 export default function ProductsPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
-  const [isDisabled, setIsDisabled] = useState(false);
-  const [sectionsConfig, setSectionsConfig] = useState<Record<string, boolean>>(
-    {},
-  );
+  const sectionsConfig = useSectionsConfig();
+  const isDisabled = sectionsConfig["products"] === false;
 
   useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const res = await fetch("/api/admin/products");
-        if (!res.ok) throw new Error("Failed to fetch products");
-        const data: ProductsData = await res.json();
+    let cancelled = false;
+    fetchCachedJson<ProductsData>("/api/admin/products").then((data) => {
+      if (!cancelled && data) {
         setProducts(data.products.filter((p) => p.available));
-      } catch (err) {
-        console.error(err);
       }
-    }
-
-    async function fetchConfig() {
-      try {
-        const res = await fetch("/api/admin/sections");
-        const data = await res.json();
-        const prodConfig = data.sections?.find((s: SectionConfig) => s.id === "products");
-        if (prodConfig && !prodConfig.enabled) {
-          setIsDisabled(true);
-        }
-        if (data?.sections) {
-          const configMap: Record<string, boolean> = {};
-          data.sections.forEach((s: SectionConfig) => {
-            configMap[s.id] = s.enabled;
-          });
-          setSectionsConfig(configMap);
-        }
-      } catch {
-        // Ignore
-      }
-    }
-
-    fetchConfig().then(() => {
-      fetchProducts();
     });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (isDisabled) {

@@ -13,6 +13,7 @@ import {
   Briefcase,
   Package,
   Settings2,
+  Images,
   LogOut,
   ChevronsUpDown,
   type LucideIcon,
@@ -42,6 +43,7 @@ const groups: Array<{ title: string; items: NavItem[] }> = [
       { href: "/admin/casestudies", label: "Case studies", icon: Briefcase },
     ],
   },
+  { title: "Library", items: [{ href: "/admin/media", label: "Media library", icon: Images }] },
   { title: "System", items: [{ href: "/admin/settings", label: "Section settings", icon: Settings2 }] },
 ];
 

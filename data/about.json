@@ -92,21 +92,21 @@
       "name": "Awwwards – Site of the Day",
       "description": "For our \"Urban Echo\" campaign microsite",
       "year": "2024",
-      "icon": "https://ik.imagekit.io/0bs3my2iz/incial-web/images/about/imgAwardsIcon.svg"
+      "icon": "/media/incial-web/images/about/imgAwardsIcon.svg"
     },
     {
       "id": "2",
       "name": "Red Dot Design Award",
       "description": "Brand Identity for \"Flux Motors\"",
       "year": "2023",
-      "icon": "https://ik.imagekit.io/0bs3my2iz/incial-web/images/about/imgAwardsIcon.svg"
+      "icon": "/media/incial-web/images/about/imgAwardsIcon.svg"
     }
   ],
   "brandTitle": "Our Brand",
   "brandText": "At Incial, our brand echoes our values: authentic, innovative, and trusted. We believe in transparency, empathy, and delivering beyond expectations. Every interaction is a chance to build lasting relationships.",
   "impactTitle": "Our Impact",
   "impactText": "Every project is a story of growth, transformation, and measurable success. We take pride in helping clients achieve goals, enhance visibility, and create memorable digital experiences.",
-  "heroBanner": "https://ik.imagekit.io/0bs3my2iz/incial-web/images/about/Team-Photo.png",
-  "brandImage": "https://ik.imagekit.io/0bs3my2iz/incial-web/images/about/Brand.png",
-  "impactImage": "https://ik.imagekit.io/0bs3my2iz/incial-web/images/about/Impact.png"
+  "heroBanner": "/media/incial-web/images/about/Team-Photo.png",
+  "brandImage": "/media/incial-web/images/about/Brand.png",
+  "impactImage": "/media/incial-web/images/about/Impact.png"
 }

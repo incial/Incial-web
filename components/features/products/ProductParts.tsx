@@ -21,21 +21,24 @@ export function firstSentence(product: Product): string {
   return end === -1 ? text : text.slice(0, end + 1);
 }
 
-/** The product's banner: its video when one is chosen, otherwise its image. */
+/** The product's banner: plays its video when video is selected in the admin panel, otherwise displays its image. */
 export function ProductMedia({ product, index }: { product: Product; index: number }) {
-  const useVideo = product.mediaType === "video" && Boolean(product.video);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const useVideo = product.mediaType !== "image" && Boolean(product.video) && !videoFailed;
 
   return (
     <div className="absolute inset-0 overflow-hidden rounded-[22px] bg-white">
       {useVideo ? (
         <video
+          key={product.video}
           src={product.video}
           poster={product.image || undefined}
           autoPlay
           muted
           loop
           playsInline
-          preload="metadata"
+          preload="auto"
+          onError={() => setVideoFailed(true)}
           className="absolute inset-0 h-full w-full object-cover object-top"
         />
       ) : product.image ? (

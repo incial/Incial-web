@@ -1,15 +1,16 @@
 "use client";
 
 import MenuFrame from "@/components/layout/MenuFrame";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ShaderHero from "@/components/ui/ShaderHero";
 import StretchHeading from "@/components/features/products/StretchHeading";
 import BlogRow, { MobilePost } from "@/components/features/blogs/BlogRow";
-import type { BlogPost, SectionConfig } from "@/lib/dataLoader";
+import type { BlogPost } from "@/lib/dataLoader";
 import { useDevice } from "@/hooks";
+import { useSectionsConfig } from "@/lib/useSectionsConfig";
 import { MobileLayout } from "@/components/mobile";
 
 interface BlogsClientProps {
@@ -25,34 +26,8 @@ export default function BlogsClient({
 }: BlogsClientProps) {
   const { isMobile, isLoading: isDeviceLoading } = useDevice();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isDisabled, setIsDisabled] = useState(false);
-
-  const [sectionsConfig, setSectionsConfig] = useState<Record<string, boolean>>(
-    {},
-  );
-
-  useEffect(() => {
-    async function fetchConfig() {
-      try {
-        const res = await fetch("/api/admin/sections");
-        const data = await res.json();
-        const blogsConfig = data.sections?.find((s: SectionConfig) => s.id === "blogs");
-        if (blogsConfig && !blogsConfig.enabled) {
-          setIsDisabled(true);
-        }
-        if (data?.sections) {
-          const configMap: Record<string, boolean> = {};
-          data.sections.forEach((s: SectionConfig) => {
-            configMap[s.id] = s.enabled;
-          });
-          setSectionsConfig(configMap);
-        }
-      } catch {
-        // Ignore
-      }
-    }
-    fetchConfig();
-  }, []);
+  const sectionsConfig = useSectionsConfig();
+  const isDisabled = sectionsConfig["blogs"] === false;
 
   if (isDeviceLoading) {
     return <div className="min-h-screen w-full bg-black" />;

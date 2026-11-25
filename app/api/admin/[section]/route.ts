@@ -266,7 +266,7 @@ function validateBlogsData(input: unknown): {
 const MAX_BODY_BYTES = 2 * 1024 * 1024; // 2 MB
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ section: string }> }
 ) {
   const { section } = await params;
@@ -274,14 +274,31 @@ export async function GET(
     return NextResponse.json({ error: "Section not found" }, { status: 404 });
   }
 
+  const fresh = req.nextUrl.searchParams.get("fresh") === "1";
+
   try {
     const filePath = getDataFilePath(section);
+    const stat = await fs.promises.stat(filePath);
+    const etag = `"${stat.size}-${Math.trunc(stat.mtimeMs)}"`;
+    const cacheHeader = fresh
+      ? "no-store, no-cache, must-revalidate, proxy-revalidate"
+      : "public, max-age=60, stale-while-revalidate=300";
+
+    if (!fresh && req.headers.get("if-none-match") === etag) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          ETag: etag,
+          "Cache-Control": cacheHeader,
+        },
+      });
+    }
+
     const raw = await fs.promises.readFile(filePath, "utf-8");
     return NextResponse.json(JSON.parse(raw), {
       headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
+        ETag: etag,
+        "Cache-Control": cacheHeader,
       },
     });
   } catch {
@@ -396,7 +413,13 @@ export async function PUT(
     }
     revalidatePath("/");
 
-    return NextResponse.json({ ok: true });
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set("incial_cms_v", String(Date.now()), {
+      path: "/",
+      maxAge: 86400,
+      sameSite: "lax",
+    });
+    return res;
   } catch {
     return NextResponse.json({ error: "Failed to write data" }, { status: 500 });
   }

@@ -1,33 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { navLinks } from "@/lib/constants";
-import type { SectionConfig } from "@/lib/dataLoader";
+import { useSectionsConfig } from "@/lib/useSectionsConfig";
 
 interface NavMenuProps {
   onClose?: () => void;
 }
 
 export default function NavMenu({ onClose }: NavMenuProps) {
-  const [enabledSections, setEnabledSections] = useState<string[] | null>(null);
-
-  useEffect(() => {
-    fetch("/api/admin/sections")
-      .then((res) => res.json())
-      .then((data: { sections: SectionConfig[] }) => {
-        const enabled = data.sections.filter((s) => s.enabled).map((s) => s.id);
-        setEnabledSections(enabled);
-      })
-      .catch(() => {
-        setEnabledSections([]);
-      });
-  }, []);
+  const sectionsConfig = useSectionsConfig();
 
   const visibleLinks = navLinks.filter((link) => {
-    if (!enabledSections || !link.sectionId) return true;
-    return enabledSections.includes(link.sectionId);
+    if (!link.sectionId) return true;
+    return sectionsConfig[link.sectionId] !== false;
   });
 
   const handleLinkClick = (href: string) => {
