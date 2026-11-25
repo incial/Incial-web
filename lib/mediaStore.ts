@@ -240,12 +240,14 @@ export async function putFile(config: S3Config, key: string, body: Buffer, conte
   const entry: ManifestEntry = { key, size: body.length, contentType, lastModified: new Date().toISOString() };
   metaCache.set(key, entry);
   invalidateMediaResponseCache(key);
-  await recordFile(entry);
+  // the file is stored; the record only indexes the library, so failing to update it must not
+  // fail the upload (the library also finds files through the content that uses them)
+  await recordFile(entry).catch((error: unknown) => console.error(`Media record: could not add ${key}`, error));
 }
 
 export async function deleteFile(config: S3Config, key: string) {
   await getS3Client(config).send(new DeleteObjectCommand({ Bucket: config.bucket, Key: key }));
   metaCache.delete(key);
   invalidateMediaResponseCache(key);
-  await forgetFile(key);
+  await forgetFile(key).catch((error: unknown) => console.error(`Media record: could not remove ${key}`, error));
 }

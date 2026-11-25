@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
-import { S3_ROOT, getS3Config, publicUrlFor } from "@/lib/s3";
+import { S3_ROOT, describeStorageError, getS3Config, publicUrlFor } from "@/lib/s3";
 import { putFile } from "@/lib/mediaStore";
 import { checkFile, cleanFolder } from "@/lib/uploadRules";
 import { validateAdminAuth } from "@/lib/adminAuth";
@@ -36,6 +36,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: publicUrlFor(config, key), key }, { status: 200 });
   } catch (error: unknown) {
     console.error("Upload error:", error);
-    return NextResponse.json({ error: "Failed to upload the file." }, { status: 500 });
+    return NextResponse.json({ error: describeStorageError(error) }, { status: 500 });
   }
 }

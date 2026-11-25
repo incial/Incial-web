@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
-import { S3_ROOT, getS3Config, publicUrlFor } from "@/lib/s3";
+import { S3_ROOT, getS3Config, publicUrlFor, describeStorageError } from "@/lib/s3";
 import { deleteFile, listMedia, putFile, replaceInContent, scanUsage } from "@/lib/mediaStore";
 import { checkFile } from "@/lib/uploadRules";
 import { validateAdminAuth } from "@/lib/adminAuth";
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     return res;
   } catch (error) {
     console.error("Media replace error:", error);
-    return NextResponse.json({ error: "Could not replace the file." }, { status: 500 });
+    return NextResponse.json({ error: `Could not replace the file. ${describeStorageError(error)}` }, { status: 500 });
   }
 }
 

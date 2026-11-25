@@ -41,3 +41,34 @@ export function getS3Client(config: S3Config): S3Client {
 export function publicUrlFor(config: S3Config, key: string): string {
   return `${config.publicBase}/${key}`;
 }
+
+/**
+ * A short, safe explanation of a storage failure for the admin (never includes keys or secrets),
+ * so a failed upload says what to fix instead of only "failed".
+ */
+export function describeStorageError(error: unknown): string {
+  const name = error instanceof Error ? error.name : "";
+  const code = (error as { code?: string; Code?: string } | null)?.code ?? (error as { Code?: string } | null)?.Code ?? "";
+  const reason = name || code;
+  switch (reason) {
+    case "AccessDenied":
+    case "Forbidden":
+      return "Amazon S3 refused the upload: the server's AWS user is not allowed to write to the bucket.";
+    case "InvalidAccessKeyId":
+    case "SignatureDoesNotMatch":
+    case "CredentialsProviderError":
+      return "Amazon S3 rejected the server's AWS keys (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY).";
+    case "NoSuchBucket":
+      return "The S3 bucket set in S3_BUCKET does not exist.";
+    case "PermanentRedirect":
+    case "AuthorizationHeaderMalformed":
+      return "The S3 bucket is in a different region than AWS_REGION.";
+    case "TimeoutError":
+    case "ETIMEDOUT":
+    case "ECONNRESET":
+    case "ENOTFOUND":
+      return "The server could not reach Amazon S3. Please try again.";
+    default:
+      return reason ? `The upload failed (${reason}).` : "The upload failed.";
+  }
+}
