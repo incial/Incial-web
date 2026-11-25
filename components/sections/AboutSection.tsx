@@ -530,6 +530,7 @@ export default function AboutSection({
           titleClassName="text-5xl italic md:text-8xl"
           tagline="We build brands, businesses, and beyond — aligning strategy, creativity, and technology."
           scrollTargetId="about-content"
+          compact
         />
 
         {/* ── Three-image bordered cell grid ──────────────────────────────── */}

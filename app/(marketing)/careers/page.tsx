@@ -421,12 +421,7 @@ export default function CareersPage() {
         <ShaderHero
           breadcrumbs={[{ label: "Home", href: "/" }, { label: "Careers" }]}
           title={
-            <StretchHeading
-              lead="Careers at"
-              emphasis="Incial"
-              baseWeight={700}
-              emphasisGrow={1.15}
-            />
+            <StretchHeading emphasis="Careers" baseWeight={700} emphasisGrow={1.15} />
           }
           titleClassName="text-5xl italic md:text-8xl"
           tagline={
@@ -436,6 +431,7 @@ export default function CareersPage() {
             </>
           }
           scrollTargetId="careers-content"
+          compact
         />
 
         <main

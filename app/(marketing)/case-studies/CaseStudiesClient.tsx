@@ -75,6 +75,7 @@ export default function CaseStudiesClient({
           image={heroBanner || undefined}
           imageOpacity={0.1}
           scrollTargetId="case-studies-list"
+          compact
         />
 
         {/* The projects: a pinned row that moves sideways as you scroll */}

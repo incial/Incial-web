@@ -64,6 +64,7 @@ export default function BlogsClient({
         image={heroBanner}
         imageOpacity={0.1}
         scrollTargetId="blog-list"
+        compact
       />
 
       <main id="blog-list" className="mx-auto max-w-[1431px] scroll-mt-4 px-5 pb-28 pt-24 sm:px-8 lg:px-12">
@@ -108,6 +109,7 @@ export default function BlogsClient({
         image={heroBanner}
         imageOpacity={0.1}
         scrollTargetId="blog-list-mobile"
+        compact
       />
 
       <main id="blog-list-mobile" className="px-5 pb-16 pt-14">
