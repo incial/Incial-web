@@ -5,9 +5,43 @@
   --foreground: #171717;
 }
 
+/*
+ * The home page's "stage" colours. Dark by default (as every other page that shares these
+ * components expects); the home page sets .stage-light to turn its whole stage white with dark ink.
+ */
+:root {
+  --stage-bg: #000000;
+  --stage-ink: #ffffff;
+  --stage-card: #202020;
+  --stage-frame: #ffffff;
+  /* the open menu bar: white with black links on most pages */
+  --stage-menu-bg: #ffffff;
+  --stage-menu-ink: #000000;
+  --stage-logo-filter: none;
+  --stage-client-filter: grayscale(1) invert(1) brightness(1.25);
+  --stage-client-blend: screen;
+}
+.stage-light {
+  --stage-bg: #ffffff;
+  --stage-ink: #151716;
+  --stage-card: #f2f3f5;
+  --stage-frame: #000000;
+  /* on the light home page the open menu bar and its frame are black, with white links */
+  --stage-menu-bg: #000000;
+  --stage-menu-ink: #ffffff;
+  --stage-logo-filter: invert(1);
+  --stage-client-filter: grayscale(1) contrast(1.15);
+  --stage-client-blend: multiply;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-stage: var(--stage-bg);
+  --color-stage-ink: var(--stage-ink);
+  --color-stage-card: var(--stage-card);
+  --color-stage-menu: var(--stage-menu-bg);
+  --color-stage-menu-ink: var(--stage-menu-ink);
   --font-sans: var(--font-poppins);
   /* one typeface across the site: index numbers and accent words use Poppins too */
   --font-mono: var(--font-poppins);
@@ -389,4 +423,136 @@ body .admin-panel textarea {
       scroll-behavior: auto !important;
     }
   }
+}
+
+/* LearnTogether hero ticker: four copies of the list, so moving by half loops seamlessly */
+@keyframes lt-ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.lt-ticker {
+  animation: lt-ticker 32s linear infinite;
+}
+
+/* LearnTogether testimonials: two copies of each row, so moving by half loops seamlessly;
+   the second row runs the other way and hovering a row pauses it */
+.lt-marquee {
+  animation: lt-ticker var(--marquee-duration, 48s) linear infinite;
+}
+/* the "typing…" dots in the chat testimonials */
+@keyframes lt-typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+.lt-typing-dot {
+  animation: lt-typing 1s ease-in-out infinite;
+}
+
+/* the spotlight testimonial's timer bar */
+@keyframes lt-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.lt-marquee-reverse {
+  animation-direction: reverse;
+}
+.lt-marquee-row:hover .lt-marquee,
+.lt-marquee-row:focus-within .lt-marquee {
+  animation-play-state: paused;
+}
+
+/* LearnTogether characters: blink, sway, wave and bob (off for reduced motion) */
+@keyframes lt-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+@keyframes lt-sway {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(2.5deg); }
+}
+@keyframes lt-wave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-10deg); }
+}
+@keyframes lt-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.lt-blink { animation: lt-blink 4.2s ease-in-out infinite; }
+.lt-sway { animation: lt-sway 3.6s ease-in-out infinite; }
+.lt-wave { animation: lt-wave 1.8s ease-in-out infinite; }
+.lt-bob { animation: lt-bob 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .lt-blink, .lt-sway, .lt-wave, .lt-bob { animation: none; }
+}
+.lt-pupils {
+  transform: translate(calc(var(--lt-look-x, 0) * 4.5px), calc(var(--lt-look-y, 0) * 3.5px));
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lt-pupils { transition: none; }
+}
+
+@keyframes lt-bubble {
+  0% { transform: translateY(8px) scale(0.6); opacity: 0; }
+  60% { transform: translateY(-2px) scale(1.06); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.lt-bubble { animation: lt-bubble 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* ── Glass tiles (home hero): hidden until the pointer comes near. Each tile shows by its glow
+   (--glow, 0 to 1, set from script for a soft circle around the pointer): quick to appear, slow to fade. ── */
+.glass-tile {
+  --glow: 0;
+  position: relative;
+  border-radius: 16%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 2px 6px -3px rgba(0, 48, 188, 0.35);
+  opacity: var(--glow);
+  transform: scale(calc(0.86 + var(--glow) * 0.14));
+  transition:
+    opacity var(--glow-t, 1.3s) ease,
+    transform var(--glow-t, 1.3s) cubic-bezier(0.22, 1, 0.36, 1);
+}
+.glass-tile::before,
+.glass-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+/* the tile's own blue, with a white glare on one corner, breathing gently on its own clock */
+.glass-tile::before {
+  background:
+    radial-gradient(circle at var(--tile-glare, 20% 18%), rgba(255, 255, 255, var(--tile-glare-a, 0.5)) 0%, rgba(255, 255, 255, 0) 58%),
+    linear-gradient(150deg, rgb(var(--tile-c2)) 0%, rgb(var(--tile-c)) 70%);
+  animation: glass-tile-breathe var(--tile-dur, 7s) ease-in-out var(--tile-delay, 0s) infinite;
+}
+/* a brighter sheen on the tiles nearest the pointer */
+.glass-tile::after {
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.9), rgba(120, 175, 255, 0.6) 55%, rgba(20, 99, 255, 0.5));
+  opacity: calc((var(--glow) - 0.6) * 1.5);
+}
+/* cells past the stepped edge stay empty */
+.glass-tile-empty {
+  visibility: hidden;
+}
+@keyframes glass-tile-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.82; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glass-tile::before { animation: none; }
 }

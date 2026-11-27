@@ -9,10 +9,11 @@ export const greetings = [
 
 export const navLinks = [
   { label: "Home", href: "/" },
-  { label: "About Us", href: "/about", sectionId: "about" },
+  { label: "Services", href: "/#services" },
+  { label: "Works", href: "/case-studies", sectionId: "casestudies" },
   { label: "Products", href: "/products" },
+  { label: "About Us", href: "/about", sectionId: "about" },
   { label: "Learn Together", href: "/learn-together" },
-  { label: "Case Study", href: "/case-studies", sectionId: "casestudies" },
   { label: "Careers", href: "/careers", sectionId: "careers" },
   { label: "Blogs", href: "/blogs", sectionId: "blogs" },
   { label: "Contact Us", href: "/#contact", sectionId: "contact" },

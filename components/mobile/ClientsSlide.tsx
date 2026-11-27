@@ -16,8 +16,8 @@ const ClientsSlideComponent = ({ id, onInView }: ClientsSlideProps) => {
 
   return (
     <MobileSlide id={id} onInView={onInView}>
-      <div className="flex h-full w-full flex-col items-center justify-center overflow-hidden bg-black text-white">
-        <div className="mb-10 px-6 text-center">
+      <div className="flex h-full w-full flex-col items-center justify-center overflow-hidden bg-stage text-stage-ink">
+        <div className="mb-14 px-6 text-center">
           <AccentHeading
             text={data?.headerText || 'Some of Our Awesome Clients:'}
             className="text-[1.75rem] tracking-tighter"

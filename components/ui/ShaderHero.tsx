@@ -24,6 +24,8 @@ interface ShaderHeroProps {
    * page shows below it (no "Scroll down" hint). The default is a full-screen opening.
    */
   compact?: boolean;
+  /** Something decorative drawn over the shader and behind the words (e.g. a glass animation). */
+  decoration?: ReactNode;
 }
 
 function ramp(value: number, from: number, to: number): number {
@@ -44,6 +46,7 @@ export default function ShaderHero({
   imageOpacity = 0.1,
   scrollTargetId,
   compact = false,
+  decoration,
 }: ShaderHeroProps) {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
@@ -80,6 +83,8 @@ export default function ShaderHero({
           className="pointer-events-none z-[1] object-cover"
         />
       )}
+
+      {decoration && <div className="pointer-events-none absolute inset-0 z-[2]">{decoration}</div>}
 
       <motion.div style={{ opacity, y: contentY }} className="relative z-10 flex max-w-3xl flex-col items-center">
         <div className="mb-8 flex justify-center">

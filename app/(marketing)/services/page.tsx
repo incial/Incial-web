@@ -6,7 +6,7 @@ import { Header, MenuFrame } from "@/components/layout";
 import Footer from "@/components/layout/Footer";
 import { MobileServicePage } from "@/components/mobile";
 import { useDevice } from "@/hooks";
-import { ServicesScroller, HowWeWork } from "@/components/features/services";
+import { ServicesScroller, HowWeWork, ServiceWorkShowcase } from "@/components/features/services";
 import { SERVICE_CATEGORIES } from "@/lib/serviceCatalog";
 
 const MENU_OFFSET_Y = "6.25rem";
@@ -18,10 +18,7 @@ export default function ServicesPage() {
   const lastScrollY = useRef(0);
 
   useEffect(() => {
-    if (isMobile) {
-      setHeaderHidden(false);
-      return;
-    }
+    if (isMobile) return;
 
     lastScrollY.current = window.scrollY;
 
@@ -58,7 +55,7 @@ export default function ServicesPage() {
       <Header
         menuOpen={menuOpen}
         onToggleMenu={() => setMenuOpen(!menuOpen)}
-        hidden={headerHidden}
+        hidden={isMobile ? false : headerHidden}
       />
       <MenuFrame open={menuOpen} />
 
@@ -71,6 +68,8 @@ export default function ServicesPage() {
         style={{ zIndex: 30 }}
       >
         <ServicesScroller categories={SERVICE_CATEGORIES} />
+
+        <ServiceWorkShowcase />
 
         <HowWeWork />
 

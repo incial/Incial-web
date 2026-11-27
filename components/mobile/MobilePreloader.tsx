@@ -52,7 +52,7 @@ export const MobilePreloader = ({ onComplete }: MobilePreloaderProps) => {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black [contain:layout_paint_style]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-stage [contain:layout_paint_style]"
       style={{ 
         transform: 'translateZ(0)', 
         backfaceVisibility: 'hidden',

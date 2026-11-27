@@ -28,7 +28,8 @@ const MobileHeader = memo(function MobileHeader({
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className="fixed left-0 right-0 top-0 z-50 flex h-[110px] items-center justify-between px-6 pt-[45px] pb-2 md:hidden backdrop-blur-md"
       style={{
-        background: "linear-gradient(to bottom, rgba(7,8,11,0.55) 0%, transparent 100%)",
+        // a soft fade from the stage colour, so the bar reads over anything scrolling beneath it
+        background: "linear-gradient(to bottom, color-mix(in srgb, var(--stage-bg) 55%, transparent) 0%, transparent 100%)",
         position: 'fixed',
         top: 0,
         left: 0,
@@ -40,19 +41,19 @@ const MobileHeader = memo(function MobileHeader({
         contain: 'layout paint style',
       }}
     >
-      <div className="text-[15.5px] leading-none tracking-[-0.02em] text-white">
+      <div className="text-[15.5px] leading-none tracking-[-0.02em] text-stage-ink">
         <span className="font-normal">We Are </span>
         <span className="font-extrabold">incial.</span>
       </div>
       <button
         onClick={onToggleMenu}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-white/90 text-white focus:outline-none"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-stage-ink/90 text-stage-ink focus:outline-none"
         aria-label="Toggle menu"
       >
         <span className="relative block h-3.5 w-3.5">
-          <span className="absolute left-0 top-0.5 h-[1.5px] w-3.5 bg-white/90" />
-          <span className="absolute left-0 top-[6px] h-[1.5px] w-3.5 bg-white/90" />
-          <span className="absolute left-0 top-[11px] h-[1.5px] w-3.5 bg-white/90" />
+          <span className="absolute left-0 top-0.5 h-[1.5px] w-3.5 bg-stage-ink/90" />
+          <span className="absolute left-0 top-[6px] h-[1.5px] w-3.5 bg-stage-ink/90" />
+          <span className="absolute left-0 top-[11px] h-[1.5px] w-3.5 bg-stage-ink/90" />
         </span>
       </button>
     </motion.header>
@@ -161,7 +162,7 @@ export const MobileLayout = ({ children, backgroundLayer, scrollLocked = false, 
   }, [menuOpen, scrollLocked, pathname]);
 
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden">
+    <div className="relative w-full h-screen bg-stage overflow-hidden">
       {/* Fixed Header */}
       <MobileHeader
         menuOpen={menuOpen}

@@ -116,6 +116,7 @@ export interface Testimonial {
   id: string;
   quote: string;
   author: string;
+  role?: string;
 }
 
 export interface ClientsData {
@@ -131,7 +132,9 @@ export interface Stat {
 }
 
 export interface TrustData {
+  eyebrow?: string;
   title: string;
+  subtitle?: string;
   stats: Stat[];
 }
 
@@ -231,4 +234,52 @@ export interface Product {
 
 export interface ProductsData {
   products: Product[];
+}
+
+// ── LearnTogether (edited at /admin/learntogether, read by the /learn-together page) ──
+
+/** A photo in the Polaroid gallery. */
+export interface LearnTogetherPhoto {
+  id: string;
+  img: string;
+  caption: string;
+}
+
+/** A past workshop, meetup or session. */
+export interface LearnTogetherEvent {
+  id: string;
+  title: string;
+  /** As it should read on the page, for example "March 2026". */
+  date: string;
+  location: string;
+  summary: string;
+  img: string;
+}
+
+export interface LearnTogetherTestimonial {
+  id: string;
+  quote: string;
+  name: string;
+  role: string;
+  img: string;
+}
+
+export interface LearnTogetherCommunity {
+  title: string;
+  text: string;
+  buttonLabel: string;
+  /** A page on this site ("/...") or an https:// link, for example a WhatsApp or Discord invite. */
+  url: string;
+}
+
+/** How the testimonials are shown: a group chat, two sliding rows, or one big quote at a time. */
+export type LearnTogetherTestimonialLayout = "chat" | "marquee" | "spotlight";
+
+export interface LearnTogetherData {
+  stats: Stat[];
+  gallery: LearnTogetherPhoto[];
+  events: LearnTogetherEvent[];
+  testimonials: LearnTogetherTestimonial[];
+  community: LearnTogetherCommunity;
+  testimonialLayout: LearnTogetherTestimonialLayout;
 }

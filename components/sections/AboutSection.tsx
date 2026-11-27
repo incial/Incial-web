@@ -16,6 +16,7 @@ import Header from "@/components/layout/Header";
 import MenuFrame from "@/components/layout/MenuFrame";
 import Footer from "@/components/layout/Footer";
 import ShaderHero from "@/components/ui/ShaderHero";
+import GlassLottie from "@/components/ui/GlassLottie";
 import StretchHeading from "@/components/features/products/StretchHeading";
 import type { AboutData, TeamMember } from "@/lib/dataLoader";
 import { fetchCachedJson } from "@/lib/publicCache";
@@ -524,13 +525,29 @@ export default function AboutSection({
               lead="About"
               emphasis="Incial"
               baseWeight={700}
-              emphasisGrow={1.15}
+              stretch={false}
             />
           }
           titleClassName="text-5xl italic md:text-8xl"
           tagline="We build brands, businesses, and beyond — aligning strategy, creativity, and technology."
           scrollTargetId="about-content"
           compact
+          decoration={
+            // the glass tile matrix in both top corners (mirrored on the left), so the words stay clear in
+            // the middle; fixed in place from the top edge and faint (20%), each tile pulsing on its own; phones
+            // show a single whole matrix
+            <>
+              <GlassLottie
+                name="tiles-matrix"
+                flip
+                className="absolute left-0 top-0 hidden aspect-[1596/1746] -translate-x-[28%] opacity-20 md:block md:w-[38vw] lg:w-[32vw] lg:-translate-x-[12%]"
+              />
+              <GlassLottie
+                name="tiles-matrix"
+                className="absolute right-0 top-0 aspect-[1596/1746] w-full opacity-20 md:w-[38vw] md:translate-x-[28%] lg:w-[32vw] lg:translate-x-[12%]"
+              />
+            </>
+          }
         />
 
         {/* ── Three-image bordered cell grid ──────────────────────────────── */}
@@ -712,8 +729,16 @@ export default function AboutSection({
           </section>
 
           {/* ── Closing Statement ──────────────────────────────────────────── */}
-          <section className="mx-auto mt-24 max-w-4xl pb-4 text-center md:mt-36">
-            <Reveal>
+          <section className="relative mx-auto mt-24 max-w-4xl pb-4 text-center md:mt-36">
+            {/* the glass ring in the white space beside the statement, partly off the right edge: fixed in place at half strength; only a glint of
+                light sweeps across the glass */}
+            <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-full w-screen -translate-x-1/2 -translate-y-1/2">
+              <GlassLottie
+                name="glass-ring"
+                className="absolute right-0 top-1/2 aspect-[1696/1137] w-[70vw] -translate-y-1/2 translate-x-[48%] opacity-50 md:w-[38vw] md:translate-x-[58%] lg:translate-x-[34%]"
+              />
+            </div>
+            <Reveal className="relative">
               <h2 className="text-balance text-[clamp(2.2rem,1.2rem+4vw,4.75rem)] font-normal leading-[1.06] tracking-[-0.045em] text-[#151716]">
                 Strategy, craft, and technology{" "}
                 <span

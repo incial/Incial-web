@@ -13,6 +13,8 @@ interface StretchHeadingProps {
   baseWeight?: number;
   /** How much the emphasised word grows while hovered (1 = not at all). */
   emphasisGrow?: number;
+  /** false keeps the letters still: no weight or width change on hover. */
+  stretch?: boolean;
 }
 
 /** Poppins steps through these weights (it has no width axis, so width is set directly). */
@@ -72,7 +74,7 @@ function naturalWidth(widths: number[], weight: number): number {
  * The words also grow a little (the emphasised one most). Everything eases back when the cursor
  * leaves.
  */
-export default function StretchHeading({ lead = "", emphasis, baseWeight = 400, emphasisGrow = 1.32 }: StretchHeadingProps) {
+export default function StretchHeading({ lead = "", emphasis, baseWeight = 400, emphasisGrow = 1.32, stretch = true }: StretchHeadingProps) {
   const reduced = useReducedMotion();
   const rootRef = useRef<HTMLSpanElement>(null);
   const wordRefs = useRef<Array<HTMLSpanElement | null>>([]);
@@ -156,7 +158,7 @@ export default function StretchHeading({ lead = "", emphasis, baseWeight = 400, 
     if (!frame.current) frame.current = requestAnimationFrame(tick);
   }
 
-  const interactive = !reduced;
+  const interactive = stretch && !reduced;
 
   return (
     <span

@@ -1,15 +1,22 @@
 {
-  "title": "Why Trust Incial?",
+  "eyebrow": "Global Presence",
+  "title": "From Kerala, for the world.",
+  "subtitle": "Wherever our clients are, that's where we work.",
   "stats": [
     {
       "id": "1",
-      "value": "100+",
-      "label": "Projects Completed"
+      "value": "5+",
+      "label": "Countries"
     },
     {
       "id": "2",
-      "value": "60+",
-      "label": "Happy Clients"
+      "value": "50+",
+      "label": "Cities"
+    },
+    {
+      "id": "3",
+      "value": "12+",
+      "label": "Live projects right now"
     }
   ]
 }

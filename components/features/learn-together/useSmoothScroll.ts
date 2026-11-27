@@ -20,12 +20,9 @@ export function useSmoothScroll(): MutableRefObject<Lenis | null> {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const lenis = new Lenis({
-      duration: 1.15,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-      autoRaf: false,
-    });
+    // lerp: each frame closes a share of the gap, so the page follows the wheel and settles soon
+    // after it stops (the same feel as the home page)
+    const lenis = new Lenis({ lerp: 0.12, smoothWheel: true, autoRaf: false });
     lenisRef.current = lenis;
 
     lenis.on("scroll", ScrollTrigger.update);

@@ -14,6 +14,7 @@ const SECTION_LABELS: Record<string, string> = {
   products: "Products",
   services: "Services",
   trust: "Training stats",
+  learntogether: "LearnTogether",
 };
 
 export interface MediaUsage {

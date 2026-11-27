@@ -6,7 +6,7 @@ interface FooterProps {
 
 export default function Footer({ noPadding = false }: FooterProps) {
   return (
-    <footer className="w-full py-4 text-white opacity-70">
+    <footer className="w-full py-4 text-stage-ink opacity-70">
       <div className={noPadding ? "w-full" : "container mx-auto px-6 md:px-12 w-full"}>
         {/* Mobile layout */}
         <div className="flex flex-col items-center justify-center gap-2 md:hidden">

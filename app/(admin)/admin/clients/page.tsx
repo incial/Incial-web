@@ -229,6 +229,7 @@ export default function AdminClientsPage() {
                 <div key={testimonial.id} className="flex flex-col gap-3 rounded-2xl border border-separator p-3">
                   <TextAreaInput label="Quote" value={testimonial.quote} onChange={(value) => updateTestimonial(index, { quote: value })} rows={3} />
                   <TextInput label="Author" value={testimonial.author} onChange={(value) => updateTestimonial(index, { author: value })} placeholder="~ Client name" />
+                  <TextInput label="Role / Project (optional)" value={testimonial.role ?? ""} onChange={(value) => updateTestimonial(index, { role: value })} placeholder="E-commerce & Brand Identity" />
                   <Button size="sm" variant="danger-soft" className="w-fit" onPress={() => change({ testimonials: data.testimonials.filter((_, i) => i !== index) })}>
                     <Trash2 size={13} />
                     Remove

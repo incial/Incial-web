@@ -139,11 +139,11 @@ function HeadingRow({
       }}
       className="absolute left-0 right-0 flex flex-col justify-end pb-[1.1rem]"
     >
-      <p className="mb-3 flex items-center gap-3 font-mono text-[0.7rem] uppercase tracking-[0.22em] text-white/50">
+      <p className="mb-3 flex items-center gap-3 font-mono text-[0.7rem] uppercase tracking-[0.22em] text-stage-ink/50">
         <span>{String(row.categoryIndex + 1).padStart(2, "0")}</span>
-        <span className="h-px w-10 bg-white/25" />
+        <span className="h-px w-10 bg-stage-ink/25" />
       </p>
-      <h2 className="font-[Poppins,sans-serif] text-[clamp(1.5rem,0.9rem+1.8vw,2.7rem)] font-bold leading-[1.05] text-white">
+      <h2 className="font-[Poppins,sans-serif] text-[clamp(1.5rem,0.9rem+1.8vw,2.7rem)] font-bold leading-[1.05] text-stage-ink">
         {row.label}
       </h2>
     </motion.div>
@@ -164,13 +164,13 @@ function ItemRow({ row, focus }: { row: FlowRow; focus: MotionValue<number> }) {
         top: `${row.top}rem`,
         height: `${row.height}rem`,
       }}
-      className="absolute left-0 right-0 flex items-center gap-4 border-b border-white/10"
+      className="absolute left-0 right-0 flex items-center gap-4 border-b border-stage-ink/10"
     >
       <motion.span
         style={{ scaleX: markerScale }}
         className="h-px w-8 origin-left bg-blue-400"
       />
-      <span className="font-[Poppins,sans-serif] text-[clamp(0.95rem,0.78rem+0.55vw,1.3rem)] font-medium text-white">
+      <span className="font-[Poppins,sans-serif] text-[clamp(0.95rem,0.78rem+0.55vw,1.3rem)] font-medium text-stage-ink">
         {row.label}
       </span>
     </motion.div>
@@ -291,7 +291,7 @@ export default function ServicesScroller({
       aria-label="Our services"
       style={{ height: `${scrollSteps * SCROLL_PER_STEP_VH + 100 + holdVh}vh` }}
       // in bridge mode this section is laid over the hero, so it must not swallow the hero's clicks
-      className={`relative text-white ${bridge ? "pointer-events-none bg-transparent" : "bg-black"}`}
+      className={`relative text-stage-ink ${bridge ? "pointer-events-none bg-transparent" : "bg-stage"}`}
     >
       <div
         className={`sticky top-0 h-screen w-full overflow-hidden supports-[height:100dvh]:h-dvh ${bridge ? "pointer-events-none" : ""}`}

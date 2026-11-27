@@ -13,6 +13,7 @@ import {
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import { ProductCard, ProductCaption, firstParagraph } from "./ProductParts";
 import ShaderHero from "@/components/ui/ShaderHero";
+import GlassLottie from "@/components/ui/GlassLottie";
 import StretchHeading from "./StretchHeading";
 import type { Product } from "@/lib/dataLoader";
 
@@ -103,11 +104,27 @@ function Hero() {
   return (
     <ShaderHero
       breadcrumbs={[{ label: "Home", href: "/" }, { label: "Products" }]}
-      title={<StretchHeading emphasis="Products" baseWeight={700} emphasisGrow={1.15} />}
+      title={<StretchHeading emphasis="Products" baseWeight={700} stretch={false} />}
       titleClassName="text-5xl italic md:text-8xl"
       tagline="Built to work. Built to scale. Built for real businesses."
       scrollTargetId="product-flow"
       compact
+      decoration={
+        // the glass tile matrix in both top corners (mirrored on the left), so the words stay clear in
+        // the middle; fixed in place from the top edge and faint (20%), each tile pulsing on its own; phones
+        // show a single whole matrix
+        <>
+          <GlassLottie
+            name="tiles-matrix"
+            flip
+            className="absolute left-0 top-0 hidden aspect-[1596/1746] -translate-x-[28%] opacity-20 md:block md:w-[38vw] lg:w-[32vw] lg:-translate-x-[12%]"
+          />
+          <GlassLottie
+            name="tiles-matrix"
+            className="absolute right-0 top-0 aspect-[1596/1746] w-full opacity-20 md:w-[38vw] md:translate-x-[28%] lg:w-[32vw] lg:translate-x-[12%]"
+          />
+        </>
+      }
     />
   );
 }
@@ -220,12 +237,18 @@ function FlowBody({ products, reduced }: ProductsFlowProps & { reduced: boolean 
 
       {/* "Let's explore our products." */}
       <div ref={headingRef} className="relative flex justify-center px-6 pt-[clamp(4.5rem,10dvh,6rem)] md:pt-[clamp(5rem,13dvh,9rem)]">
+        {/* the glass ring in the white space beside the heading, partly off the right edge: fixed in place at half strength; only a glint of
+          light sweeps across the glass */}
+        <GlassLottie
+          name="glass-ring"
+          className="absolute right-0 top-[clamp(1rem,4dvh,3rem)] aspect-[1696/1137] w-[64vw] translate-x-[52%] opacity-50 md:w-[30vw] md:translate-x-[52%] lg:translate-x-[26%]"
+        />
         <motion.p
           initial={reduced ? false : { opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-10%" }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center text-[clamp(2.4rem,11vw,3.4rem)] font-normal tracking-[-0.04em] md:text-[clamp(1.6rem,1rem+2.4vw,3.2rem)]"
+          className="relative text-center text-[clamp(2.4rem,11vw,3.4rem)] font-normal tracking-[-0.04em] md:text-[clamp(1.6rem,1rem+2.4vw,3.2rem)]"
         >
           Let&rsquo;s explore our products.
           <span className="relative ml-3 inline-block h-[1.05em] w-[1.05em] rounded-full bg-[#151716] align-middle shadow-[0_0_0_0.22em_rgba(34,180,90,0.16)] ring-2 ring-white">

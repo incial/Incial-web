@@ -8,6 +8,8 @@ interface ScrollHintProps {
   className?: string;
   /** id of the element to scroll to; without a match the page scrolls down one screen. */
   targetId?: string;
+  /** Show only the arrows, without the words (the words stay as the button's label). */
+  iconOnly?: boolean;
 }
 
 /** Scroll one screen down, to the services section when the page has an anchor for it. */
@@ -49,8 +51,8 @@ export function DoubleDownArrow({ className = "h-6 w-6" }: { className?: string 
   );
 }
 
-/** A double downward arrow with a cascading pulse, and the words "Scroll down". */
-export default function ScrollHint({ delay = 0, className = "", targetId = "services" }: ScrollHintProps) {
+/** A double downward arrow with a cascading pulse, and the words "Scroll down" (unless `iconOnly`). */
+export default function ScrollHint({ delay = 0, className = "", targetId = "services", iconOnly = false }: ScrollHintProps) {
   return (
     <motion.button
       type="button"
@@ -59,11 +61,11 @@ export default function ScrollHint({ delay = 0, className = "", targetId = "serv
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className={`group flex cursor-pointer items-center gap-2.5 text-[14px] font-normal tracking-tight text-white/85 transition-colors hover:text-white focus-visible:text-white focus:outline-none ${className}`}
+      className={`group flex cursor-pointer items-center gap-2.5 text-[14px] font-normal tracking-tight text-stage-ink/85 transition-colors hover:text-stage-ink focus-visible:text-stage-ink focus:outline-none ${className}`}
     >
       <span className="scroll-hint-bob flex items-center gap-2.5">
-        <DoubleDownArrow className="h-[22px] w-[22px]" />
-        <span className="text-[15px]">Scroll down</span>
+        <DoubleDownArrow className={iconOnly ? "h-8 w-8 md:h-9 md:w-9" : "h-[22px] w-[22px]"} />
+        {!iconOnly && <span className="text-[15px]">Scroll down</span>}
       </span>
     </motion.button>
   );

@@ -23,7 +23,7 @@ const PIXELS_PER_SECOND = 38;
 const CARD_WIDTH_REM = { phone: 13, desktop: 24 };
 const SKELETON_CARDS = 6;
 const CARD_CLASS =
-  "relative mr-1 flex aspect-[5/2] w-[clamp(11rem,52vw,16rem)] shrink-0 lg:aspect-[7/2] lg:w-[clamp(13rem,32vw,26rem)] items-center justify-center overflow-hidden rounded-[5px] bg-[#202020]";
+  "relative mr-1 flex aspect-[5/2] w-[clamp(11rem,52vw,16rem)] shrink-0 lg:aspect-[7/2] lg:w-[clamp(13rem,32vw,26rem)] items-center justify-center overflow-hidden rounded-[5px] bg-stage-card";
 
 /** Deals clients into `rowCount` rows, round-robin, so every row has a similar mix. */
 function splitIntoRows(clients: ReadonlyArray<Client>, rowCount: number): Client[][] {
@@ -67,7 +67,7 @@ function ClientCard({ client, eager }: { client: Client; eager: boolean }) {
         loading={eager ? "eager" : "lazy"}
         // white logos on dark cards, whatever the source artwork: opaque white backgrounds
         // turn black and blend into the card
-        className="pointer-events-none object-contain object-center px-[14%] py-3 mix-blend-screen lg:px-[18%] lg:py-6 [filter:grayscale(1)_invert(1)_brightness(1.25)]"
+        className="pointer-events-none object-contain object-center px-[14%] py-3 [mix-blend-mode:var(--stage-client-blend)] lg:px-[18%] lg:py-6 [filter:var(--stage-client-filter)]"
       />
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { useStageColors, useStageTone } from "@/lib/stageTone";
 import { geoNaturalEarth1 } from "d3-geo";
 import type { ClientLocation } from "@/lib/dataLoader";
 import { HQ_LOCATION, isValidLocation } from "@/lib/clientLocations";
@@ -11,6 +12,12 @@ interface ClientWorldMapProps {
   locations: ReadonlyArray<ClientLocation>;
   /** Hold the threads back until the map is actually revealed (default: start when on screen). */
   play?: boolean;
+  /** Whether to draw city/client/HQ text labels next to pins (default: true). */
+  showLabels?: boolean;
+  /** Override the land-dot fill color (defaults to the active stage tone's `mapLand`). */
+  landColor?: string;
+  /** Draw pins and pulse rings in stage ink (black/white) so only the arc lines use accent blue. */
+  monochromePins?: boolean;
   className?: string;
 }
 
@@ -31,8 +38,9 @@ const FIRST_DELAY_MS = 500;
 const STAGGER_MS = 220;
 const MAX_STAGGER_MS = 2200;
 const PULSE_PERIOD_MS = 3400;
-const ACCENT = "86, 166, 255";
-const LABEL_MIN_WIDTH = 640;
+const DARK_ACCENT = "86, 166, 255";
+const LIGHT_ACCENT = "20, 99, 255";
+const LABEL_MIN_WIDTH = 520;
 
 function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
@@ -65,7 +73,14 @@ function buildArc(from: Point, to: Point, height: number): Point[] {
  * Dotted world map with threads running from Incial's base to every client location.
  * Draws only while on screen and in view; reduced-motion visitors get the finished map.
  */
-export default function ClientWorldMap({ locations, play = true, className = "" }: ClientWorldMapProps) {
+export default function ClientWorldMap({
+  locations,
+  play = true,
+  showLabels: showLabelsProp = true,
+  landColor,
+  monochromePins = false,
+  className = "",
+}: ClientWorldMapProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -80,6 +95,12 @@ export default function ClientWorldMap({ locations, play = true, className = "" 
       return true;
     });
   }, [locations]);
+
+  const colors = useStageColors();
+  const tone = useStageTone();
+  const accentRgb = tone === "light" ? LIGHT_ACCENT : DARK_ACCENT;
+  const resolvedLandColor = landColor ?? colors.mapLand;
+  const pinRingRgb = monochromePins ? colors.inkRgb : accentRgb;
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -114,7 +135,7 @@ export default function ClientWorldMap({ locations, play = true, className = "" 
       const layerCtx = layer.getContext("2d");
       if (!layerCtx) return;
       layerCtx.scale(dpr, dpr);
-      layerCtx.fillStyle = "rgba(150, 200, 255, 0.5)";
+      layerCtx.fillStyle = resolvedLandColor;
       const radius = Math.max(0.8, width / 950);
       layerCtx.beginPath();
       for (const [lng, lat] of dots) {
@@ -171,12 +192,12 @@ export default function ClientWorldMap({ locations, play = true, className = "" 
       const phase = ((now / 1700 + offset) % 1 + 1) % 1;
       ctx.beginPath();
       ctx.arc(point[0], point[1], size + phase * size * (strong ? 4.5 : 3.2), 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${ACCENT}, ${((1 - phase) * (strong ? 0.7 : 0.45)).toFixed(3)})`;
+      ctx.strokeStyle = `rgba(${pinRingRgb}, ${((1 - phase) * (strong ? 0.7 : 0.45)).toFixed(3)})`;
       ctx.lineWidth = 1.2;
       ctx.stroke();
       ctx.beginPath();
       ctx.arc(point[0], point[1], size, 0, Math.PI * 2);
-      ctx.fillStyle = strong ? "#ffffff" : `rgb(${ACCENT})`;
+      ctx.fillStyle = strong || monochromePins ? colors.ink : `rgb(${accentRgb})`;
       ctx.fill();
     };
 
@@ -191,7 +212,7 @@ export default function ClientWorldMap({ locations, play = true, className = "" 
           ? 0
           : now - startedAt;
       const pin = Math.max(2.2, width / 360);
-      const showLabels = width >= LABEL_MIN_WIDTH;
+      const showLabels = showLabelsProp && width >= LABEL_MIN_WIDTH;
 
       threads.forEach((thread, index) => {
         const delay = FIRST_DELAY_MS + Math.min(index * STAGGER_MS, MAX_STAGGER_MS);
@@ -202,7 +223,7 @@ export default function ClientWorldMap({ locations, play = true, className = "" 
         ctx.beginPath();
         ctx.moveTo(thread.path[0][0], thread.path[0][1]);
         for (let i = 1; i <= last; i++) ctx.lineTo(thread.path[i][0], thread.path[i][1]);
-        ctx.strokeStyle = `rgba(${ACCENT}, 0.7)`;
+        ctx.strokeStyle = `rgba(${accentRgb}, 0.7)`;
         ctx.lineWidth = Math.max(1.4, width / 650);
         ctx.lineCap = "round";
         ctx.stroke();
@@ -211,8 +232,8 @@ export default function ClientWorldMap({ locations, play = true, className = "" 
         if (progress < 1) {
           ctx.beginPath();
           ctx.arc(head[0], head[1], pin * 0.9, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-          ctx.shadowColor = `rgba(${ACCENT}, 0.9)`;
+          ctx.fillStyle = `rgba(${colors.inkRgb}, 0.95)`;
+          ctx.shadowColor = `rgba(${accentRgb}, 0.9)`;
           ctx.shadowBlur = 10;
           ctx.fill();
           ctx.shadowBlur = 0;
@@ -226,15 +247,15 @@ export default function ClientWorldMap({ locations, play = true, className = "" 
         const pulse = thread.path[Math.min(ARC_STEPS, Math.floor(travelled * ARC_STEPS))];
         ctx.beginPath();
         ctx.arc(pulse[0], pulse[1], pin * 0.7, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-        ctx.shadowColor = `rgba(${ACCENT}, 0.9)`;
+        ctx.fillStyle = `rgba(${colors.inkRgb}, 0.9)`;
+        ctx.shadowColor = `rgba(${accentRgb}, 0.9)`;
         ctx.shadowBlur = 8;
         ctx.fill();
         ctx.shadowBlur = 0;
 
         if (showLabels) {
           ctx.font = `500 ${Math.max(10, width / 95)}px Poppins, sans-serif`;
-          ctx.fillStyle = "rgba(255, 255, 255, 0.78)";
+          ctx.fillStyle = `rgba(${colors.inkRgb}, 0.78)`;
           ctx.textAlign = thread.end[0] > width * 0.82 ? "right" : "left";
           const gap = thread.end[0] > width * 0.82 ? -pin * 2.4 : pin * 2.4;
           ctx.fillText(thread.label.split(",")[0], thread.end[0] + gap, thread.end[1] + pin * 0.4);
@@ -244,7 +265,7 @@ export default function ClientWorldMap({ locations, play = true, className = "" 
       drawPin(hq, now, 0, pin * 1.35, true);
       if (showLabels) {
         ctx.font = `600 ${Math.max(11, width / 85)}px Poppins, sans-serif`;
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = colors.ink;
         ctx.textAlign = "left";
         ctx.fillText("Incial", hq[0] + pin * 3, hq[1] + pin * 0.5);
       }
@@ -302,7 +323,7 @@ export default function ClientWorldMap({ locations, play = true, className = "" 
       resize.disconnect();
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [places, play]);
+  }, [places, play, showLabelsProp, colors, accentRgb, resolvedLandColor, pinRingRgb, monochromePins]);
 
   return (
     <div

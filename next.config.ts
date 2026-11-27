@@ -27,6 +27,7 @@ const shortAssetCache = [
 ];
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["*.devtunnels.ms"],
   compress: true,
   poweredByHeader: false,
   // Load the database driver from node_modules instead of bundling it: webpack's copy of `ws`
