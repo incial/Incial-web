@@ -21,7 +21,7 @@ export const COMPACT_LOGO_TOP = "clamp(4.25rem, 10vh, 6.5rem)";
  * services stack turns back into, are drawn at exactly this size so the three always match.
  * (Tailwind needs these as whole literal strings.)
  */
-export const LOGO_BOX_SIZE = "h-72 w-72 md:h-[29rem] md:w-[29rem] lg:h-[36rem] lg:w-[36rem]";
+export const LOGO_BOX_SIZE = "h-72 w-72 md:h-[clamp(24rem,66svh,40rem)] md:w-[clamp(24rem,66svh,40rem)]";
 export const LOGO_BOX_WIDTH = "w-72 md:w-[29rem] lg:w-[36rem]";
 
 export default function LogoScreen({
@@ -61,12 +61,12 @@ export default function LogoScreen({
           transition={skipAnimation ? { duration: 0 } : { delay: 2.5 }}
           className="absolute left-[10%] hidden md:block"
         >
-          <LiquidButton href="/about" className="px-8 py-3 text-sm">About Us</LiquidButton>
+          <LiquidButton href="/about" className="px-7 py-2.5 text-[13px]">About Us</LiquidButton>
         </motion.div>
 
         {/* Inner Logo Wrapper: scaled and shifted upwards by 38px to stay perfectly centered */}
         <motion.div
-          className="relative flex w-[75vw] max-w-[320px] aspect-square items-center justify-center"
+          className="relative flex w-[88vw] max-w-[390px] aspect-square items-center justify-center"
           initial={{ scale: 0.95, y: 0 }}
           animate={{ scale: 1, y: -38 }}
           exit={{ scale: 0.95, y: 0 }}
@@ -76,7 +76,7 @@ export default function LogoScreen({
           {!skipAnimation && (
             <motion.svg
               viewBox="0 0 626 590"
-              className="absolute inset-0 h-full w-full stroke-white"
+              className="absolute inset-0 h-full w-full stroke-stage-ink"
               fill="transparent"
               strokeWidth="3"
               strokeLinecap="round"
@@ -119,7 +119,7 @@ export default function LogoScreen({
               src="/logo/Logoo-white.svg"
               alt="Incial Logo"
               fill
-              className="object-contain"
+              className="object-contain [filter:var(--stage-logo-filter)]"
               priority
             />
           </motion.div>
@@ -132,7 +132,7 @@ export default function LogoScreen({
           transition={skipAnimation ? { duration: 0 } : { delay: 2.5 }}
           className="absolute right-[10%] hidden md:block"
         >
-          <LiquidButton href="/pdf/Brochure.pdf" className="px-8 py-3 text-sm">Our Works</LiquidButton>
+          <LiquidButton href="/pdf/Brochure.pdf" className="px-7 py-2.5 text-[13px]">Our Works</LiquidButton>
         </motion.div>
       </motion.div>
     );
@@ -156,7 +156,7 @@ export default function LogoScreen({
         transition={compact ? { duration: 0.3 } : skipAnimation ? { duration: 0 } : { delay: 2.5 }}
         className={`absolute left-[10%] hidden md:block ${compact ? "pointer-events-none" : ""}`}
       >
-        <LiquidButton href="/about" className="px-8 py-3 text-sm">About Us</LiquidButton>
+        <LiquidButton href="/about" className="px-7 py-2.5 text-[13px]">About Us</LiquidButton>
       </motion.div>
 
       {/* Desktop Logo Container (Standard Flex centering, no offsets) */}
@@ -173,7 +173,7 @@ export default function LogoScreen({
         {!skipAnimation && (
           <motion.svg
             viewBox="0 0 626 590"
-            className="absolute inset-0 h-full w-full stroke-white"
+            className="absolute inset-0 h-full w-full stroke-stage-ink"
             fill="transparent"
             strokeWidth="3"
             strokeLinecap="round"
@@ -216,7 +216,7 @@ export default function LogoScreen({
             src="/logo/Logoo-white.svg"
             alt="Incial Logo"
             fill
-            className="object-contain"
+            className="object-contain [filter:var(--stage-logo-filter)]"
             priority
           />
         </motion.div>
@@ -229,7 +229,7 @@ export default function LogoScreen({
         transition={compact ? { duration: 0.3 } : skipAnimation ? { duration: 0 } : { delay: 2.5 }}
         className={`absolute right-[10%] hidden md:block ${compact ? "pointer-events-none" : ""}`}
       >
-        <LiquidButton href="/pdf/Brochure.pdf" className="px-8 py-3 text-sm">Our Works</LiquidButton>
+        <LiquidButton href="/pdf/Brochure.pdf" className="px-7 py-2.5 text-[13px]">Our Works</LiquidButton>
       </motion.div>
     </motion.div>
   );

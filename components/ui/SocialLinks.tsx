@@ -23,7 +23,7 @@ interface SocialLinksProps {
 }
 
 export default function SocialLinks({
-  className = "text-white/80 hover:text-white",
+  className = "text-stage-ink/80 hover:text-stage-ink",
 }: SocialLinksProps) {
   return (
     <div className="flex items-center gap-4">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useStageTone } from "@/lib/stageTone";
 
 interface ShaderBackgroundProps {
   className?: string;
@@ -9,6 +10,8 @@ interface ShaderBackgroundProps {
    * whatever lies beneath instead of ending in a line. The parent should be the colour to fade to.
    */
   fadeBottom?: number;
+  /** "dark": the near-black surface; "light": the same in paper white; "green": the LearnTogether green. Defaults to the stage tone (dark unless the home page sets light). */
+  variant?: "dark" | "green" | "light";
 }
 
 const VERTEX = `
@@ -96,6 +99,163 @@ void main() {
 }
 `;
 
+/** The same surface as FRAGMENT, but paper white (used when the stage is light). */
+const FRAGMENT_LIGHT = `
+precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
+uniform vec2 uPointer;  // eased cursor position, 0..1 (y up)
+uniform float uHover;   // 0 when the cursor is away, 1 when it is over the hero
+
+float hash(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(
+    mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+    mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x),
+    f.y
+  );
+}
+
+float fbm(vec2 p) {
+  float v = 0.0;
+  float a = 0.5;
+  for (int i = 0; i < 4; i++) {
+    v += a * noise(p);
+    p = p * 2.03 + vec2(17.1, 9.2);
+    a *= 0.5;
+  }
+  return v;
+}
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / uRes;
+  float aspect = uRes.x / uRes.y;
+  vec2 q = vec2(uv.x * aspect, uv.y);
+  // the texture shifts a hair with the cursor: depth, not motion
+  q += (uPointer - 0.5) * 0.04 * uHover;
+
+  vec3 base = vec3(0.972, 0.974, 0.978);
+
+  // slow, soft mottling
+  float texture = (fbm(q * 1.6 + vec2(uTime * 0.004, -uTime * 0.0027)) - 0.5) * 0.024;
+  // fine, paper-like texture
+  texture += (fbm(q * 38.0) - 0.5) * 0.007;
+  // film grain that shimmers slowly: each new pattern is faded in over the last one, so it never
+  // flickers or steps
+  float grainStep = uTime * 0.6;
+  float grainA = hash(gl_FragCoord.xy + floor(grainStep) * 37.0);
+  float grainB = hash(gl_FragCoord.xy + (floor(grainStep) + 1.0) * 37.0);
+  float grain = mix(grainA, grainB, smoothstep(0.0, 1.0, fract(grainStep)));
+  texture += (grain - 0.5) * 0.028;
+
+  // brighter in the middle, darker toward the corners
+  vec2 c = uv - 0.5;
+  c.x *= aspect * 0.8;
+  float vignette = smoothstep(0.95, 0.15, length(c));
+  // a very slow breath in the middle of the screen
+  float breath = 1.0 + 0.10 * sin(uTime * 0.12);
+
+  // a barely-there lift of light that follows the cursor
+  vec2 d = uv - uPointer;
+  d.x *= aspect;
+  float follow = exp(-dot(d, d) * 7.0) * 0.011 * uHover;
+
+  // the light surface: paper white, a touch greyer toward the corners, a faint cool lift at the cursor
+  vec3 color = base + texture * 0.8 + 0.008 * vignette * breath + vec3(-0.004, 0.0, 0.006) * follow / 0.011;
+  color *= mix(0.94, 1.0, vignette);
+
+  gl_FragColor = vec4(min(color, vec3(1.0)), 1.0);
+}
+`;
+
+/**
+ * The LearnTogether green: soft bands of green that slowly flow and fold into each other
+ * (domain-warped noise), a lighter glow in the middle, a light that follows the cursor, and
+ * animated film grain over everything.
+ */
+const FRAGMENT_GREEN = `
+precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
+uniform vec2 uPointer;
+uniform float uHover;
+
+float hash(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(
+    mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+    mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x),
+    f.y
+  );
+}
+
+float fbm(vec2 p) {
+  float v = 0.0;
+  float a = 0.5;
+  for (int i = 0; i < 5; i++) {
+    v += a * noise(p);
+    p = p * 2.02 + vec2(17.1, 9.2);
+    a *= 0.5;
+  }
+  return v;
+}
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / uRes;
+  float aspect = uRes.x / uRes.y;
+  vec2 q = vec2(uv.x * aspect, uv.y);
+  q += (uPointer - 0.5) * 0.06 * uHover;
+  float t = uTime * 0.05;
+
+  // the flow: noise that bends noise, so the bands fold slowly into each other
+  vec2 warp = vec2(fbm(q * 1.1 + vec2(t, -t * 0.7)), fbm(q * 1.1 + vec2(-t * 0.8, t * 0.6) + 5.2));
+  float n = fbm(q * 1.4 + warp * 1.8 - vec2(t * 0.5, 0.0));
+
+  vec3 deep  = vec3(0.427, 0.737, 0.271);  // #6dbc45
+  vec3 mid   = vec3(0.561, 0.831, 0.388);  // #8fd463
+  vec3 light = vec3(0.690, 0.906, 0.502);  // #b0e780
+  vec3 color = mix(deep, mid, smoothstep(0.28, 0.62, n));
+  color = mix(color, light, smoothstep(0.55, 0.85, n) * 0.75);
+
+  // a lighter glow in the middle, a little darker toward the corners
+  vec2 c = uv - vec2(0.5, 0.58);
+  c.x *= aspect * 0.75;
+  float glow = smoothstep(0.85, 0.0, length(c));
+  color += vec3(0.06, 0.07, 0.04) * glow;
+  color *= mix(0.9, 1.0, smoothstep(1.1, 0.3, length(c)));
+
+  // a soft light that follows the cursor
+  vec2 d = uv - uPointer;
+  d.x *= aspect;
+  color += vec3(0.05, 0.06, 0.035) * exp(-dot(d, d) * 6.0) * uHover;
+
+  // film grain that shimmers (cross-faded, so it never flickers)
+  float grainStep = uTime * 0.8;
+  float grainA = hash(gl_FragCoord.xy + floor(grainStep) * 37.0);
+  float grainB = hash(gl_FragCoord.xy + (floor(grainStep) + 1.0) * 37.0);
+  float grain = mix(grainA, grainB, smoothstep(0.0, 1.0, fract(grainStep)));
+  color += (grain - 0.5) * 0.075;
+
+  gl_FragColor = vec4(color, 1.0);
+}
+`;
+
 /**
  * The shader is drawn at a fraction of the screen size and stretched up: the texture is soft
  * anyway, and it keeps every frame cheap enough to draw at the screen's full refresh rate, which
@@ -121,7 +281,9 @@ function compile(gl: WebGLRenderingContext, type: number, source: string): WebGL
 }
 
 /** A WebGL shader that fills its (positioned) parent. Draws nothing if WebGL is unavailable. */
-export default function ShaderBackground({ className = "", fadeBottom = 0 }: ShaderBackgroundProps) {
+export default function ShaderBackground({ className = "", fadeBottom = 0, variant }: ShaderBackgroundProps) {
+  const tone = useStageTone();
+  const surface = variant ?? tone;
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -136,7 +298,7 @@ export default function ShaderBackground({ className = "", fadeBottom = 0 }: Sha
     if (!gl) return;
 
     const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
-    const fragment = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT);
+    const fragment = compile(gl, gl.FRAGMENT_SHADER, surface === "green" ? FRAGMENT_GREEN : surface === "light" ? FRAGMENT_LIGHT : FRAGMENT);
     const program = gl.createProgram();
     if (!vertex || !fragment || !program) return;
     gl.attachShader(program, vertex);
@@ -267,7 +429,7 @@ export default function ShaderBackground({ className = "", fadeBottom = 0 }: Sha
       // The context is deliberately not released here: React's dev double-mount would otherwise
       // leave this same canvas with a lost context (a blank white hero). It is freed with the canvas.
     };
-  }, []);
+  }, [surface]);
 
   // opaque down to the start of the fade, then easing smoothly to transparent at the bottom edge
   const fadeStart = `${Math.round((1 - fadeBottom) * 100)}%`;

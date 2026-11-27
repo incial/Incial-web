@@ -14,6 +14,7 @@ import {
   Package,
   Settings2,
   Images,
+  GraduationCap,
   LogOut,
   ChevronsUpDown,
   type LucideIcon,
@@ -33,7 +34,8 @@ const groups: Array<{ title: string; items: NavItem[] }> = [
       { href: "/admin/about", label: "About", icon: Users },
       { href: "/admin/clients", label: "Clients", icon: Building2 },
       { href: "/admin/products", label: "Products", icon: Package },
-      { href: "/admin/trust", label: "Training stats", icon: BarChart3 },
+      { href: "/admin/trust", label: "Global presence", icon: BarChart3 },
+      { href: "/admin/learntogether", label: "LearnTogether", icon: GraduationCap },
     ],
   },
   {

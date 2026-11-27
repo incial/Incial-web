@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useStageColors } from "@/lib/stageTone";
 import { geoGraticule, geoOrthographic, geoPath, type GeoPermissibleObjects } from "d3-geo";
 import { timer } from "d3-timer";
 import { loadLandDots, loadWorldOutline } from "@/lib/mapData";
@@ -19,6 +20,7 @@ export default function RotatingEarth({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const colors = useStageColors();
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -65,9 +67,9 @@ export default function RotatingEarth({
         0,
         2 * Math.PI,
       );
-      ctx.fillStyle = "#000000";
+      ctx.fillStyle = colors.globeOcean;
       ctx.fill();
-      ctx.strokeStyle = "rgba(100, 150, 255, 0.4)"; // Slightly glowing edge
+      ctx.strokeStyle = colors.globeEdge; // slightly glowing edge
       ctx.lineWidth = 2 * scaleFactor;
       ctx.stroke();
 
@@ -75,7 +77,7 @@ export default function RotatingEarth({
         // Draw graticule
         ctx.beginPath();
         path(graticuleLines);
-        ctx.strokeStyle = "rgba(100, 150, 255, 0.2)";
+        ctx.strokeStyle = colors.globeGrid;
         ctx.lineWidth = 1 * scaleFactor;
         ctx.globalAlpha = 0.5;
         ctx.stroke();
@@ -86,7 +88,7 @@ export default function RotatingEarth({
         landFeatures?.features.forEach((feature) => {
           path(feature);
         });
-        ctx.strokeStyle = "rgba(100, 150, 255, 0.6)";
+        ctx.strokeStyle = colors.globeLand;
         ctx.lineWidth = 1 * scaleFactor;
         ctx.stroke();
       }
@@ -94,7 +96,7 @@ export default function RotatingEarth({
       // Draw halftone dots: one path and one fill for all of them (thousands of separate
       // fills per frame were what made the globe stutter)
       const dotRadius = 1.2 * scaleFactor;
-      ctx.fillStyle = "rgba(150, 200, 255, 0.8)";
+      ctx.fillStyle = colors.globeDots;
       ctx.beginPath();
       for (const dot of allDots) {
         const projected = projection([dot.lng, dot.lat]);
@@ -255,7 +257,7 @@ export default function RotatingEarth({
       canvas.removeEventListener("mousedown", handleMouseDown);
       canvas.removeEventListener("wheel", handleWheel);
     };
-  }, [width, height]);
+  }, [width, height, colors]);
 
   if (error) {
     return (

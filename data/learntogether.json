@@ -1,0 +1,144 @@
+{
+  "stats": [
+    {
+      "id": "demo-s1",
+      "value": "12+",
+      "label": "Events completed"
+    },
+    {
+      "id": "demo-s2",
+      "value": "350+",
+      "label": "Learners joined"
+    },
+    {
+      "id": "demo-s3",
+      "value": "40+",
+      "label": "Projects built"
+    },
+    {
+      "id": "demo-s4",
+      "value": "4",
+      "label": "Learning tracks"
+    }
+  ],
+  "gallery": [
+    {
+      "id": "demo-g0",
+      "img": "/images/about/Team-Photo.webp",
+      "caption": "Brand sprint, day one"
+    },
+    {
+      "id": "demo-g1",
+      "img": "/images/about/imgBrand.webp",
+      "caption": "Pitching the prototypes"
+    },
+    {
+      "id": "demo-g2",
+      "img": "/images/about/imgImpact.webp",
+      "caption": "Sketch wall"
+    },
+    {
+      "id": "demo-g3",
+      "img": "/images/case1.webp",
+      "caption": "Late-night build"
+    },
+    {
+      "id": "demo-g4",
+      "img": "/images/about/Brand.png",
+      "caption": "Mentor hour"
+    },
+    {
+      "id": "demo-g5",
+      "img": "/images/about/Impact.png",
+      "caption": "Demo day"
+    },
+    {
+      "id": "demo-g6",
+      "img": "/images/about/Team-Photo.webp",
+      "caption": "The whole crew"
+    },
+    {
+      "id": "demo-g7",
+      "img": "/images/about/imgBrand.webp",
+      "caption": "Coffee & critique"
+    }
+  ],
+  "events": [
+    {
+      "id": "demo-e1",
+      "title": "Brand Identity Workshop",
+      "date": "Demo · March 2026",
+      "location": "Demo venue",
+      "summary": "Demo summary: two days of research, moodboards and logo sketches, ending with each team presenting a full identity.",
+      "img": "/images/about/imgBrand.webp"
+    },
+    {
+      "id": "demo-e2",
+      "title": "Build Your First Web App",
+      "date": "Demo · February 2026",
+      "location": "Demo venue",
+      "summary": "Demo summary: from a blank editor to a deployed app in one weekend, with mentors on hand for every bug.",
+      "img": "/images/case1.webp"
+    },
+    {
+      "id": "demo-e3",
+      "title": "Social Campaign Lab",
+      "date": "Demo · January 2026",
+      "location": "Demo venue",
+      "summary": "Demo summary: plan, shoot and schedule a week of content for a real local brand.",
+      "img": "/images/about/imgImpact.webp"
+    },
+    {
+      "id": "demo-e4",
+      "title": "Portfolio Review Night",
+      "date": "Demo · December 2025",
+      "location": "Demo venue",
+      "summary": "Demo summary: one-on-one feedback on portfolios from working designers and developers.",
+      "img": "/images/about/Team-Photo.webp"
+    }
+  ],
+  "testimonials": [
+    {
+      "id": "demo-t1",
+      "quote": "Demo quote: I came in knowing a little Figma and left with a brand I designed end to end, plus the confidence to present it.",
+      "name": "Demo Learner",
+      "role": "Design track (demo)",
+      "img": ""
+    },
+    {
+      "id": "demo-t2",
+      "quote": "Demo quote: building something real with people who cared made it click in a way no course ever did.",
+      "name": "Demo Learner",
+      "role": "Technology track (demo)",
+      "img": ""
+    },
+    {
+      "id": "demo-t3",
+      "quote": "Demo quote: the mentors treated our work like client work. That changed how I think about everything I make.",
+      "name": "Demo Learner",
+      "role": "Marketing track (demo)",
+      "img": ""
+    },
+    {
+      "id": "demo-t4",
+      "quote": "Demo quote: short, friendly, and very hands-on.",
+      "name": "Demo Mentor",
+      "role": "Mentor (demo)",
+      "img": ""
+    },
+    {
+      "id": "demo-t5",
+      "quote": "Demo quote: a longer testimonial to see how the cards cope with more text. We met every week, shared what we had built, broke it, fixed it and shipped it again, and by the end the whole group had something to show.",
+      "name": "Demo Learner",
+      "role": "Creative Skills track (demo)",
+      "img": ""
+    }
+  ],
+  "community": {
+    "title": "Join the LearnTogether community",
+    "text": "Meet designers, coders and marketers who build like you. Hear about the next workshop first.",
+    "buttonLabel": "Join the community",
+    "url": "/#contact"
+  },
+  "testimonialLayout": "chat"
+}

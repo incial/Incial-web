@@ -8,7 +8,7 @@ import { apiGetSection, apiSaveSection } from "@/lib/adminApi";
 import type { ClientLocation, ClientsData, Stat, TrustData } from "@/lib/dataLoader";
 import ClientLocations from "./ClientLocations";
 import SectionVisibilityToggle from "@/components/admin/SectionVisibilityToggle";
-import { EmptyState, LoadingState, PageHeader, Panel, SaveButton, TextInput } from "@/components/admin/ui";
+import { EmptyState, LoadingState, PageHeader, Panel, SaveButton, TextAreaInput, TextInput } from "@/components/admin/ui";
 
 export default function AdminTrustPage() {
   const [data, setData] = useState<TrustData | null>(null);
@@ -20,7 +20,7 @@ export default function AdminTrustPage() {
   useEffect(() => {
     apiGetSection<TrustData>("trust")
       .then(setData)
-      .catch(() => setData({ title: "", stats: [] }));
+      .catch(() => setData({ eyebrow: "", title: "", subtitle: "", stats: [] }));
     apiGetSection<ClientsData>("clients")
       .then((value) => {
         setClients(value);
@@ -73,7 +73,7 @@ export default function AdminTrustPage() {
     setSaving(true);
     try {
       await apiSaveSection("trust", data);
-      toast.success("Training stats saved.");
+      toast.success("Global presence section saved.");
     } catch {
       toast.error("Failed to save.");
     } finally {
@@ -84,21 +84,41 @@ export default function AdminTrustPage() {
   return (
     <div>
       <PageHeader
-        title="Training & trust stats"
-        description={'The numbers in the "Why Trust Incial?" section.'}
+        title="Global presence & stats"
+        description={'Copy, metrics, and world map pins in the "Global Presence" section.'}
         visibility={<SectionVisibilityToggle sectionId="trust" label="Show section" />}
         primary={<SaveButton saving={saving} onPress={save} />}
       />
 
       <div className="grid items-start gap-6 @3xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        <Panel title="Heading" description="The title above the numbers.">
-          <TextInput label="Title" value={data.title} onChange={(value) => setData({ ...data, title: value })} placeholder="Why Trust Incial?" />
+        <Panel title="Heading & copy" description="The eyebrow, headline, and subtitle above the metrics.">
+          <TextInput
+            label="Eyebrow"
+            value={data.eyebrow ?? ""}
+            onChange={(value) => setData({ ...data, eyebrow: value })}
+            placeholder="Global Presence"
+          />
+          <TextAreaInput
+            label="Headline"
+            value={data.title}
+            onChange={(value) => setData({ ...data, title: value })}
+            placeholder={"From Kerala,\nfor the world."}
+            description="Use a new line where you want the headline to break."
+            rows={2}
+          />
+          <TextAreaInput
+            label="Subtitle"
+            value={data.subtitle ?? ""}
+            onChange={(value) => setData({ ...data, subtitle: value })}
+            placeholder="Wherever our clients are, that's where we work."
+            rows={2}
+          />
           <SectionVisibilityToggle sectionId="trust-title" label="Show heading" />
         </Panel>
 
         <Panel
-          title={`Stats (${data.stats.length})`}
-          description={'Big numbers, for example "50+ Happy Clients".'}
+          title={`Metrics (${data.stats.length})`}
+          description={'Numbers that count up on scroll, for example "5+ Countries".'}
           actions={
             <Button size="sm" variant="secondary" onPress={() => setData({ ...data, stats: [...data.stats, { id: String(Date.now()), value: "", label: "" }] })}>
               <Plus size={14} />

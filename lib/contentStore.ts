@@ -26,6 +26,7 @@ export const CONTENT_KEYS = [
   "casestudies",
   "products",
   "sections",
+  "learntogether",
 ] as const;
 export type ContentKey = (typeof CONTENT_KEYS)[number];
 /** The record of uploaded files (see lib/mediaStore.ts), stored alongside the content. */

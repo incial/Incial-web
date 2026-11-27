@@ -144,7 +144,7 @@ export const LandingIntroSequence = memo(function LandingIntroSequence({
             }}
           >
             <div
-              className="flex flex-row items-center justify-center gap-x-2.5 font-light text-white whitespace-nowrap"
+              className="flex flex-row items-center justify-center gap-x-2.5 font-light text-stage-ink whitespace-nowrap"
               style={{
                 fontSize: 'clamp(1.75rem, 6.5vw, 3.5rem)',
                 backfaceVisibility: 'hidden',

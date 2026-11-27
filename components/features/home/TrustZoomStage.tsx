@@ -14,6 +14,7 @@ import { isValidLocation } from "@/lib/clientLocations";
 import { fetchCachedJson } from "@/lib/publicCache";
 import { useClientsData } from "@/lib/useClientsData";
 import { useSectionsConfig } from "@/lib/useSectionsConfig";
+import { useStageColors } from "@/lib/stageTone";
 
 interface Stat {
   id: string;
@@ -46,7 +47,6 @@ const DEFAULT_STATS: Stat[] = [
 ];
 
 const ACCENT = "#56A6FF";
-const WHITE = "#ffffff";
 
 // timeline (fractions of `progress`)
 const DISSOLVE_END = 0.08; // the grainy logo turns into the solid white one
@@ -124,6 +124,7 @@ function LogoDoors({
   /** Draw the logo exactly as large as the hero logo (and so as the dust it collapses to). */
   sizeClass: string;
 }) {
+  const colors = useStageColors();
   const mainRef = useRef<SVGGElement>(null);
   const leftRef = useRef<SVGGElement>(null);
   const rightRef = useRef<SVGGElement>(null);
@@ -208,7 +209,7 @@ function LogoDoors({
             <feComposite in="SourceGraphic" in2="mask" operator="in" />
           </filter>
         </defs>
-        <g ref={mainRef} fill={WHITE} opacity={0}>
+        <g ref={mainRef} fill={colors.ink} opacity={0}>
           <g ref={dissolveRef}>
             <g ref={leftRef}>
               <rect ref={dotRef} x="164" y="150" width="122" height="122" rx="61" clipPath="url(#trust-left-half)" />
@@ -261,7 +262,8 @@ function WipeWord({
 }) {
   const start = (index / count) * 0.55;
   const t = useTransform(reveal, [start, start + 0.45], [0, 1], { clamp: true });
-  const color = useTransform(t, [0, 0.45, 1], [ACCENT, ACCENT, isBrand ? ACCENT : WHITE]);
+  const ink = useStageColors().ink;
+  const color = useTransform(t, [0, 0.45, 1], [ACCENT, ACCENT, isBrand ? ACCENT : ink]);
   const y = useTransform(t, [0, 1], ["0.6em", "0em"]);
 
   return (
@@ -311,7 +313,7 @@ function StatItem({
       <div className="text-[clamp(3rem,1.6rem+3.6vw,4.4rem)] font-bold italic leading-none tracking-tighter text-[#56A6FF]">
         <CountUp value={stat.value} reveal={reveal} />
       </div>
-      <div className="mt-2 text-base font-normal tracking-wide text-white md:text-lg">{stat.label}</div>
+      <div className="mt-2 text-base font-normal tracking-wide text-stage-ink md:text-lg">{stat.label}</div>
     </motion.div>
   );
 }
@@ -374,7 +376,7 @@ export default function TrustZoomStage({
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {withBackdrop && <motion.div style={{ opacity: backdrop }} className="absolute inset-0 bg-black" />}
+      {withBackdrop && <motion.div style={{ opacity: backdrop }} className="absolute inset-0 bg-stage" />}
 
       <motion.div
         style={{ opacity: contentOpacity, scale: contentScale, y: contentY }}

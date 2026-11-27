@@ -31,7 +31,7 @@ export default function Header({
   blend = false,
 }: HeaderProps) {
   const pathname = usePathname();
-  const shouldHideMobile = hideMobile || pathname === "/";
+  const shouldHideMobile = hideMobile;
   const [scrollHidden, setScrollHidden] = useState(false);
   const lastScrollYRef = useRef(0);
 
@@ -100,13 +100,13 @@ export default function Header({
             style={{ pointerEvents: menuOpen || shouldHide ? "none" : "auto" }}
             className="fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-transparent px-6 py-5 md:hidden"
           >
-            <div className="text-sm font-light tracking-wide text-white">
+            <div className="text-sm font-light tracking-wide text-stage-ink">
               We Are <span className="font-bold">incial.</span>
             </div>
             <button
               onClick={onToggleMenu}
               aria-label={menuOpen ? "Close menu" : "Open menu"}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/60 text-white transition-colors hover:bg-white/10"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-stage-ink/60 text-stage-ink transition-colors hover:bg-stage-ink/10"
             >
               <HiMenuAlt3 className="text-2xl" />
             </button>
@@ -168,13 +168,13 @@ export default function Header({
           style={{ pointerEvents: menuOpen || shouldHide ? "none" : "auto" }}
           className={`fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-transparent px-6 py-5 md:hidden${blendClass}`}
         >
-          <div className="text-sm font-light tracking-wide text-white">
+          <div className="text-sm font-light tracking-wide text-stage-ink">
             We Are <span className="font-bold">incial.</span>
           </div>
           <button
             onClick={onToggleMenu}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/60 text-white transition-colors hover:bg-white/10"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-stage-ink/60 text-stage-ink transition-colors hover:bg-stage-ink/10"
           >
             <HiMenuAlt3 className="text-2xl" />
           </button>
@@ -207,15 +207,15 @@ export default function Header({
           opacity: shouldHide ? 0 : 1,
         }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed left-0 right-0 top-0 z-50 origin-top items-center justify-between px-10 pb-4 pt-10 md:px-20 hidden md:flex${blendClass}`}
+        className={`pointer-events-none [&>*]:pointer-events-auto fixed left-0 right-0 top-0 z-50 origin-top items-center justify-between px-10 pb-4 pt-8 md:px-14 hidden md:flex${blendClass}`}
       >
-        <div className="text-xl font-light tracking-wide text-white">
+        <div className="text-lg font-light tracking-wide text-stage-ink">
           We Are <span className="font-bold">incial.</span>
         </div>
         <button
           onClick={onToggleMenu}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
-          className="flex cursor-pointer items-center gap-2 rounded-full border border-white/30 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+          className="flex cursor-pointer items-center gap-2 rounded-full border border-stage-ink/30 px-4 py-2 text-[13px] font-medium text-stage-ink transition-colors hover:bg-stage-ink/10"
         >
           {menuOpen ? "Close" : "Menu"}
           {menuOpen ? (

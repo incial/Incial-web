@@ -18,6 +18,7 @@ import Footer from "@/components/layout/Footer";
 import ShaderHero from "@/components/ui/ShaderHero";
 import StretchHeading from "@/components/features/products/StretchHeading";
 import { useSectionsConfig } from "@/lib/useSectionsConfig";
+import VoiceCard, { useTeamMembers, type VoiceItem } from "@/components/features/careers/VoiceCard";
 
 interface Job {
   id: number;
@@ -28,13 +29,6 @@ interface Job {
   slug: string;
 }
 
-interface TestimonialItem {
-  quote: string;
-  author: string;
-  initials: string;
-  role: string;
-  company: string;
-}
 
 const PERKS: ReadonlyArray<string> = [
   "Flexible hours & remote-friendly workflows",
@@ -45,7 +39,7 @@ const PERKS: ReadonlyArray<string> = [
   "High-trust, collaborative studio culture",
 ];
 
-const TESTIMONIALS: ReadonlyArray<TestimonialItem> = [
+const TESTIMONIALS: ReadonlyArray<VoiceItem> = [
   {
     quote:
       "Our culture values respect, curiosity, and continuous learning. Every voice helps shape our journey.",
@@ -375,6 +369,8 @@ export default function CareersPage() {
   const [activeWaveIndex, setActiveWaveIndex] = useState<number | null>(null);
   const jobs: Job[] = [];
   const sectionsConfig = useSectionsConfig();
+  // photos and roles for the "From the Team" quotes come from the About team in the admin
+  const team = useTeamMembers();
   const isDisabled = sectionsConfig["careers"] === false;
 
   if (isDisabled) {
@@ -660,34 +656,13 @@ export default function CareersPage() {
               <Crosshair className="absolute -bottom-2.5 left-1/2 hidden -translate-x-1/2 md:inline" />
 
               {TESTIMONIALS.map((item, idx) => (
-                <Reveal
+                <VoiceCard
                   key={item.author}
-                  delay={idx * 0.08}
-                  className={`group flex flex-col justify-between gap-8 py-10 transition-colors hover:bg-black/[0.015] md:py-12 ${
-                    idx === 0 ? "md:pr-12" : "md:pl-12"
-                  }`}
-                >
-                  <blockquote className="text-lg font-normal leading-relaxed tracking-[-0.015em] text-[#151716]/85 md:text-xl">
-                    &ldquo;{item.quote}&rdquo;
-                  </blockquote>
-
-                  <div className="flex items-center gap-3.5">
-                    <span
-                      aria-hidden
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#151716] text-xs font-semibold tracking-wider text-white transition-transform duration-300 group-hover:scale-105"
-                    >
-                      {item.initials}
-                    </span>
-                    <div>
-                      <p className="text-sm font-medium text-[#151716]">
-                        {item.author}
-                      </p>
-                      <p className="text-xs font-medium tracking-[0.04em] text-black/50">
-                        {item.role} · {item.company}
-                      </p>
-                    </div>
-                  </div>
-                </Reveal>
+                  item={item}
+                  team={team}
+                  index={idx}
+                  className={idx === 0 ? "md:pr-12" : "md:pl-12"}
+                />
               ))}
             </div>
           </section>

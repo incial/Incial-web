@@ -1,134 +1,103 @@
-'use client';
+"use client";
 
-import MenuFrame from "@/components/layout/MenuFrame";
-import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react';
-import { motion } from 'framer-motion';
-import { Header } from '@/components/layout';
-import FlowSection from './FlowSection';
-import { useSmoothScroll } from './useSmoothScroll';
-import LearnLandingSlide from './LearnLandingSlide';
-import SkillsTogetherSlide from './SkillsTogetherSlide';
-import Itstatedwith from './itstartedwith';
-import Whatwexlpore from './Whatwexlpore';
-import Explore1 from './Explore1';
-import Notjustech from './Notjustech';
-import Itsaboutbuild from './Itsaboutbuild';
-import Wedont from './Wedont';
-import Ourapproach from './OurApproach';
-import ReadyToStartBuilding from './ReadyToStartBuilding';
+import { useCallback, useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Footer, Header, MenuFrame } from "@/components/layout";
+import { LT_COLORS } from "./content";
+import { useSmoothScroll } from "./useSmoothScroll";
+import HeroSection from "./HeroSection";
+import CuriositySection from "./CuriositySection";
+import ExploreSection from "./ExploreSection";
+import BuildingSection from "./BuildingSection";
+import JourneySection from "./JourneySection";
+import ApproachSection from "./ApproachSection";
+import ReadySection from "./ReadySection";
+import EventsSection from "./EventsSection";
+import GalleryColumns from "./GalleryColumns";
+import StatsSection from "./StatsSection";
+import TestimonialsSection from "./TestimonialsSection";
+import CommunitySection from "./CommunitySection";
+import { useLearnTogetherContent } from "./useLearnTogetherContent";
 
-interface Nav {
-  onNext: () => void;
-  onPrev: () => void;
-}
-
-interface FlowStep {
-  minHeight: string;
-  Slide: ComponentType<Nav>;
-}
-
-/** The flow, top to bottom. Explore is a long scrolling section; the rest are one screen each. */
-const STEPS: FlowStep[] = [
-  { minHeight: '100vh', Slide: LearnLandingSlide },
-  { minHeight: '100vh', Slide: SkillsTogetherSlide },
-  { minHeight: '100vh', Slide: Itstatedwith },
-  { minHeight: '100vh', Slide: Whatwexlpore },
-  { minHeight: '260vh', Slide: Explore1 },
-  { minHeight: '100vh', Slide: Notjustech },
-  { minHeight: '100vh', Slide: Itsaboutbuild },
-  { minHeight: '100vh', Slide: Wedont },
-  { minHeight: '100vh', Slide: Ourapproach },
-  { minHeight: '100vh', Slide: ReadyToStartBuilding },
-];
-
-const LAST = STEPS.length - 1;
-
+/**
+ * LearnTogether: a playful, colourful page on warm paper, unlike the black-and-white pages, but
+ * with the site's header and menu, type, hairline boxes and buttons. Every section animates with
+ * GSAP ScrollTrigger on top of Lenis smooth scrolling; the same layout serves phones (pinned and
+ * sideways effects turn into simple reveals there).
+ */
 export default function LearnTogetherPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const lenisRef = useSmoothScroll();
-  const sectionsRef = useRef<Array<HTMLElement | null>>([]);
-
-  const registerSection = useCallback((index: number, element: HTMLElement | null) => {
-    sectionsRef.current[index] = element;
-  }, []);
-
-  const scrollToY = useCallback(
+  // jumps the page to a scroll position (the gallery's scrollbar), through Lenis when it runs
+  const scrollTo = useCallback(
     (y: number) => {
       const lenis = lenisRef.current;
-      if (lenis) lenis.scrollTo(y, { duration: 1.4 });
-      else window.scrollTo({ top: y, behavior: 'smooth' });
+      if (lenis) {
+        // sections that loaded after Lenis started change the page height: measure again first
+        lenis.resize();
+        lenis.scrollTo(y, { immediate: true, force: true });
+      }
+      else window.scrollTo(0, y);
     },
     [lenisRef],
   );
+  // the admin-edited parts (events, gallery, testimonials, numbers, community); each shows once it has entries
+  const content = useLearnTogetherContent();
 
-  /** Moves to a section; going back into a long one lands at its end so the flow reads on. */
-  const goTo = useCallback(
-    (index: number, direction: 1 | -1) => {
-      const target = sectionsRef.current[Math.max(0, Math.min(LAST, index))];
-      if (!target) return;
-      const top = target.getBoundingClientRect().top + window.scrollY;
-      const isTall = target.offsetHeight > window.innerHeight * 1.5;
-      scrollToY(direction < 0 && isTall ? top + target.offsetHeight - window.innerHeight : top);
-    },
-    [scrollToY],
-  );
-
-  const currentIndex = useCallback(() => {
-    const middle = window.innerHeight / 2;
-    return sectionsRef.current.findIndex((el) => {
-      if (!el) return false;
-      const rect = el.getBoundingClientRect();
-      return rect.top <= middle && rect.bottom > middle;
-    });
+  // every character on the page looks toward the pointer: its position (-1..1 on each axis)
+  // goes into two CSS variables the pupils read, once per frame at most
+  useEffect(() => {
+    const root = document.documentElement;
+    let frame = 0;
+    const onMove = (event: PointerEvent) => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        root.style.setProperty("--lt-look-x", ((event.clientX / window.innerWidth) * 2 - 1).toFixed(3));
+        root.style.setProperty("--lt-look-y", ((event.clientY / window.innerHeight) * 2 - 1).toFixed(3));
+      });
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      cancelAnimationFrame(frame);
+      root.style.removeProperty("--lt-look-x");
+      root.style.removeProperty("--lt-look-y");
+    };
   }, []);
 
-  // PageUp / PageDown (and arrows on one-screen slides) step through the flow
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      const down = event.key === 'PageDown' || event.key === 'ArrowDown';
-      const up = event.key === 'PageUp' || event.key === 'ArrowUp';
-      if (!down && !up) return;
-
-      const index = currentIndex();
-      if (index < 0) return;
-      const isArrow = event.key.startsWith('Arrow');
-      const isTall = (sectionsRef.current[index]?.offsetHeight ?? 0) > window.innerHeight * 1.5;
-      if (isArrow && isTall) return; // let long sections scroll naturally
-
-      event.preventDefault();
-      goTo(index + (down ? 1 : -1), down ? 1 : -1);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [currentIndex, goTo]);
-
   return (
-    <div className="relative bg-white min-h-screen">
-      <Header menuOpen={menuOpen} onToggleMenu={() => setMenuOpen(!menuOpen)} />
-
+    <div className="relative min-h-screen bg-black">
+      <Header menuOpen={menuOpen} onToggleMenu={() => setMenuOpen((open) => !open)} blend />
       <MenuFrame open={menuOpen} />
 
       <motion.div
-        animate={{
-          y: menuOpen ? 100 : 0,
-        }}
+        animate={{ y: menuOpen ? 100 : 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="relative origin-top overflow-x-clip bg-black text-white min-h-screen"
-        style={{ zIndex: 30 }}
+        onClick={() => menuOpen && setMenuOpen(false)}
+        className={`relative origin-top overflow-x-clip text-[#151716] ${menuOpen ? "cursor-pointer" : ""}`}
+        style={{ zIndex: 30, background: LT_COLORS.paper }}
       >
-        {STEPS.map((step, index) => (
-          <FlowSection
-            key={index}
-            index={index}
-            minHeight={step.minHeight}
-            onElement={registerSection}
-          >
-            <step.Slide
-              onNext={() => goTo(index + 1, 1)}
-              onPrev={() => goTo(index - 1, -1)}
-            />
-          </FlowSection>
-        ))}
+        <main>
+          <HeroSection />
+          <CuriositySection />
+          <ExploreSection />
+          <BuildingSection />
+          <JourneySection />
+          <ApproachSection />
+          {content && content.stats.length > 0 && <StatsSection stats={content.stats} />}
+          {content && content.events.length > 0 && <EventsSection events={content.events} />}
+          {content && content.gallery.length > 0 && <GalleryColumns photos={content.gallery} onScrollTo={scrollTo} />}
+          {content && content.testimonials.length > 0 && <TestimonialsSection items={content.testimonials} layout={content.testimonialLayout} />}
+          {content && content.community.title && <CommunitySection community={content.community} />}
+          <ReadySection />
+        </main>
+
+        <div className="bg-black pb-4 pt-8 text-white">
+          <div className="mx-auto max-w-[1431px] px-5 sm:px-8 lg:px-12">
+            <Footer />
+          </div>
+        </div>
       </motion.div>
     </div>
   );

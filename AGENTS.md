@@ -156,3 +156,20 @@ When decomposing work across multiple sub-agents or parallel workers:
    - Any sub-agent modifying a shared interface (`lib/dataLoader.ts`, `lib/uploadRules.ts`, `prisma/schema.prisma`, API request/response schemas) must report the exact contract diff immediately so dependent agents update callers before integration.
 4. **Parent Verification Duty**
    - A sub-agent's self-reported pass is not sufficient after merging parallel changes. The coordinator/parent agent must run `pnpm typecheck && pnpm lint` (and `pnpm build` when applicable) on the integrated working tree before reporting completion.
+
+## 9. Graphify Knowledge Graph Maintenance
+
+- Graphify is installed for this repository and its graph is stored under the ignored `graphify-out/` directory.
+- After each completed implementation iteration (a coherent set of related edits), run `graphify update .` and review the result before moving on. If documentation or other non-code source files changed, run `/graphify . --update` so those changes are reflected too.
+- A post-commit Graphify hook is installed. Keep it enabled so every commit refreshes the code graph; if hooks are unavailable in an environment, run `graphify update .` manually after committing.
+- Do not stage or commit generated Graphify output unless the task explicitly asks for it.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

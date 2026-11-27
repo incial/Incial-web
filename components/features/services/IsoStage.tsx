@@ -19,6 +19,7 @@ import {
   clamp01,
   smoothstep,
 } from "./isoGeometry";
+import { useStageColors } from "@/lib/stageTone";
 
 interface IsoStageProps {
   spec: StageSpec;
@@ -36,7 +37,6 @@ const ISO = "scale(1,0.5) rotate(45)";
 const PLATE_ICON = 46;
 const ICON_STROKE = {
   fill: "none",
-  stroke: "#ffffff",
   strokeWidth: 1.7,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
@@ -57,6 +57,7 @@ function Extrusion({
   stepList: number[];
   fill: string;
 }) {
+  const colors = useStageColors();
   return (
     <>
       {stepList.map((k) => (
@@ -69,7 +70,7 @@ function Extrusion({
           rx={radius}
           transform={`translate(0,${k}) ${ISO}`}
           fill={fill}
-          stroke="rgba(255,255,255,0.16)"
+          stroke={`rgba(${colors.inkRgb},0.16)`}
           strokeWidth="1"
           vectorEffect="non-scaling-stroke"
         />
@@ -79,10 +80,11 @@ function Extrusion({
 }
 
 function Base({ y, stackX }: { y: MotionValue<number>; stackX: number }) {
+  const colors = useStageColors();
   return (
     <motion.g style={{ y }}>
       <g transform={`translate(${stackX} 0)`} opacity="0.5">
-        <Extrusion side={SLAB_SIDE} radius={SLAB_RADIUS} stepList={SLAB_STEPS} fill="#0b0b0d" />
+        <Extrusion side={SLAB_SIDE} radius={SLAB_RADIUS} stepList={SLAB_STEPS} fill={colors.slab} />
         <rect
           x={-SLAB_SIDE / 2}
           y={-SLAB_SIDE / 2}
@@ -90,8 +92,8 @@ function Base({ y, stackX }: { y: MotionValue<number>; stackX: number }) {
           height={SLAB_SIDE}
           rx={SLAB_RADIUS}
           transform={ISO}
-          fill="#070708"
-          stroke="rgba(255,255,255,0.4)"
+          fill={colors.slabTop}
+          stroke={`rgba(${colors.inkRgb},0.4)`}
           strokeWidth="1.3"
           vectorEffect="non-scaling-stroke"
         />
@@ -103,7 +105,7 @@ function Base({ y, stackX }: { y: MotionValue<number>; stackX: number }) {
           rx={SLAB_RADIUS * 0.6}
           transform={ISO}
           fill="none"
-          stroke="rgba(255,255,255,0.12)"
+          stroke={`rgba(${colors.inkRgb},0.12)`}
           strokeWidth="1"
           vectorEffect="non-scaling-stroke"
         />
@@ -113,10 +115,11 @@ function Base({ y, stackX }: { y: MotionValue<number>; stackX: number }) {
 }
 
 function Lid({ y, stackX }: { y: MotionValue<number>; stackX: number }) {
+  const colors = useStageColors();
   return (
     <motion.g style={{ y }}>
       <g transform={`translate(${stackX} 0)`} opacity="0.5">
-        <Extrusion side={SLAB_SIDE} radius={SLAB_RADIUS} stepList={SLAB_STEPS} fill="#0d0d0f" />
+        <Extrusion side={SLAB_SIDE} radius={SLAB_RADIUS} stepList={SLAB_STEPS} fill={colors.slab} />
         <rect
           x={-SLAB_SIDE / 2}
           y={-SLAB_SIDE / 2}
@@ -124,12 +127,12 @@ function Lid({ y, stackX }: { y: MotionValue<number>; stackX: number }) {
           height={SLAB_SIDE}
           rx={SLAB_RADIUS}
           transform={ISO}
-          fill="#050506"
-          stroke="rgba(255,255,255,0.6)"
+          fill={colors.lidTop}
+          stroke={`rgba(${colors.inkRgb},0.6)`}
           strokeWidth="1.4"
           vectorEffect="non-scaling-stroke"
         />
-        <g transform={`${ISO} scale(${LOGO_SCALE})`} fill="#ffffff">
+        <g transform={`${ISO} scale(${LOGO_SCALE})`} fill={colors.ink}>
           <circle cx={LOGO_PATHS.dot.cx} cy={LOGO_PATHS.dot.cy} r={LOGO_PATHS.dot.r} />
           <path d={LOGO_PATHS.lower} />
           <path d={LOGO_PATHS.tall} />
@@ -152,14 +155,15 @@ function Plate({
   revealed: MotionValue<number>;
   baseY: MotionValue<number>;
 }) {
+  const colors = useStageColors();
   const open = useTransform(revealed, (r) => smoothstep(r - index));
   const y = useTransform(baseY, (b) => b - (index + 1) * PLATE_SPACING);
   const x = useTransform(open, (o) => (1 - o) * 80);
   const act = useTransform([active, open], ([a, o]: number[]) =>
     clamp01(1 - Math.abs(a - index)) * o,
   );
-  const topFill = useTransform(act, [0, 1], ["rgba(16,16,20,0.4)", "rgba(59,130,246,0.85)"]);
-  const edgeFill = useTransform(act, [0, 1], ["rgba(10,10,12,0.55)", "rgba(29,75,168,0.9)"]);
+  const topFill = useTransform(act, [0, 1], [colors.plateIdle, "rgba(59,130,246,0.85)"]);
+  const edgeFill = useTransform(act, [0, 1], [colors.plateEdgeIdle, "rgba(29,75,168,0.9)"]);
   const strokeOpacity = useTransform(act, [0, 1], [0.38, 0.95]);
 
   return (
@@ -175,7 +179,7 @@ function Plate({
             height={PLATE_SIDE}
             rx={PLATE_RADIUS}
             transform={`translate(0,${k}) ${ISO}`}
-            stroke="rgba(255,255,255,0.14)"
+            stroke={`rgba(${colors.inkRgb},0.14)`}
             strokeWidth="1"
             vectorEffect="non-scaling-stroke"
             style={{ fill: edgeFill }}
@@ -188,7 +192,7 @@ function Plate({
           height={PLATE_SIDE}
           rx={PLATE_RADIUS}
           transform={ISO}
-          stroke="#ffffff"
+          stroke={colors.ink}
           strokeWidth="1.2"
           vectorEffect="non-scaling-stroke"
           style={{ fill: topFill, strokeOpacity }}
@@ -214,6 +218,7 @@ function PlateIcon({
   revealed: MotionValue<number>;
   baseY: MotionValue<number>;
 }) {
+  const colors = useStageColors();
   const open = useTransform(revealed, (r) => smoothstep(r - index));
   const y = useTransform(baseY, (b) => b - (index + 1) * PLATE_SPACING);
   const x = useTransform(open, (o) => (1 - o) * 80);
@@ -221,7 +226,7 @@ function PlateIcon({
     clamp01(1 - Math.abs(a - index)) * o,
   );
   const opacity = useTransform([open, act], ([o, a]: number[]) => o * (0.55 + 0.45 * a));
-  const stroke = useTransform(act, [0, 1], ["#e6e8ee", "#a9cbff"]);
+  const stroke = useTransform(act, [0, 1], [colors.iconIdle, "#a9cbff"]);
 
   return (
     <motion.g style={{ y, x, opacity }}>

@@ -23,7 +23,7 @@ export default function RotatingText({ wordIndex, words }: RotatingTextProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}
-      className="flex w-full items-center justify-center gap-[0.28em] px-4 text-center font-light text-white"
+      className="flex w-full items-center justify-center gap-[0.28em] px-4 text-center font-light text-stage-ink"
       style={{ fontSize: FONT_SIZE }}
     >
       <FlowingSlot

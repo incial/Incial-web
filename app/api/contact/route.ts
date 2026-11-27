@@ -7,6 +7,9 @@ const TO_EMAIL = process.env.CONTACT_TO_EMAIL || "toincial@gmail.com";
 
 const LIMITS = { name: 120, email: 254, phone: 40, company: 160, message: 5000 };
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_REGEX = /^\+?[\d\s()-]{7,20}$/;
+/** The services a visitor can tick on the home page form ("What do you need?"). */
+const NEEDS = new Set(["Technology", "Branding", "Marketing", "Media", "Not sure yet"]);
 
 // Lightweight in-memory rate limit (per server instance): 5 requests / 10 min / IP.
 const RATE_WINDOW_MS = 10 * 60 * 1000;
@@ -55,23 +58,33 @@ export async function POST(req: NextRequest) {
     const message = cleanField(body.message, LIMITS.message);
     const phone = cleanField(body.phone, LIMITS.phone);
     const company = cleanField(body.company, LIMITS.company);
+    // only the known options, at most one of each
+    const needs = Array.isArray(body.needs)
+      ? [...new Set(body.needs.filter((need): need is string => typeof need === "string" && NEEDS.has(need)))]
+      : [];
 
-    if (!name || !email || !message) {
+    // a way to reply is required: an email address, or (from the home page form) a phone number
+    if (!name || !message || (!email && !phone)) {
       return NextResponse.json(
-        { error: "Name, email, and message are required." },
+        { error: "Name, a message, and an email or phone number are required." },
         { status: 400 }
       );
     }
 
-    if (!EMAIL_REGEX.test(email)) {
+    if (email && !EMAIL_REGEX.test(email)) {
       return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
     }
+    if (phone && !PHONE_REGEX.test(phone)) {
+      return NextResponse.json({ error: "Invalid phone number." }, { status: 400 });
+    }
+
+    const fullMessage = needs.length > 0 ? `Needs: ${needs.join(", ")}\n\n${message}` : message;
 
     await prisma.contactSubmission.create({
       data: {
         name,
         email,
-        message,
+        message: fullMessage,
         phone: phone || null,
         company: company || null,
       },
@@ -89,7 +102,7 @@ export async function POST(req: NextRequest) {
       const { error: resendError } = await new Resend(apiKey).emails.send({
         from: "Incial Contact <onboarding@resend.dev>",
         to: TO_EMAIL,
-        replyTo: email,
+        ...(email ? { replyTo: email } : {}),
         subject: `New contact from ${name.replace(/[\r\n]+/g, " ")} — Incial`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
@@ -97,10 +110,10 @@ export async function POST(req: NextRequest) {
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin-bottom: 24px;" />
             <table style="width: 100%; border-collapse: collapse;">
               ${row("Name", escapeHtml(name), "font-weight: 600;")}
-              ${row("Email", `<a href="mailto:${safeEmail}" style="color: #2563eb;">${safeEmail}</a>`)}
+              ${email ? row("Email", `<a href="mailto:${safeEmail}" style="color: #2563eb;">${safeEmail}</a>`) : ""}
               ${phone ? row("Phone", escapeHtml(phone)) : ""}
               ${company ? row("Company", escapeHtml(company)) : ""}
-              ${row("Message", escapeHtml(message), "white-space: pre-wrap;")}
+              ${row("Message", escapeHtml(fullMessage), "white-space: pre-wrap;")}
             </table>
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin-top: 24px;" />
             <p style="color: #9ca3af; font-size: 12px; margin-top: 16px;">

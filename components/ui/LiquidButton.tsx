@@ -9,23 +9,30 @@ interface LiquidButtonProps {
   href?: string;
   onClick?: () => void;
   /**
-   * `outline`: transparent, and a white liquid fills it on hover (the text turns black).
+   * `outline`: transparent, and a liquid in the stage ink fills it on hover (white on dark pages,
+   *   dark on the light home page).
    * `solid`: white, and a black liquid fills it on hover (the text turns white).
+   * `ink`: near-black for light backgrounds, and a white liquid fills it on hover (the text turns dark).
    */
-  variant?: "outline" | "solid";
+  variant?: "outline" | "solid" | "ink";
   className?: string;
 }
 
 const VARIANTS = {
   outline: {
-    base: "border-white/40 bg-transparent text-white hover:text-black focus-visible:text-black",
-    liquid: "bg-white",
-    wave: "fill-white",
+    base: "border-stage-ink/40 bg-transparent text-stage-ink hover:text-stage focus-visible:text-stage",
+    liquid: "bg-stage-ink",
+    wave: "fill-stage-ink",
   },
   solid: {
     base: "border-white bg-white text-black hover:text-white focus-visible:text-white",
     liquid: "bg-black",
     wave: "fill-black",
+  },
+  ink: {
+    base: "border-[#151716] bg-[#151716] text-white hover:text-[#151716] focus-visible:text-[#151716]",
+    liquid: "bg-white",
+    wave: "fill-white",
   },
 } as const;
 

@@ -32,7 +32,7 @@ export default function ClientSection({ exit }: { exit?: MotionValue<number> }) 
     <section
       ref={sectionRef}
       id="client"
-      className="relative flex h-dvh min-h-[34rem] w-full flex-col justify-center overflow-hidden bg-black py-14 text-white md:py-16"
+      className="relative flex h-dvh min-h-[34rem] w-full flex-col justify-center overflow-hidden bg-stage py-14 text-stage-ink md:py-16"
     >
       <motion.div
         style={{ y: layerY, opacity: layerOpacity, scale: layerScale }}
@@ -40,7 +40,7 @@ export default function ClientSection({ exit }: { exit?: MotionValue<number> }) 
       >
         <motion.div
           style={{ y: headingY, opacity: headingOpacity }}
-          className="mb-14 px-6 text-center md:mb-20"
+          className="mb-16 px-6 text-center md:mb-24 lg:mb-28"
         >
           <AccentHeading
             text={data?.headerText || "Some of Our Awesome Clients:"}
@@ -62,10 +62,10 @@ export default function ClientSection({ exit }: { exit?: MotionValue<number> }) 
             >
               {data?.testimonials.map((test) => (
                 <div key={test.id} className="flex flex-col">
-                  <p className="mb-4 font-[Poppins] text-base font-light italic leading-relaxed text-white/80 md:text-lg">
+                  <p className="mb-4 font-[Poppins] text-base font-light italic leading-relaxed text-stage-ink/80 md:text-lg">
                     &ldquo;{test.quote}&rdquo;
                   </p>
-                  <p className="text-right text-sm font-light italic tracking-wide text-white/60">
+                  <p className="text-right text-sm font-light italic tracking-wide text-stage-ink/60">
                     ~ {test.author}
                   </p>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type RefObject } from "react";
+import { useStageColors } from "@/lib/stageTone";
 import { cancelFrame, frame as frameLoop, type FrameData, type MotionValue } from "framer-motion";
 import { fetchCachedImageUrl } from "@/lib/publicCache";
 import {
@@ -70,8 +71,7 @@ const LANDING_SHIFT_SHARE = 0.18;
 const WHITE = 0;
 const SOFT = 1;
 const BLUE = 2;
-/** Particle colours, indexed by WHITE / SOFT / BLUE. */
-const PALETTE = ["#ffffff", "#c9ccd6", "#7db1ff"] as const;
+/* Particle colours, indexed by WHITE / SOFT / BLUE ("white" is the stage ink): from the stage tone. */
 /** Opacity is rounded to this many steps so particles can be filled in a few batches. */
 const ALPHA_LEVELS = 12;
 const COS45 = Math.SQRT1_2;
@@ -336,6 +336,7 @@ export default function DustCanvas({
   className,
 }: DustCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const PALETTE = useStageColors().dust;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -637,7 +638,7 @@ export default function DustCanvas({
       window.removeEventListener("pointercancel", handleRelease);
       document.documentElement.removeEventListener("pointerleave", handleLeave);
     };
-  }, [spec, anchorRef, morph, revealed, active, plateCount, logoSource, logoSrc, instant, entry, holdShare]);
+  }, [spec, anchorRef, morph, revealed, active, plateCount, logoSource, logoSrc, instant, entry, holdShare, PALETTE]);
 
   return <canvas ref={canvasRef} className={className} aria-hidden />;
 }

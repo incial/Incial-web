@@ -37,19 +37,19 @@ export default function NavMenu({ onClose }: NavMenuProps) {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: -80, opacity: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed left-0 right-0 top-0 z-40 hidden items-center justify-center gap-0 bg-white px-6 py-8 md:flex"
+        className="fixed left-0 right-0 top-0 z-40 hidden items-center justify-center gap-0 bg-stage-menu px-6 py-8 md:flex"
       >
         {visibleLinks.map((link, i) => (
           <div key={link.label} className="flex items-center">
             <Link
               href={link.href}
               onClick={() => handleLinkClick(link.href)}
-              className="px-5 text-sm font-medium text-black transition-colors hover:text-black/60"
+              className="px-5 text-sm font-medium text-stage-menu-ink transition-colors hover:text-stage-menu-ink/60"
             >
               {link.label}
             </Link>
             {i < visibleLinks.length - 1 && (
-              <div className="h-4 w-px bg-black/20" />
+              <div className="h-4 w-px bg-stage-menu-ink/20" />
             )}
           </div>
         ))}
@@ -61,7 +61,7 @@ export default function NavMenu({ onClose }: NavMenuProps) {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -12 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-white md:hidden"
+        className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-stage-menu md:hidden"
       >
         <nav className="flex flex-col items-center w-full">
           {visibleLinks.map((link, i) => (
@@ -69,12 +69,12 @@ export default function NavMenu({ onClose }: NavMenuProps) {
               <Link
                 href={link.href}
                 onClick={() => handleLinkClick(link.href)}
-                className="w-full py-5 text-center text-base font-medium text-black transition-colors hover:text-black/50"
+                className="w-full py-5 text-center text-base font-medium text-stage-menu-ink transition-colors hover:text-stage-menu-ink/50"
               >
                 {link.label}
               </Link>
               {i < visibleLinks.length - 1 && (
-                <div className="h-px w-full bg-black/10" />
+                <div className="h-px w-full bg-stage-menu-ink/10" />
               )}
             </div>
           ))}

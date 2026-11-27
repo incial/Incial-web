@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateAdminAuth } from "@/lib/adminAuth";
 import { revalidatePath } from "next/cache";
 import { CONTENT_KEYS, readContent, writeContent, type ContentKey } from "@/lib/contentStore";
+import { validateLearnTogetherData } from "@/lib/learnTogetherValidation";
 
 export const dynamic = "force-dynamic";
 
@@ -255,6 +256,59 @@ function validateBlogsData(input: unknown): {
   };
 }
 
+function validateTrustData(input: unknown): {
+  data: {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    stats: Array<{ id: string; value: string; label: string }>;
+  } | null;
+  errors: ValidationError[];
+} {
+  const errors: ValidationError[] = [];
+  const body = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
+
+  const eyebrow = typeof body.eyebrow === "string" ? body.eyebrow.trim() : "";
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  const subtitle = typeof body.subtitle === "string" ? body.subtitle.trim() : "";
+
+  if (!title) {
+    errors.push({ path: "title", message: "Headline is required." });
+  }
+
+  if (!Array.isArray(body.stats)) {
+    errors.push({ path: "stats", message: "stats must be an array." });
+  }
+
+  const rawStats = Array.isArray(body.stats) ? body.stats : [];
+  const stats = rawStats.map((item, index) => {
+    const obj = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+    if (!item || typeof item !== "object") {
+      errors.push({ path: `stats[${index}]`, message: "Each stat must be an object." });
+      return { id: String(index + 1), value: "", label: "" };
+    }
+    const id = typeof obj.id === "string" && obj.id.trim() ? obj.id.trim() : String(index + 1);
+    const value = typeof obj.value === "string" ? obj.value.trim() : "";
+    const label = typeof obj.label === "string" ? obj.label.trim() : "";
+    if (!value) {
+      errors.push({ path: `stats[${index}].value`, message: "Stat value is required." });
+    }
+    if (!label) {
+      errors.push({ path: `stats[${index}].label`, message: "Stat label is required." });
+    }
+    return { id, value, label };
+  });
+
+  if (errors.length > 0) {
+    return { data: null, errors };
+  }
+
+  return {
+    data: { eyebrow, title, subtitle, stats },
+    errors,
+  };
+}
+
 const MAX_BODY_BYTES = 2 * 1024 * 1024; // 2 MB
 
 export async function GET(
@@ -369,8 +423,24 @@ export async function PUT(
       payload = data;
     }
 
-    if (section === "about") {
-      const bad = findNonPersistentImages(body);
+    if (section === "learntogether") {
+      const { data, errors } = validateLearnTogetherData(body);
+      if (errors.length > 0 || !data) {
+        return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
+      }
+      payload = data;
+    }
+
+    if (section === "trust") {
+      const { data, errors } = validateTrustData(body);
+      if (errors.length > 0 || !data) {
+        return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
+      }
+      payload = data;
+    }
+
+    if (section === "about" || section === "learntogether") {
+      const bad = findNonPersistentImages(payload);
       if (bad.length > 0) {
         return NextResponse.json(
           {
@@ -401,6 +471,8 @@ export async function PUT(
       revalidatePath("/services");
     } else if (section === "products") {
       revalidatePath("/products");
+    } else if (section === "learntogether") {
+      revalidatePath("/learn-together");
     }
     revalidatePath("/");
 

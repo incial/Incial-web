@@ -28,7 +28,7 @@ export default function MenuFrame({ open }: MenuFrameProps) {
       }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className="pointer-events-none fixed z-[39]"
-      style={{ boxShadow: "0 0 0 200vmax #ffffff" }}
+      style={{ boxShadow: "0 0 0 200vmax var(--stage-frame)" }}
     />
   );
 }

@@ -1,166 +1,105 @@
 {
-  "headerText": "Some of Our Awesome Clients:",
   "clients": [
     {
       "id": "blaupunkt",
+      "src": "/media/incial-web/clients/blaupunkt.png",
       "name": "Blaupunkt",
-      "src": "/media/incial-web/clients/blaupunkt.png"
+      "location": {
+        "lat": 44.2,
+        "lng": -91.43,
+        "label": "Blaupunkt"
+      }
     },
     {
       "id": "voltant",
+      "src": "/media/incial-web/clients/voltant.png",
       "name": "Voltant Energy",
-      "src": "/media/incial-web/clients/voltant.png"
-    },
-    {
-      "id": "datalabs",
-      "name": "DataLabs",
-      "src": "/media/incial-web/clients/Datalabs.png"
-    },
-    {
-      "id": "precon",
-      "name": "Precon",
-      "src": "/media/incial-web/clients/precon.png"
-    },
-    {
-      "id": "dc-kottayam",
-      "name": "DC Kottayam",
-      "src": "/media/incial-web/clients/dc-kottayam.png"
-    },
-    {
-      "id": "usi3dt",
-      "name": "USI3DT",
-      "src": "/media/incial-web/clients/usi3dt.png"
+      "location": {
+        "lat": 24.02,
+        "lng": 45.13,
+        "label": "Voltant Energy"
+      }
     },
     {
       "id": "livelong",
-      "name": "LiveLong Wealth",
-      "src": "/media/incial-web/clients/livelong.png"
-    },
-    {
-      "id": "dream",
-      "name": "Dream",
-      "src": "/media/incial-web/clients/dream.png"
+      "src": "/media/incial-web/clients/livelong.png",
+      "name": "LiveLong Wealth"
     },
     {
       "id": "ajce",
-      "name": "AJCE",
-      "src": "/media/incial-web/clients/ajce.png"
-    },
-    {
-      "id": "vic",
-      "name": "VIC",
-      "src": "/media/incial-web/clients/vic.png"
-    },
-    {
-      "id": "apj-paramedicals",
-      "name": "APJ Paramedicals",
-      "src": "/media/incial-web/clients/apj-paramedicals.png"
-    },
-    {
-      "id": "cognilearn",
-      "name": "CogniLearn",
-      "src": "/media/incial-web/clients/cognilearn.png"
-    },
-    {
-      "id": "coinco",
-      "name": "Coinco",
-      "src": "/media/incial-web/clients/coinco.png"
+      "src": "/media/incial-web/clients/ajce.png",
+      "name": "AJCE"
     },
     {
       "id": "jaybees",
-      "name": "Jaybees",
-      "src": "/media/incial-web/clients/jaybees.png"
-    },
-    {
-      "id": "eden-public-school",
-      "name": "Eden Public School",
-      "src": "/media/incial-web/clients/eden-public-school.png"
+      "src": "/media/incial-web/clients/jaybees.png",
+      "name": "Jaybees"
     },
     {
       "id": "esla-spices",
-      "name": "Esla Spices",
-      "src": "/media/incial-web/clients/esla-spices.png"
+      "src": "/media/incial-web/clients/esla-spices.png",
+      "name": "Esla Spices"
     },
     {
       "id": "eutropics",
-      "name": "Eutropics",
-      "src": "/media/incial-web/clients/eutropics.png"
-    },
-    {
-      "id": "elavanal",
-      "name": "Elavanal",
-      "src": "/media/incial-web/clients/elavanal.png"
+      "src": "/media/incial-web/clients/eutropics.png",
+      "name": "Eutropics"
     },
     {
       "id": "fotoloom",
-      "name": "Fotoloom",
-      "src": "/media/incial-web/clients/fotoloom.png"
-    },
-    {
-      "id": "funfee",
-      "name": "Funfee",
-      "src": "/media/incial-web/clients/funfee.png"
-    },
-    {
-      "id": "homescapes",
-      "name": "Homescapes",
-      "src": "/media/incial-web/clients/homescapes.png"
-    },
-    {
-      "id": "zaburb",
-      "name": "Zaburb",
-      "src": "/media/incial-web/clients/usi.png"
-    },
-    {
-      "id": "1772861291899",
-      "name": "Zabrub",
-      "src": "/media/incial-web/clients/Zabrub.png"
-    },
-    {
-      "id": "logo2",
-      "name": "Logo2",
-      "src": "/media/incial-web/clients/logo2.png"
+      "src": "/media/incial-web/clients/fotoloom.png",
+      "name": "Fotoloom"
     },
     {
       "id": "manna",
-      "name": "Manna Caterers",
-      "src": "/media/incial-web/clients/manna.png"
+      "src": "/media/incial-web/clients/manna.png",
+      "name": "Manna Caterers"
     },
     {
       "id": "meowendi",
-      "name": "Meowendi",
-      "src": "/media/incial-web/clients/meowendi.png"
+      "src": "/media/incial-web/clients/meowendi.png",
+      "name": "Meowendi"
     },
     {
       "id": "miraco",
-      "name": "MIRACO",
-      "src": "/media/incial-web/clients/miraco.png"
-    },
-    {
-      "id": "skinzone",
-      "name": "Skinzone",
-      "src": "/media/incial-web/clients/skinzone.png"
-    },
-    {
-      "id": "1772728901003",
-      "name": "jaybees",
-      "src": "/media/incial-web/clients/Varchikenfood.png"
+      "src": "/media/incial-web/clients/miraco.png",
+      "name": "MIRACO"
     },
     {
       "id": "livelong-pala",
-      "name": "LiveLong Pala",
-      "src": "/media/incial-web/clients/livelong-pala.png"
+      "src": "/media/incial-web/clients/livelong-pala.png",
+      "name": "LiveLong Pala"
     },
     {
       "id": "untitled1",
-      "name": "Livelongpala",
-      "src": "/media/incial-web/clients/untitled1.png"
+      "src": "/media/incial-web/clients/untitled1.png",
+      "name": "Livelongpala"
     },
     {
       "id": "varkitchen",
-      "name": "Varkitchen",
-      "src": "/media/incial-web/clients/varkitchen.png"
+      "src": "/media/incial-web/clients/varkitchen.png",
+      "name": "Varkitchen"
     }
   ],
-  "testimonials": []
+  "headerText": "Some of Our Awesome Clients:",
+  "testimonials": [
+    {
+      "id": "homescapes",
+      "quote": "Incial took us from an offline-only home décor seller to a full-fledged direct-to-consumer brand. Their Shopify architecture and curated visual identity completely transformed how customers discover and shop with us.",
+      "author": "Homescapes",
+      "role": "E-commerce & Brand Identity"
+    },
+    {
+      "id": "funfee",
+      "quote": "From curiosity teasers to high-energy launch reels, Incial turned our new venue into the most talked-about family destination in town—bringing 18,000 organic followers and over 4.6 million views in just three weeks.",
+      "author": "Funfee",
+      "role": "Social Media & Brand Launch"
+    },
+    {
+      "id": "livelong-wealth",
+      "quote": "Their educational strategy and relatable content broke down complex financial concepts for our audience, building a loyal investor community and growing our Assets Under Management from 33 lakhs to 42 Cr.",
+      "author": "Livelong Wealth",
+      "role": "Financial Services Marketing"
+    }
+  ]
 }

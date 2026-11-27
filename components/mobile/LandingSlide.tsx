@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo, useRef, memo, type ReactNode } from 'react';
+import { useStageTone } from '@/lib/stageTone';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
@@ -36,7 +37,8 @@ const navTargets: Record<string, string> = {
   products: '/products',
 };
 
-// The first button is solid white with black text; the second is outlined. Both fill with a liquid on hover.
+// The first button is solid in the stage ink (white on dark, near-black on the light home page); the
+// second is outlined. Both fill with a liquid on hover.
 const CTAButton = memo(
   ({
     label,
@@ -50,16 +52,19 @@ const CTAButton = memo(
     variant: 'solid' | 'outline';
     icon: ReactNode;
     onClick: (action: string) => void;
-  }) => (
+  }) => {
+    const tone = useStageTone();
+    return (
     <LiquidButton
-      variant={variant}
+      variant={variant === 'solid' && tone === 'light' ? 'ink' : variant}
       onClick={() => onClick(action)}
-      className="min-w-[11rem] flex-none !border-white px-5 py-3.5 text-[12px] font-semibold leading-tight"
+      className="min-w-[11rem] flex-none !border-stage-ink px-5 py-3.5 text-[12px] font-semibold leading-tight"
     >
       {label}
       {icon}
     </LiquidButton>
-  ),
+    );
+  },
 );
 
 CTAButton.displayName = 'CTAButton';
